@@ -71,8 +71,44 @@ GitHub funcionar como trava de verdade:
 na PR #1 (`feature/fundacao-design-system`) e retornou exatamente
 `Auto-merge is not enabled for this repository. Enable it in repository
 Settings → General → Pull Requests → Allow auto-merge.` — a limitação
-acima não é hipotética. A PR ficou aberta, pronta para review, sem merge
-declarado.
+acima não era hipotética. A PR ficou aberta, pronta para review, sem merge
+declarado, e foi mergeada manualmente pelo usuário.
+
+**Atualização (PR #2, re-testado de verdade):** `mcp__github__enable_pr_auto_merge`
+foi chamado novamente na PR #2 (`feature/supabase-rls-storage`) e desta
+vez **não** retornou o erro "Auto-merge is not enabled for this
+repository" — confirma que "Allow auto-merge" está de fato habilitado nas
+configurações do repositório, como o usuário reportou. Porém o retorno
+real foi outro erro, igualmente informativo:
+
+```text
+The pull request is already in clean status (all checks passed).
+Auto-merge only applies when checks are pending — you can merge directly.
+```
+
+Ou seja: sem nenhum required status check configurado no branch padrão
+(branch protection/ruleset continua sem confirmação de estar configurado —
+sem ferramenta disponível para o agente configurar isso), o GitHub não tem
+nada pendente para esperar, então recusa "armar" o auto-merge e sugere
+merge direto. Isso confirma na prática a limitação que já estava
+documentada como hipótese: auto-merge nativo do GitHub só funciona como
+trava real quando existem required status checks pendentes; sem eles, a
+opção do repositório sozinha não basta.
+
+**Decisão tomada:** o agente **não** chamou `merge_pull_request` para
+contornar isso. Fazer isso seria exatamente a "decisão unilateral de
+merge" proibida pelo `automation-contract.md` (seção "Regra de merge") —
+o critério "checks limpos" aqui só é verdadeiro porque não há check
+nenhum, não porque algo foi de fato validado por CI. A PR #2 ficou aberta,
+marcada como pronta para review (`draft: false`), aguardando merge manual
+do usuário — mesmo fluxo de fechamento que a PR #1.
+
+**Ainda pendente (inalterado):** branch protection / ruleset com required
+status checks no branch padrão. Enquanto isso não existir, toda PR futura
+provavelmente vai repetir esse mesmo resultado ("clean status, merge
+directly") em vez de travar em CI de verdade — vale configurar isso assim
+que houver um workflow de CI real (lint/typecheck/test/build) para servir
+de required check.
 
 O servidor MCP do GitHub conectado nesta sessão expõe
 `mcp__github__enable_pr_auto_merge` / `disable_pr_auto_merge` (nível de PR),
@@ -100,6 +136,42 @@ push), mas o merge final depende de confirmação real do GitHub — o agente
 vai tentar `enable_pr_auto_merge` e reportar exatamente o que acontecer
 (sucesso, falha, ou merge que já é possível de forma direta caso não haja
 nenhuma proteção configurada).
+
+## Supabase
+
+- **Projeto:** `listada-escola`, ref `wfdejmokxrunupsekcmq`, região
+  `sa-east-1`, organização `mzinhoww-gmailcom's projects`. Criado no
+  Prompt 02 — a org já tinha outros projetos (`the-loyalty`, `wedding`,
+  etc.) não relacionados a este; nunca assumir que um projeto Supabase
+  existente é "o" projeto deste repo sem confirmar o nome.
+- Plano free tem **limite de 2 projetos ativos simultâneos** por
+  organização — bateu nesse limite ao criar o projeto e ao tentar reativar
+  um projeto pausado existente; precisou que o usuário pausasse outro
+  projeto primeiro. Ter isso em mente se um Prompt futuro precisar de outro
+  projeto Supabase (branch de preview, staging, etc.).
+- `mcp__Supabase__apply_migration` para DDL (schema, RLS, storage — tudo
+  que deve virar arquivo em `supabase/migrations/`); `execute_sql` para
+  tudo que não é migration (testes, queries de verificação, seed
+  pontual). `apply_migration` valida referências a tabelas na criação de
+  função `language sql` — funções que referenciam tabelas criadas
+  depois precisam ficar em uma migration posterior (ver
+  `20260910200900_rls_helper_functions.sql`, separado do resto dos
+  helpers por esse motivo exato).
+- **`get_advisors(type: security)` cacheia** — depois de uma correção
+  (revogar EXECUTE, etc.), ele pode continuar reportando o estado antigo
+  por um tempo. Não confiar nele para confirmar uma correção que acabou de
+  ser aplicada; verificar direto via SQL
+  (`information_schema.routine_privileges`, `pg_roles`, etc.) quando a
+  confirmação imediata importa.
+- Testar RLS de verdade (não só escrever as policies e assumir que
+  funcionam) exige simular usuários: inserir linhas mínimas em
+  `auth.users` (só `id`, `email`, `raw_user_meta_data` — o resto tem
+  default), depois `set local role authenticated;` +
+  `select set_config('request.jwt.claims', json_build_object('sub',
+  '<uuid>', 'role','authenticated')::text, true);` para virar aquele
+  usuário dentro da transação. Ver `supabase/tests/rls_idor.sql` para o
+  padrão completo, incluindo a armadilha de USING-passa-mas-WITH-CHECK-falha
+  (gera exceção, não 0 linhas).
 
 ## Rollback
 
