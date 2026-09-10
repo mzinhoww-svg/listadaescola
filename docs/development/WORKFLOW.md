@@ -52,8 +52,8 @@ que seja atualizado conforme o projeto evolui (CI aparece, branch protection
 4. Abrir PR com `mcp__github__create_pull_request` (base = `claude/eager-galileo-d8hdtc` por enquanto).
 5. Validar localmente antes de tirar do rascunho; marcar pronta para review com `mcp__github__update_pull_request` (`draft: false`) quando estiver de fato pronta — uma PR em draft não é mergeada pelo auto-merge do GitHub mesmo com auto-merge solicitado.
 6. Solicitar auto-merge com `mcp__github__enable_pr_auto_merge`. **Ver limitação abaixo — hoje isso provavelmente falha ou não trava nada de verdade.**
-7. Acompanhar CI/review via `subscribe_pr_activity` (eventos chegam como wake da sessão) e `mcp__github__pull_request_read`/`get_check_run` para status pontual. Nunca declarar "merge concluído" sem confirmar o estado `merged` via API.
-8. Após merge confirmado: atualizar o branch padrão local, deletar o branch de feature, confirmar worktree limpo.
+7. Acompanhar CI/review via `subscribe_pr_activity` (eventos chegam como wake da sessão) e `mcp__github__pull_request_read`/`get_check_run` para status pontual. Nunca declarar "merge concluído" sem confirmar o estado `merged` via API. **Antes de qualquer novo push numa branch de feature (ex.: um ajuste de docs pós-checks), reconfirmar com `pull_request_read` que a PR ainda está aberta** — o usuário pode mergear a qualquer momento, e um push depois do merge fica órfão na branch (não chega ao branch padrão; ver "Limitação real conhecida — deleção de branch remota pós-merge" abaixo para o caso real em que isso aconteceu).
+8. Após merge confirmado: atualizar o branch padrão local (`git pull`), deletar o branch de feature local (`git branch -d`) e tentar deletar o remoto (`git push origin --delete`) — **essa última parte falha hoje com HTTP 403, ver seção de limitação abaixo; reportar e seguir em frente, não é bloqueador.**
 
 ## Limitação real conhecida — branch protection / auto-merge
 
@@ -101,7 +101,23 @@ merge" proibida pelo `automation-contract.md` (seção "Regra de merge") —
 o critério "checks limpos" aqui só é verdadeiro porque não há check
 nenhum, não porque algo foi de fato validado por CI. A PR #2 ficou aberta,
 marcada como pronta para review (`draft: false`), aguardando merge manual
-do usuário — mesmo fluxo de fechamento que a PR #1.
+do usuário — mesmo fluxo de fechamento que a PR #1. **Confirmado via API**
+(`pull_request_read`): `merged: true`, `merged_by: mzinhoww-svg`,
+`merged_at: 2026-09-10T21:04:05Z` — o usuário mergeou manualmente pela UI
+do GitHub, poucos minutos depois de a PR ficar pronta para review.
+
+**Armadilha real descoberta neste ciclo:** um commit de docs (`d575b97`,
+o texto original desta seção "Vercel" abaixo) foi enviado para
+`feature/supabase-rls-storage` **depois** de o usuário já ter mergeado a
+PR naquele head anterior (`5859ac9`). Push para uma branch de feature cuja
+PR acabou de mergear não reabre nem atualiza a PR — o commit fica órfão,
+só existindo na branch remota, e nunca chega ao branch padrão. Esse
+conteúdo teve que ser reconstituído e commitado diretamente em
+`claude/eager-galileo-d8hdtc` (ver nota abaixo sobre o bloqueio de deleção
+de branch). **Lição:** depois de qualquer push a uma branch de feature,
+vale checar o estado real da PR (`pull_request_read`) antes de assumir que
+ela ainda está aberta — especialmente quando há um intervalo entre o push
+e o próximo passo do agente.
 
 **Ainda pendente (inalterado):** branch protection / ruleset com required
 status checks no branch padrão. Enquanto isso não existir, toda PR futura
@@ -136,6 +152,56 @@ push), mas o merge final depende de confirmação real do GitHub — o agente
 vai tentar `enable_pr_auto_merge` e reportar exatamente o que acontecer
 (sucesso, falha, ou merge que já é possível de forma direta caso não haja
 nenhuma proteção configurada).
+
+## Limitação real conhecida — deleção de branch remota pós-merge
+
+O passo 8 do fluxo acima ("deletar o branch de feature") **falha hoje via
+`git push origin --delete <branch>`** neste ambiente: retorna `HTTP 403` +
+`RPC failed` / `unexpected disconnect` (testado após o merge da PR #2,
+tentativa repetida em `feature/supabase-rls-storage` e
+`feature/fundacao-design-system`, ambos os merges já confirmados via API).
+O servidor MCP do GitHub conectado não expõe nenhuma ferramenta de deleção
+de branch/ref (só `create_branch`) — verificado por busca nas ferramentas
+disponíveis. Não é um bloqueio de rede (`git push`/`git pull` normais
+funcionam o resto da sessão inteira contra o mesmo host); o mais provável
+é permissão insuficiente do credencial usado para esse tipo específico de
+operação, ou uma proteção não documentada no lado do GitHub.
+
+**Impacto:** nenhum — branches de feature já mergeadas e órfãs no remoto
+não afetam nada funcionalmente, só ficam poluindo a lista de branches.
+**Não é bloqueador para nenhum Prompt.** Se o usuário quiser, pode apagar
+manualmente pela UI do GitHub (Branches → ícone de lixeira) a qualquer
+momento; o agente vai continuar tentando deletar localmente (branch local,
+que funciona via `git branch -d`) e reportando quando a deleção remota
+falhar, sem insistir/repetir a tentativa (ver `/root/.ccr/README.md`:
+"do not retry... report them instead").
+
+## Vercel
+
+- O repositório já estava conectado a um projeto Vercel
+  (`mazinhoww-5476s-projects/listadaescola`) via o app/bot `vercel[bot]`
+  **desde a PR #1** — isso já constava no corpo da própria PR #1
+  ("achado anterior de 'sem projeto Vercel conectado' estava errado"), mas
+  nunca tinha sido registrado aqui no WORKFLOW.md até agora (PR #2). Todo
+  push a uma branch com PR aberta dispara deploy de preview automático —
+  aparece como comentário do bot (criado e depois editado conforme o build
+  avança: `DEPLOYED`/`Building`/`Ready`) mais um commit status
+  `context: "Vercel"`.
+- Confirmado de novo na PR #2: status `Vercel` → `success` ("Deployment
+  has completed") para o commit `5859ac9`, preview em
+  `https://listadaescola-git-feature-supab-ec8b95-mazinhoww-5476s-projects.vercel.app`.
+- É só um **commit status informativo** hoje, não um required check —
+  branch protection continua não configurada (ver seção acima), então o
+  status `Vercel` não bloqueia nada. Se/quando branch protection for
+  configurada, vale considerar exigir esse status junto com CI de
+  lint/typecheck/test/build.
+- O comentário do `vercel[bot]` na PR é atualizado in-place a cada novo
+  push (mesmo comentário, conteúdo editado) — não precisa de resposta, é
+  só status automático.
+- Ferramentas MCP `mcp__Vercel__*` estão disponíveis nesta sessão
+  (`get_project_deployment_protection`, `get_web_analytics`, etc.) mas
+  ainda não foram usadas/necessárias — a integração até agora é 100%
+  automática via GitHub App, sem intervenção do agente.
 
 ## Supabase
 
