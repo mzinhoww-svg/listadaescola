@@ -71,8 +71,16 @@ GitHub funcionar como trava de verdade:
 na PR #1 (`feature/fundacao-design-system`) e retornou exatamente
 `Auto-merge is not enabled for this repository. Enable it in repository
 Settings → General → Pull Requests → Allow auto-merge.` — a limitação
-acima não é hipotética. A PR ficou aberta, pronta para review, sem merge
-declarado.
+acima não era hipotética. A PR ficou aberta, pronta para review, sem merge
+declarado, e foi mergeada manualmente pelo usuário.
+
+**Atualização:** o usuário reportou ter habilitado "Allow auto-merge"
+depois da PR #1. Ainda não re-testado nesta sessão — a próxima PR aberta
+vai confirmar via `enable_pr_auto_merge` de verdade e este arquivo será
+atualizado com o resultado real, não com a afirmação em si. Branch
+protection/required status checks continuam sem confirmação de estarem
+configurados (e continuam fora do alcance de qualquer ferramenta
+disponível para o agente configurar).
 
 O servidor MCP do GitHub conectado nesta sessão expõe
 `mcp__github__enable_pr_auto_merge` / `disable_pr_auto_merge` (nível de PR),
@@ -100,6 +108,42 @@ push), mas o merge final depende de confirmação real do GitHub — o agente
 vai tentar `enable_pr_auto_merge` e reportar exatamente o que acontecer
 (sucesso, falha, ou merge que já é possível de forma direta caso não haja
 nenhuma proteção configurada).
+
+## Supabase
+
+- **Projeto:** `listada-escola`, ref `wfdejmokxrunupsekcmq`, região
+  `sa-east-1`, organização `mzinhoww-gmailcom's projects`. Criado no
+  Prompt 02 — a org já tinha outros projetos (`the-loyalty`, `wedding`,
+  etc.) não relacionados a este; nunca assumir que um projeto Supabase
+  existente é "o" projeto deste repo sem confirmar o nome.
+- Plano free tem **limite de 2 projetos ativos simultâneos** por
+  organização — bateu nesse limite ao criar o projeto e ao tentar reativar
+  um projeto pausado existente; precisou que o usuário pausasse outro
+  projeto primeiro. Ter isso em mente se um Prompt futuro precisar de outro
+  projeto Supabase (branch de preview, staging, etc.).
+- `mcp__Supabase__apply_migration` para DDL (schema, RLS, storage — tudo
+  que deve virar arquivo em `supabase/migrations/`); `execute_sql` para
+  tudo que não é migration (testes, queries de verificação, seed
+  pontual). `apply_migration` valida referências a tabelas na criação de
+  função `language sql` — funções que referenciam tabelas criadas
+  depois precisam ficar em uma migration posterior (ver
+  `20260910200900_rls_helper_functions.sql`, separado do resto dos
+  helpers por esse motivo exato).
+- **`get_advisors(type: security)` cacheia** — depois de uma correção
+  (revogar EXECUTE, etc.), ele pode continuar reportando o estado antigo
+  por um tempo. Não confiar nele para confirmar uma correção que acabou de
+  ser aplicada; verificar direto via SQL
+  (`information_schema.routine_privileges`, `pg_roles`, etc.) quando a
+  confirmação imediata importa.
+- Testar RLS de verdade (não só escrever as policies e assumir que
+  funcionam) exige simular usuários: inserir linhas mínimas em
+  `auth.users` (só `id`, `email`, `raw_user_meta_data` — o resto tem
+  default), depois `set local role authenticated;` +
+  `select set_config('request.jwt.claims', json_build_object('sub',
+  '<uuid>', 'role','authenticated')::text, true);` para virar aquele
+  usuário dentro da transação. Ver `supabase/tests/rls_idor.sql` para o
+  padrão completo, incluindo a armadilha de USING-passa-mas-WITH-CHECK-falha
+  (gera exceção, não 0 linhas).
 
 ## Rollback
 
