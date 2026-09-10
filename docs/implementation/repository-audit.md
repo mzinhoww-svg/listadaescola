@@ -60,7 +60,7 @@ repositório GitHub em si não tem nenhum commit em nenhuma branch.
 | Auth | **Ausente** | Nenhum código de autenticação, middleware ou configuração de provider. |
 | Frontend (app/src/pages) | **Ausente** | Nenhum diretório `app/`, `src/`, ou `pages/`. |
 | Supabase | **Ausente** | Nenhum diretório `supabase/`, nenhum `supabase/config.toml`, nenhuma migration. |
-| Vercel | **Ausente** | Nenhum `vercel.json` ou configuração de projeto Vercel versionada. |
+| Vercel | **Parcial** | Nenhum `vercel.json` versionado, mas os metadados do repositório no GitHub têm `homepage = https://listadaescola.vercel.app` — ou seja, existe (ou existiu) um projeto Vercel com esse nome associado ao repo. A URL responde **404** no momento desta auditoria: o nome do projeto está reservado, mas não há nenhum deploy bem-sucedido nele (consistente com não haver código para implantar). |
 | CI | **Ausente** | Nenhum `.github/workflows/`. |
 | Docker | **Ausente** | Nenhum `Dockerfile` ou `docker-compose*`. |
 | Tooling (lint/test/format) | **Ausente** | Nenhum ESLint/Prettier/Vitest/Jest/Playwright config. |
@@ -127,6 +127,26 @@ Para que as etapas 1–6 do prompt possam ser executadas com conteúdo real:
 4. O MCP `stitch` precisa estar configurado a nível de ambiente (com a
    chave rotacionada e armazenada como segredo, não em texto de prompt)
    para que os designs possam ser listados e inspecionados.
+
+## Branch padrão e Pull Request
+
+Como o repositório não tinha nenhum commit antes desta sessão, ele também
+não tinha uma branch padrão definida (`git remote show origin` retornava
+`HEAD branch: (unknown)`). Ao empurrar `claude/eager-galileo-d8hdtc` como o
+primeiro push do repositório, o GitHub automaticamente definiu essa branch
+como a **branch padrão** do repositório (confirmado via API:
+`default_branch: "claude/eager-galileo-d8hdtc"`).
+
+Por isso, **nenhum Pull Request foi aberto** — não existe outra branch para
+usar como base de comparação; abrir um PR da branch contra ela mesma não é
+possível nem faz sentido. As alterações desta etapa estão diretamente no que
+hoje é a branch padrão do repositório.
+
+Isso é uma decisão estrutural que cabe ao usuário revisar: se o nome de
+branch padrão pretendido para o projeto é `main` (convenção mais comum), é
+necessário renomear esta branch ou criar `main` explicitamente e ajustar o
+padrão do repositório — isso não foi feito automaticamente aqui por ser uma
+mudança estrutural do projeto, não uma auditoria.
 
 ## Testes / lint / build
 
