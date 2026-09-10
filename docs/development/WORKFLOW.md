@@ -43,6 +43,16 @@ que seja atualizado conforme o projeto evolui (CI aparece, branch protection
 | `curl` | Sim | 8.5.0 |
 | Acesso à API do GitHub | Sim, via MCP (`mcp__github__*`) | Autenticado; `get_me`/`list_branches`/`create_pull_request`/etc. testados e funcionando nesta sessão. |
 | MCP Stitch | **Não** | Não aparece na lista de ferramentas/MCP disponíveis nesta sessão. Nenhuma chave foi fornecida para configurá-lo (corretamente, por segurança). Bloqueador real — ver `docs/implementation/stitch-mapping.md`. |
+| `playwright` (verificação manual em navegador) | Sim, mas **não é dependência do projeto** | Instalado globalmente em `/opt/node22/lib/node_modules` — rodar script com `NODE_PATH=/opt/node22/lib/node_modules node script.js`; Chromium já em `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`. |
+
+**Next.js 16 — `middleware.ts` → `proxy.ts`:** a partir da v16 o Next.js
+renomeou a convenção (`middleware`/`proxy.js` é o novo nome; a função
+exportada também muda de `middleware` para `proxy` — `next build` avisa
+com "The middleware file convention is deprecated" caso o nome antigo
+seja usado). Confirmado nesta versão (16.3.4) desde o Prompt 03: o
+arquivo já nasce como `src/proxy.ts` (função `proxy`), não
+`src/middleware.ts`. Ver `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md`
+para a referência completa se precisar consultar de novo.
 
 ## Como abrir e mergear uma PR aqui (mecânica real)
 
@@ -238,6 +248,68 @@ falhar, sem insistir/repetir a tentativa (ver `/root/.ccr/README.md`:
   usuário dentro da transação. Ver `supabase/tests/rls_idor.sql` para o
   padrão completo, incluindo a armadilha de USING-passa-mas-WITH-CHECK-falha
   (gera exceção, não 0 linhas).
+
+## Autenticação (Supabase Auth)
+
+Implementado no Prompt 03 (`@supabase/ssr`, `src/lib/auth/*`,
+`src/proxy.ts`) — ver `docs/security/rls.md`, seção "RBAC de aplicação",
+para o desenho completo. Aqui só as armadilhas reais descobertas.
+
+- **Seed de usuário de teste para login real exige colunas de token
+  vazias, não NULL.** `supabase/tests/rls_idor.sql` insere `auth.users`
+  só com `(id, email, raw_user_meta_data)` — suficiente para simular papel
+  via `set_config` dentro de uma transação com RLS, mas insuficiente para
+  autenticar de verdade via `signInWithPassword`/`/auth/v1/token`: o
+  GoTrue quebra com `"error finding user: sql: Scan error on column
+  index 3, name \"confirmation_token\": converting NULL to string is
+  unsupported"` (confirmado via `query_logs` no source `auth_logs`).
+  Motivo: o driver Go do GoTrue escaneia `confirmation_token`,
+  `recovery_token`, `email_change`, `email_change_token_new`,
+  `email_change_token_current`, `phone_change`, `phone_change_token` e
+  `reauthentication_token` como string não-anulável. Para seed de usuário
+  com login real, definir essas colunas como `''` (string vazia) —
+  também precisa de `encrypted_password` via
+  `extensions.crypt('senha', extensions.gen_salt('bf'))` (pgcrypto já
+  instalado neste projeto) e `email_confirmed_at = now()`.
+- **Domínio `.local` é rejeitado pelo GoTrue em fluxos que enviam e-mail
+  de verdade.** `signUp`/`resetPasswordForEmail` para um e-mail
+  `algo@test.local` **novo** retornam `400 email_address_invalid`
+  ("Email address ... is invalid") — mas isso só é checado no caminho que
+  de fato tentaria enviar e-mail; um usuário já existente/confirmado
+  reenviando signup (comportamento anti-enumeração do próprio GoTrue) não
+  passa por essa validação e responde como sucesso normalmente. Ou seja:
+  seed direto via SQL (bypassa GoTrue) aceita qualquer domínio; testar o
+  fluxo real de signup/recovery ponta-a-ponta com um e-mail **novo**
+  exige um domínio com formato realista (evitar `.local`/`.test`).
+- **Rate limit de envio de e-mail é baixo por padrão no free tier.**
+  Bateu em `429 over_email_send_rate_limit` depois de poucas chamadas
+  reais de signup/recovery em sequência curta durante a verificação deste
+  prompt. Não fica óbvio no client (o SDK só retorna `error`, sem detalhe
+  visível na UI) — só apareceu via `query_logs` (`source: auth_logs`).
+  Relevante para Prompt 17 (testes e2e) e Prompt 19 (produção): testar o
+  fluxo de e-mail repetidamente exige espaçar as tentativas, e produção
+  provavelmente vai precisar de SMTP customizado (Settings → Auth → SMTP)
+  para não esbarrar nesse limite com usuários reais.
+- **Redirect URLs / Site URL do Supabase Auth — sem ferramenta MCP para
+  configurar.** `emailRedirectTo`/`redirectTo` (usados em `signUp`,
+  `resetPasswordForEmail`, `resend`) só funcionam de verdade se a URL
+  usada estiver na allow-list de "Redirect URLs" do projeto (Dashboard →
+  Authentication → URL Configuration) — confirmado via
+  `mcp__Supabase__search_docs`. Nenhuma ferramenta `mcp__Supabase__*`
+  disponível nesta sessão lê ou escreve essa configuração (só
+  `get_project_url`/`get_advisors`/`search_docs`/gestão de
+  projeto/branch/edge function). `http://localhost:3000` costuma vir
+  pré-configurado por padrão em projeto novo; qualquer domínio de
+  produção/preview real (Vercel) **precisa ser adicionado manualmente**
+  antes de link de confirmação/recuperação funcionar fora do localhost.
+  Mesma categoria de bloqueio que "Allow auto-merge" do GitHub — reportar,
+  não simular que está resolvido.
+- Verificado ao vivo com `npm run dev` + Playwright (`chromium` global do
+  ambiente, via `NODE_PATH=/opt/node22/lib/node_modules`, já que
+  `playwright` não é dependência do projeto) contra o projeto Supabase
+  real — 3 usuários seedados (USER/SCHOOL_MANAGER/ADMIN), testados e
+  removidos ao final (nenhum dado de teste ficou no projeto). Ver PR do
+  Prompt 03 para os scripts e resultado completo.
 
 ## Rollback
 

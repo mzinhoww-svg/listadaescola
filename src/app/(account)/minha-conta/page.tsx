@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { FileText, Heart, Bookmark } from "lucide-react";
 
-import { ScaffoldNotice } from "@/components/dev/scaffold-notice";
+import { getCurrentProfile } from "@/lib/auth/session";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Minha conta" };
@@ -12,11 +12,14 @@ const summaryCards = [
   { icon: Bookmark, title: "Listas salvas", description: "Listas que você guardou para depois." },
 ];
 
-export default function MinhaContaPage() {
+export default async function MinhaContaPage() {
+  const profile = await getCurrentProfile();
+
   return (
     <>
-      <ScaffoldNotice promptRef="Prompt 03 — auth, profiles e RBAC" />
-      <h1 className="text-2xl font-semibold text-neutral-900">Minha conta</h1>
+      <h1 className="text-2xl font-semibold text-neutral-900">
+        {profile?.full_name ? `Olá, ${profile.full_name}` : "Minha conta"}
+      </h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         {summaryCards.map(({ icon: Icon, title, description }) => (
           <Card key={title}>
