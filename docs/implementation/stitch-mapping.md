@@ -3,6 +3,16 @@
 - **Data:** 2026-09-10
 - **Status:** 🔴 **BLOQUEADO** — não foi possível produzir nenhum mapeamento real.
 
+> **Atualização (mesmo dia, sessão de bootstrap seguinte):** o bloqueio
+> "não existe PRD" foi resolvido — `docs/product/PRD.md` está no
+> repositório com o sitemap completo (seção 6) que pode alimentar a coluna
+> "Rota (PRD)" da tabela abaixo. O bloqueio do Stitch **continua**: o MCP
+> `stitch` segue ausente da lista de ferramentas desta sessão, nenhuma
+> chave foi fornecida (corretamente — chaves não devem ser coladas em
+> mensagens de tarefa) e nenhuma tentativa de configuração foi feita. Este
+> documento não foi reescrito com um mapeamento real; isso ainda depende
+> do Stitch estar de fato acessível numa sessão futura.
+
 ## Por que está bloqueado
 
 Este mapeamento depende de duas coisas que precisam existir simultaneamente,

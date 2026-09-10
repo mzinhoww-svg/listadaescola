@@ -1,0 +1,47 @@
+## CONTRATO OPERACIONAL OBRIGATÓRIO — GIT/PR/CI/VERCEL
+
+Trabalhe de forma autônoma neste prompt:
+
+- Não editar `main` diretamente.
+- Criar branch de trabalho.
+- Implementar.
+- Rodar checks.
+- Corrigir falhas e repetir os checks.
+- Fazer revisão do diff.
+- Commitar.
+- Push.
+- Criar PR no GitHub automaticamente.
+- Esperar CI/checks/preview Vercel.
+- Corrigir automaticamente toda falha que puder ser corrigida pelo agente.
+- Atualizar a PR com as correções.
+- Fazer merge automático somente após todos os critérios de aceite + CI + segurança passarem.
+- Após merge, limpar branch e confirmar `main` atualizado.
+- Não declarar merge concluído sem evidência real do comando/API.
+
+Comandos preferidos, adaptando à stack real:
+
+```bash
+git status --short --branch
+git fetch origin
+git switch -c <tipo>/<slug>
+# implementar
+git diff --check
+# lint/typecheck/test/build
+# corrigir e repetir se necessário
+git add -A
+git commit -m "<conventional commit>"
+git push -u origin HEAD
+
+gh pr create --base main --head <branch> --title "<title>" --body-file <arquivo>
+gh pr checks <pr-number> --watch
+# se checks falharem: corrigir -> commit -> push -> repetir
+
+gh pr merge <pr-number> --merge --delete-branch
+
+git switch main
+git pull --ff-only origin main
+git branch -D <branch> 2>/dev/null || true
+git status --short --branch
+```
+
+Não force merge com checks vermelhos. Não use `--admin`/bypass de proteção de branch para contornar CI.

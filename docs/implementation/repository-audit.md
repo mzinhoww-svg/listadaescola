@@ -5,6 +5,19 @@
 - **Repositório:** `mzinhoww-svg/listadaescola`
 - **Escopo do prompt:** Next.js + TypeScript + Supabase/PostgreSQL/PostGIS + Vercel, escopo inicial Mato Grosso.
 
+> **Atualização (mesmo dia, sessão de bootstrap seguinte):** os documentos
+> reais do projeto foram recebidos e já estão no repositório —
+> `docs/product/PRD.md`, `docs/security/rls.md`,
+> `docs/architecture/data-model.md`, `docs/architecture/inep-import.md`, e o
+> pacote completo de prompts em `docs/prompts/`. As tabelas abaixo refletem
+> o estado no momento em que este documento foi escrito (repositório
+> completamente vazio, sem nenhum desses arquivos) e **não foram
+> reescritas** para não inventar uma reexecução da auditoria que não
+> aconteceu de fato. Uma reauditoria completa contra o conteúdo real
+> (Prompt 00 "para valer") é trabalho futuro, não desta sessão. O que
+> mudou desde então está registrado em `docs/development/WORKFLOW.md` e
+> `docs/development/automation-contract.md`.
+
 ## Resumo executivo
 
 **O repositório está vazio.** Não há um único commit, em nenhuma branch, no
