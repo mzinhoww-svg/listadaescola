@@ -137,6 +137,31 @@ vai tentar `enable_pr_auto_merge` e reportar exatamente o que acontecer
 (sucesso, falha, ou merge que já é possível de forma direta caso não haja
 nenhuma proteção configurada).
 
+## Vercel
+
+- **Descoberto na PR #2** (não configurado por esta sessão): o repositório
+  GitHub já está conectado a um projeto Vercel
+  (`mazinhoww-5476s-projects/listadaescola`) via o app/bot `vercel[bot]`.
+  Todo push a uma branch com PR aberta dispara deploy de preview
+  automático — evento chega como comentário do bot (criado e depois
+  editado conforme o build avança: `DEPLOYED`/`Building`/`Ready`) mais um
+  commit status `context: "Vercel"`.
+  Confirmado no PR #2: status `Vercel` → `success` ("Deployment has
+  completed") para o commit `5859ac9`, preview em
+  `https://listadaescola-git-feature-supab-ec8b95-mazinhoww-5476s-projects.vercel.app`.
+- Isso é só um **commit status informativo** hoje, não um required check —
+  branch protection continua não configurada (ver seção acima), então o
+  status `Vercel` não bloqueia nada. Se/quando branch protection for
+  configurada, vale considerar exigir esse status junto com CI de
+  lint/typecheck/test/build.
+- O comentário do `vercel[bot]` na PR é atualizado in-place a cada novo
+  push (mesmo comentário, conteúdo editado) — não precisa de resposta,
+  é só status automático.
+- Ferramentas MCP `mcp__Vercel__*` estão disponíveis nesta sessão
+  (`get_project_deployment_protection`, `get_web_analytics`, etc.) mas
+  ainda não foram usadas/necessárias — a integração até agora é 100%
+  automática via GitHub App, sem intervenção do agente.
+
 ## Supabase
 
 - **Projeto:** `listada-escola`, ref `wfdejmokxrunupsekcmq`, região
