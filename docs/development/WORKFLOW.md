@@ -67,6 +67,13 @@ GitHub funcionar como trava de verdade:
    ou `main` se for renomeado) exigindo PR antes de merge e, quando existir
    CI, required status checks.
 
+**Confirmado na prática:** `mcp__github__enable_pr_auto_merge` foi chamado
+na PR #1 (`feature/fundacao-design-system`) e retornou exatamente
+`Auto-merge is not enabled for this repository. Enable it in repository
+Settings → General → Pull Requests → Allow auto-merge.` — a limitação
+acima não é hipotética. A PR ficou aberta, pronta para review, sem merge
+declarado.
+
 O servidor MCP do GitHub conectado nesta sessão expõe
 `mcp__github__enable_pr_auto_merge` / `disable_pr_auto_merge` (nível de PR),
 mas **não expõe nenhuma ferramenta de branch protection, ruleset ou
