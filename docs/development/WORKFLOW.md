@@ -74,13 +74,41 @@ Settings → General → Pull Requests → Allow auto-merge.` — a limitação
 acima não era hipotética. A PR ficou aberta, pronta para review, sem merge
 declarado, e foi mergeada manualmente pelo usuário.
 
-**Atualização:** o usuário reportou ter habilitado "Allow auto-merge"
-depois da PR #1. Ainda não re-testado nesta sessão — a próxima PR aberta
-vai confirmar via `enable_pr_auto_merge` de verdade e este arquivo será
-atualizado com o resultado real, não com a afirmação em si. Branch
-protection/required status checks continuam sem confirmação de estarem
-configurados (e continuam fora do alcance de qualquer ferramenta
-disponível para o agente configurar).
+**Atualização (PR #2, re-testado de verdade):** `mcp__github__enable_pr_auto_merge`
+foi chamado novamente na PR #2 (`feature/supabase-rls-storage`) e desta
+vez **não** retornou o erro "Auto-merge is not enabled for this
+repository" — confirma que "Allow auto-merge" está de fato habilitado nas
+configurações do repositório, como o usuário reportou. Porém o retorno
+real foi outro erro, igualmente informativo:
+
+```text
+The pull request is already in clean status (all checks passed).
+Auto-merge only applies when checks are pending — you can merge directly.
+```
+
+Ou seja: sem nenhum required status check configurado no branch padrão
+(branch protection/ruleset continua sem confirmação de estar configurado —
+sem ferramenta disponível para o agente configurar isso), o GitHub não tem
+nada pendente para esperar, então recusa "armar" o auto-merge e sugere
+merge direto. Isso confirma na prática a limitação que já estava
+documentada como hipótese: auto-merge nativo do GitHub só funciona como
+trava real quando existem required status checks pendentes; sem eles, a
+opção do repositório sozinha não basta.
+
+**Decisão tomada:** o agente **não** chamou `merge_pull_request` para
+contornar isso. Fazer isso seria exatamente a "decisão unilateral de
+merge" proibida pelo `automation-contract.md` (seção "Regra de merge") —
+o critério "checks limpos" aqui só é verdadeiro porque não há check
+nenhum, não porque algo foi de fato validado por CI. A PR #2 ficou aberta,
+marcada como pronta para review (`draft: false`), aguardando merge manual
+do usuário — mesmo fluxo de fechamento que a PR #1.
+
+**Ainda pendente (inalterado):** branch protection / ruleset com required
+status checks no branch padrão. Enquanto isso não existir, toda PR futura
+provavelmente vai repetir esse mesmo resultado ("clean status, merge
+directly") em vez de travar em CI de verdade — vale configurar isso assim
+que houver um workflow de CI real (lint/typecheck/test/build) para servir
+de required check.
 
 O servidor MCP do GitHub conectado nesta sessão expõe
 `mcp__github__enable_pr_auto_merge` / `disable_pr_auto_merge` (nível de PR),
