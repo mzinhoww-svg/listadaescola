@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — Listada Escola
+ *
+ * PROVISÓRIO: não existe referência do Stitch nesta sessão (MCP stitch
+ * indisponível — ver docs/implementation/stitch-mapping.md). Estes valores
+ * são um ponto de partida coerente e acessível, não uma decisão de marca
+ * final. Devem ser conferidos/ajustados contra o Stitch assim que o MCP
+ * estiver disponível.
+ *
+ * Cores semânticas (primary/success/warning/danger/info) são aliases da
+ * paleta padrão do Tailwind v4 — os valores em si já são testados/AA em
+ * boa parte das combinações comuns. `whatsapp` é a única cor de marca
+ * externa fixa (usada exclusivamente para o CTA de WhatsApp da papelaria,
+ * nunca como cor genérica de ação).
+ */
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a; /* slate-900 */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Marca / ação primária */
+  --color-primary-50: var(--color-blue-50);
+  --color-primary-100: var(--color-blue-100);
+  --color-primary-200: var(--color-blue-200);
+  --color-primary-300: var(--color-blue-300);
+  --color-primary-400: var(--color-blue-400);
+  --color-primary-500: var(--color-blue-500);
+  --color-primary-600: var(--color-blue-600);
+  --color-primary-700: var(--color-blue-700);
+  --color-primary-800: var(--color-blue-800);
+  --color-primary-900: var(--color-blue-900);
+
+  /* Neutros — texto, bordas, superfícies */
+  --color-neutral-50: var(--color-slate-50);
+  --color-neutral-100: var(--color-slate-100);
+  --color-neutral-200: var(--color-slate-200);
+  --color-neutral-300: var(--color-slate-300);
+  --color-neutral-400: var(--color-slate-400);
+  --color-neutral-500: var(--color-slate-500);
+  --color-neutral-600: var(--color-slate-600);
+  --color-neutral-700: var(--color-slate-700);
+  --color-neutral-800: var(--color-slate-800);
+  --color-neutral-900: var(--color-slate-900);
+
+  /* Semânticas de estado */
+  --color-success-50: var(--color-emerald-50);
+  --color-success-500: var(--color-emerald-500);
+  --color-success-600: var(--color-emerald-600);
+  --color-success-700: var(--color-emerald-700);
+
+  --color-warning-50: var(--color-amber-50);
+  --color-warning-500: var(--color-amber-500);
+  --color-warning-600: var(--color-amber-600);
+  --color-warning-700: var(--color-amber-700);
+
+  --color-danger-50: var(--color-red-50);
+  --color-danger-500: var(--color-red-500);
+  --color-danger-600: var(--color-red-600);
+  --color-danger-700: var(--color-red-700);
+
+  --color-info-50: var(--color-sky-50);
+  --color-info-500: var(--color-sky-500);
+  --color-info-600: var(--color-sky-600);
+  --color-info-700: var(--color-sky-700);
+
+  /* Patrocínio — nunca deve se confundir com rating/qualidade */
+  --color-sponsored-50: var(--color-amber-50);
+  --color-sponsored-600: var(--color-amber-600);
+  --color-sponsored-700: var(--color-amber-700);
+
+  /* WhatsApp — uso exclusivo no CTA de orçamento com papelaria */
+  --color-whatsapp: #25d366;
+  --color-whatsapp-dark: #128c7e;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Arial, sans-serif;
+}
+
+/*
+ * Convenção de raio (usar estas classes, não valores arbitrários):
+ * - controles pequenos (button, input, badge): rounded-lg
+ * - cards, painéis: rounded-xl
+ * - sheets/drawers/modal: rounded-t-2xl / rounded-2xl
+ *
+ * Convenção de sombra:
+ * - card em repouso: shadow-sm
+ * - elemento flutuante (dropdown, toast): shadow-md
+ * - overlay modal/drawer/bottom sheet: shadow-lg
+ *
+ * Touch target mínimo: 44x44px em qualquer elemento interativo visível em
+ * mobile (ver --spacing usado em h-11/min-h-11 = 2.75rem = 44px).
+ */
+
+/* Foco visível consistente em todo elemento interativo, incluindo quando
+   estilos de foco do navegador são suprimidos por CSS de terceiros. */
+:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 2px;
+}
