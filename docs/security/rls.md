@@ -119,6 +119,55 @@ Dois buckets (`supabase/migrations/20260910201800_storage.sql`):
 Testado (teste 08b): usuário A não vê o `storage.objects` de um anexo
 privado do usuário B.
 
+## RBAC de aplicação (Prompt 03 — auth, profiles e RBAC)
+
+Camada complementar à RLS, não um substituto dela: RLS continua sendo a
+autoridade final mesmo que a camada de aplicação tenha um bug.
+
+- **Sessão SSR:** `@supabase/ssr`, cookies via `src/lib/supabase/server.ts`
+  (Server Components/Actions/Route Handlers) e `src/lib/supabase/proxy.ts`
+  (`updateSession`, chamado pelo `src/proxy.ts` — convenção `proxy`, não
+  `middleware`, ver seção correspondente em WORKFLOW.md). Sempre
+  `getUser()`, nunca `getSession()`, nos pontos de decisão de acesso —
+  `getSession()` só decodifica o JWT local, `getUser()` revalida contra o
+  servidor de Auth.
+- **Gate de rota:** `src/proxy.ts` roda em toda request, refaz o cookie de
+  sessão e redireciona visitante anônimo para `/auth/entrar?next=...` em
+  `/minha-conta`, `/enviar-lista`, `/sugerir-escola` e `/admin`. Isso é só
+  o gate "está logado?" — é rápido e roda no edge, sem acesso a papel.
+- **Gate de papel:** cada layout server-side desses grupos chama
+  `requireUser()`/`requireRole()` (`src/lib/auth/session.ts`) como segunda
+  camada (defesa em profundidade — funciona mesmo se o matcher do proxy
+  tiver algum bug) e, no caso de `/admin`, lê `profiles.role` de verdade no
+  banco (nunca confia em claim de JWT — o Supabase não inclui papel
+  customizado no token por padrão aqui). Papéis permitidos em `/admin`:
+  `ADMIN`, `SUPER_ADMIN` (`ADMIN_ROLES` em `src/lib/auth/roles.ts`, espelha
+  `is_admin()`). Usuário autenticado sem papel suficiente vê uma tela de
+  "Acesso restrito" (não é redirecionado de volta ao login — já está
+  autenticado, redirecionar de novo para login seria confuso).
+- **Redirect seguro (`next`):** `src/lib/safe-redirect.ts` — só aceita
+  caminho relativo de único `/`; rejeita `//host`, `/\host`, `scheme://` e
+  qualquer coisa cuja origem resolvida difira da própria app. Usado no
+  proxy, no formulário de login e no callback de e-mail.
+- **Testado ao vivo** (Playwright + 3 usuários seedados diretamente via
+  SQL com senha real via `pgcrypto`, depois removidos): anônimo bloqueado
+  nas 4 áreas; usuário comum acessa conta/contribuição mas recebe "Acesso
+  restrito" em `/admin`; `SCHOOL_MANAGER` tratado igual a usuário comum
+  para esse fim (não escala para admin); `ADMIN` acessa tudo; logout
+  revoga acesso imediatamente; senha errada mostra erro genérico (sem
+  enumeração); `next` malicioso (`https://evil.com`, `//evil.com`) é
+  ignorado e cai no fallback. 17/17 verificações passaram — ver PR do
+  Prompt 03 para o script.
+- **Armadilha para reproduzir isso no futuro:** inserir usuário direto via
+  SQL (como em `supabase/tests/rls_idor.sql`) é suficiente para simular
+  papel em teste de RLS, mas **não é suficiente para login real** —
+  colunas de token do GoTrue (`confirmation_token`, `recovery_token`,
+  `email_change*`, `phone_change*`, `reauthentication_token`) precisam ser
+  `''` (string vazia), não `NULL`, ou o GoTrue quebra com "converting NULL
+  to string is unsupported" ao tentar autenticar. Ver WORKFLOW.md, seção
+  "Autenticação (Supabase Auth)", para o restante das armadilhas
+  descobertas (domínio de e-mail de teste, rate limit de envio).
+
 ## Secrets
 
 - Browser: somente variáveis `NEXT_PUBLIC_*` que sejam realmente publicáveis. Ver `.env.example`.

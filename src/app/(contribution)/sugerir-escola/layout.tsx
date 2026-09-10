@@ -3,13 +3,13 @@ import { X } from "lucide-react";
 
 import { requireUser } from "@/lib/auth/session";
 
-export default async function ContributionLayout({ children }: { children: React.ReactNode }) {
-  await requireUser("/enviar-lista");
+export default async function SuggestSchoolLayout({ children }: { children: React.ReactNode }) {
+  await requireUser("/sugerir-escola");
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-neutral-50">
       <header className="flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6">
-        <span className="text-sm font-semibold text-neutral-900">Enviar lista escolar</span>
+        <span className="text-sm font-semibold text-neutral-900">Sugerir escola</span>
         <Link
           href="/"
           aria-label="Cancelar e sair"

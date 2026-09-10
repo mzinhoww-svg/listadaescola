@@ -1,36 +1,38 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { ScaffoldNotice } from "@/components/dev/scaffold-notice";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getSafeRedirect } from "@/lib/safe-redirect";
+import { LoginForm } from "@/components/auth/login-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Entrar" };
 
-export default function EntrarPage() {
+export default async function EntrarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
+  const { next, error } = await searchParams;
+  const safeNext = getSafeRedirect(next, "/minha-conta");
+
+  const user = await getCurrentUser();
+  if (user) redirect(safeNext);
+
   return (
-    <>
-      <ScaffoldNotice promptRef="Prompt 03 — auth, profiles e RBAC" />
-      <Card>
-        <CardHeader>
-          <CardTitle>Entrar</CardTitle>
-          <CardDescription>Acesse sua conta para contribuir com listas.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Input label="E-mail" type="email" autoComplete="email" required />
-          <Input label="Senha" type="password" autoComplete="current-password" required />
-          <Button className="mt-2" type="submit">
-            Entrar
-          </Button>
-          <p className="text-center text-sm text-neutral-500">
-            Não tem conta?{" "}
-            <Link href="/auth/criar-conta" className="font-medium text-primary-600 hover:underline">
-              Criar conta
-            </Link>
+    <Card>
+      <CardHeader>
+        <CardTitle>Entrar</CardTitle>
+        <CardDescription>Acesse sua conta para contribuir com listas.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {error === "callback_failed" && (
+          <p role="alert" className="mb-4 text-sm text-danger-600">
+            Não foi possível confirmar o link. Ele pode ter expirado — tente novamente.
           </p>
-        </CardContent>
-      </Card>
-    </>
+        )}
+        <LoginForm next={safeNext} />
+      </CardContent>
+    </Card>
   );
 }
