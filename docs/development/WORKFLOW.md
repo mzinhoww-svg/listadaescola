@@ -253,10 +253,33 @@ verde antes da chamada) — só confirma que o fluxo de merge direto em si
 funciona ponta a ponta. Achado extra: o branch remoto da PR #11 já não
 existia mais no momento da tentativa de deleção pós-merge — ver
 "Limitação real conhecida — deleção de branch remota pós-merge" abaixo,
-seção "Atualização (PR #11, comportamento mudou)". **Ainda pendente**:
-observar uma PR onde o check `Vercel` esteja genuinamente em andamento no
-momento do `enable_pr_auto_merge`, para finalmente testar se o auto-merge
-arma/espera de verdade.
+seção "Atualização (PR #11, comportamento mudou)".
+
+**Atualização (PR #12, confirmação comportamental real do ruleset):** a
+própria PR que registrava o adendo acima (`docs/record-pr11-merge-outcome`,
+#12) forneceu o teste que faltava. `enable_pr_auto_merge` chamado logo
+após abrir a PR (antes do preview da Vercel terminar) **não** retornou
+"already in clean status" desta vez — retornou um erro novo: `The pull
+request is in unstable status (required checks are failing). Fix the
+failing checks before enabling auto-merge.` Antes de assumir uma falha de
+verdade, o agente conferiu `pull_request_read` (`get_status` e `get`):
+o status do commit era `state: "pending"` (`context: "Vercel"`,
+`description: "Vercel is deploying your app"`) — não `failure` — e
+`mergeable_state: "unstable"`, que no GitHub significa "required status
+check ainda não terminou", não necessariamente falhou. A mensagem de erro
+da ferramenta MCP ("required checks are failing") é enganosa nesse caso:
+o check só estava pendente, ainda rodando. **Esta é a primeira
+confirmação comportamental real, nesta sessão, de que existe um required
+status check de verdade bloqueando merge no branch padrão** — nas PRs
+#10 e #11 o check já sempre estava verde antes da chamada de
+`enable_pr_auto_merge`, o que deixava em aberto se isso era por não haver
+gate nenhum ou só porque o check era rápido demais para pegar a tempo;
+agora está confirmado que é a segunda opção, e que o gate existe e
+funciona. Não fazia sentido chamar `enable_pr_auto_merge` de novo depois
+disso (o SDK já recusou uma vez) — o próximo passo é aguardar o webhook
+de CI (`subscribe_pr_activity`, já ativo nesta PR) confirmar sucesso do
+check e então seguir direto para o merge verificado
+(`merge_pull_request`), sem tentar re-armar o auto-merge.
 
 ## Limitação real conhecida — deleção de branch remota pós-merge
 
