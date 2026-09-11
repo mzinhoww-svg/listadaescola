@@ -527,6 +527,47 @@ export type Database = {
         }
         Relationships: []
       }
+      ranking_weights: {
+        Row: {
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+          weight_completeness: number
+          weight_distance: number
+          weight_lists: number
+          weight_popularity: number
+          weight_quality: number
+        }
+        Insert: {
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          weight_completeness?: number
+          weight_distance?: number
+          weight_lists?: number
+          weight_popularity?: number
+          weight_quality?: number
+        }
+        Update: {
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          weight_completeness?: number
+          weight_distance?: number
+          weight_lists?: number
+          weight_popularity?: number
+          weight_quality?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_weights_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           created_at: string
@@ -1427,8 +1468,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_campaign: {
+        Args: {
+          p_ends_at: string
+          p_entity_name: string
+          p_entity_type: string
+          p_priority: number
+          p_starts_at: string
+        }
+        Returns: string
+      }
+      admin_set_campaign_status: {
+        Args: { p_campaign_id: string; p_status: string }
+        Returns: undefined
+      }
       admin_set_school_list_status: {
         Args: { p_school_list_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_update_ranking_weights: {
+        Args: {
+          p_weight_completeness: number
+          p_weight_distance: number
+          p_weight_lists: number
+          p_weight_popularity: number
+          p_weight_quality: number
+        }
         Returns: undefined
       }
       admin_update_school: {
@@ -1633,10 +1698,12 @@ export type Database = {
           longitude: number
           municipality: string
           name: string
-          relevance_score: number
+          organic_score: number
+          rating_score: number
           review_count: number
           school_type: Database["public"]["Enums"]["school_type"]
           slug: string
+          sponsored_priority: number
           total_count: number
           uf: string
         }[]

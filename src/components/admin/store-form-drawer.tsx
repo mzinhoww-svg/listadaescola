@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useActionState } from "react";
 import { Pencil, Plus } from "lucide-react";
 
 import { upsertStoreAction, type FormState } from "@/lib/admin/store-actions";
@@ -9,18 +8,22 @@ import type { AdminStore } from "@/lib/admin/stores";
 import { Drawer, DrawerTrigger, DrawerContent } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "@/components/auth/submit-button";
-import { useCloseOnActionSuccess } from "@/hooks/use-close-on-action-success";
+import { useDrawerFormAction } from "@/hooks/use-drawer-form-action";
 
 const initialState: FormState = {};
 
 export function StoreFormDrawer({ store }: { store?: AdminStore }) {
   const [open, setOpen] = React.useState(false);
-  const [state, formAction] = useActionState(upsertStoreAction, initialState);
-  useCloseOnActionSuccess(state, setOpen);
+  const { state, pending, handleSubmit, resetState } = useDrawerFormAction(upsertStoreAction, initialState, () => setOpen(false));
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) resetState();
+      }}
+    >
       <DrawerTrigger asChild>
         {store ? (
           <Button variant="ghost" size="icon" aria-label={`Editar ${store.name}`}>
@@ -34,7 +37,7 @@ export function StoreFormDrawer({ store }: { store?: AdminStore }) {
         )}
       </DrawerTrigger>
       <DrawerContent title={store ? `Editar ${store.name}` : "Nova papelaria"}>
-        <form action={formAction} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {store && <input type="hidden" name="store_id" value={store.id} />}
           <Input label="Nome" name="name" defaultValue={store?.name ?? ""} required />
           <div className="grid grid-cols-2 gap-3">
@@ -71,7 +74,9 @@ export function StoreFormDrawer({ store }: { store?: AdminStore }) {
           )}
 
           <div className="flex justify-end">
-            <SubmitButton>{store ? "Salvar" : "Criar papelaria"}</SubmitButton>
+            <Button type="submit" loading={pending}>
+              {store ? "Salvar" : "Criar papelaria"}
+            </Button>
           </div>
         </form>
       </DrawerContent>
