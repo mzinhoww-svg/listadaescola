@@ -1451,6 +1451,33 @@ export type Database = {
         }
         Returns: Json
       }
+      nearby_schools: {
+        Args: {
+          p_cep?: string
+          p_lat?: number
+          p_limit?: number
+          p_lon?: number
+          p_municipality?: string
+          p_offset?: number
+          p_radius_km?: number
+          p_uf?: string
+        }
+        Returns: {
+          address: string
+          cep: string
+          distance_km: number
+          id: string
+          inep_code: string
+          latitude: number
+          location_type: Database["public"]["Enums"]["location_type"]
+          longitude: number
+          municipality: string
+          name: string
+          school_type: Database["public"]["Enums"]["school_type"]
+          slug: string
+          uf: string
+        }[]
+      }
       reject_submission: {
         Args: { p_reason: string; p_submission_id: string }
         Returns: undefined

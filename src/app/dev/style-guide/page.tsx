@@ -16,6 +16,39 @@ import { LoadingState, Skeleton } from "@/components/ui/loading-state";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { useToast } from "@/components/ui/use-toast";
+import { Map } from "@/components/map/map";
+import { LocationInput } from "@/components/location/location-input";
+import type { ResolvedLocation } from "@/lib/geocoding/types";
+
+const CUIABA_CENTER = { lat: -15.6014, lon: -56.0979 };
+
+function MapaLocalizacaoDemo() {
+  const [resolved, setResolved] = React.useState<ResolvedLocation | null>(null);
+
+  const hasCoords = resolved?.lat != null && resolved?.lon != null;
+  const center = hasCoords ? { lat: resolved!.lat!, lon: resolved!.lon! } : CUIABA_CENTER;
+  const markers = hasCoords
+    ? [{ id: "resolved", lat: resolved!.lat!, lon: resolved!.lon!, label: resolved!.label }]
+    : [];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <LocationInput onResolved={setResolved} />
+      {resolved && (
+        <div className="rounded-lg bg-neutral-100 p-3 text-xs text-neutral-700">
+          <p className="mb-1 font-medium text-neutral-900">Resultado de resolveLocation:</p>
+          <pre className="overflow-x-auto">{JSON.stringify(resolved, null, 2)}</pre>
+        </div>
+      )}
+      <Map
+        center={center}
+        zoom={hasCoords ? 14 : 12}
+        markers={markers}
+        className="overflow-hidden rounded-xl border border-neutral-200"
+      />
+    </div>
+  );
+}
 
 const colorTokens = [
   "primary",
@@ -230,6 +263,10 @@ export default function StyleGuidePage() {
           <Skeleton className="h-4 w-1/2" />
           <Skeleton className="h-24 w-full" />
         </div>
+      </Section>
+
+      <Section title="Mapas e localização (Prompt 05)">
+        <MapaLocalizacaoDemo />
       </Section>
 
       <Section title="Header">
