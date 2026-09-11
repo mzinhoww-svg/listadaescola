@@ -24,8 +24,15 @@ export default async function AdminDashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold text-neutral-900">Dashboard</h1>
         <p className="text-sm text-neutral-500">
-          Visitas, buscas, cliques e conversão entram no Prompt 14 (analytics-vendas) -- os números abaixo são só
-          contagens reais do banco, nunca estimados.
+          Contagens reais do banco, nunca estimadas. Visitas, buscas, cliques, conversão e vendas reportadas ficam em{" "}
+          <Link href="/admin/analytics" className="font-medium text-primary-600 hover:underline">
+            Analytics
+          </Link>{" "}
+          e{" "}
+          <Link href="/admin/vendas" className="font-medium text-primary-600 hover:underline">
+            Vendas
+          </Link>
+          .
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 
 export interface FormState {
   error?: string;
@@ -53,6 +54,8 @@ export async function submitSchoolSuggestionAction(_prevState: FormState, formDa
   });
 
   if (error) return { error: "Não foi possível enviar a sugestão. Tente novamente." };
+
+  await recordAnalyticsEvent({ eventType: "submission_submitted", metadata: { kind: "school_suggestion" } });
 
   return { success: "Sugestão enviada! Nossa equipe vai avaliar e adicionar a escola em breve." };
 }

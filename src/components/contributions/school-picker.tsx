@@ -15,8 +15,7 @@ export function SchoolPicker({ onSelect }: { onSelect: (school: SchoolSearchOpti
   const [results, setResults] = React.useState<SchoolSearchOption[] | null>(null);
   const [pending, startTransition] = React.useTransition();
 
-  function handleSearch(event: React.FormEvent) {
-    event.preventDefault();
+  function runSearch() {
     const trimmed = query.trim();
     if (trimmed.length < 3) return;
     startTransition(async () => {
@@ -27,22 +26,38 @@ export function SchoolPicker({ onSelect }: { onSelect: (school: SchoolSearchOpti
 
   return (
     <div className="flex flex-col gap-4">
-      <form onSubmit={handleSearch} className="flex items-end gap-2">
+      {/* Deliberately a <div>, not a <form> -- SchoolPicker can end up
+       * composed inside a caller's own <form> (e.g. the admin sales-report
+       * Drawers, Prompt 14). Nested <form> elements are invalid HTML; when
+       * built anyway via React (DOM APIs allow what the parser wouldn't),
+       * clicking a nested type="submit" button triggered a genuine native
+       * form submission (a real GET navigation to the current URL) instead
+       * of respecting either form's onSubmit/preventDefault -- confirmed
+       * live via Playwright request/navigation tracing, not just a
+       * suspicion. A plain button + explicit search trigger has no
+       * "submit" semantics at all, so there is no submission to nest. */}
+      <div className="flex items-end gap-2">
         <div className="flex-1">
           <Input
             label="Nome da escola ou código INEP"
             placeholder="Ex.: Colégio Coração de Jesus"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                runSearch();
+              }
+            }}
             autoComplete="off"
             helperText="Digite ao menos 3 letras"
           />
         </div>
-        <Button type="submit" disabled={query.trim().length < 3}>
+        <Button type="button" onClick={runSearch} disabled={query.trim().length < 3}>
           <Search className="size-4" aria-hidden="true" />
           Buscar
         </Button>
-      </form>
+      </div>
 
       {pending && <LoadingState label="Buscando escolas..." />}
 

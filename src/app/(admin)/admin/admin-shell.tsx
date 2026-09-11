@@ -15,6 +15,8 @@ const navItems = [
   { label: "Parceiros", href: "/admin/ecommerce" },
   { label: "Catálogo", href: "/admin/catalogo" },
   { label: "Patrocínios", href: "/admin/patrocinios" },
+  { label: "Analytics", href: "/admin/analytics" },
+  { label: "Vendas", href: "/admin/vendas" },
 ];
 
 function AdminNav({ onNavigate }: { onNavigate?: () => void }) {

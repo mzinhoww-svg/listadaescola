@@ -476,6 +476,81 @@ export type Database = {
           },
         ]
       }
+      partner_sale_reports: {
+        Row: {
+          commission_value: number
+          created_at: string
+          ecommerce_product_id: string | null
+          gross_value: number
+          id: string
+          list_id: string | null
+          notes: string | null
+          partner_id: string
+          reported_by: string | null
+          school_id: string | null
+        }
+        Insert: {
+          commission_value?: number
+          created_at?: string
+          ecommerce_product_id?: string | null
+          gross_value: number
+          id?: string
+          list_id?: string | null
+          notes?: string | null
+          partner_id: string
+          reported_by?: string | null
+          school_id?: string | null
+        }
+        Update: {
+          commission_value?: number
+          created_at?: string
+          ecommerce_product_id?: string | null
+          gross_value?: number
+          id?: string
+          list_id?: string | null
+          notes?: string | null
+          partner_id?: string
+          reported_by?: string | null
+          school_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_sale_reports_ecommerce_product_id_fkey"
+            columns: ["ecommerce_product_id"]
+            isOneToOne: false
+            referencedRelation: "ecommerce_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_sale_reports_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "school_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_sale_reports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "ecommerce_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_sale_reports_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_sale_reports_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand: string | null
@@ -1285,6 +1360,77 @@ export type Database = {
           },
         ]
       }
+      store_sale_reports: {
+        Row: {
+          created_at: string
+          id: string
+          list_id: string | null
+          notes: string | null
+          quoted_value: number | null
+          reported_by: string | null
+          sale_value: number | null
+          school_id: string | null
+          status: Database["public"]["Enums"]["store_sale_status"]
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          list_id?: string | null
+          notes?: string | null
+          quoted_value?: number | null
+          reported_by?: string | null
+          sale_value?: number | null
+          school_id?: string | null
+          status?: Database["public"]["Enums"]["store_sale_status"]
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          list_id?: string | null
+          notes?: string | null
+          quoted_value?: number | null
+          reported_by?: string | null
+          sale_value?: number | null
+          school_id?: string | null
+          status?: Database["public"]["Enums"]["store_sale_status"]
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_sale_reports_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "school_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_sale_reports_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_sale_reports_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_sale_reports_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_services: {
         Row: {
           id: string
@@ -1468,6 +1614,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_analytics_event_counts: {
+        Args: { p_since?: string }
+        Returns: {
+          event_count: number
+          event_type: string
+        }[]
+      }
+      admin_analytics_top_schools: {
+        Args: { p_limit?: number; p_since?: string }
+        Returns: {
+          school_id: string
+          school_name: string
+          view_count: number
+        }[]
+      }
       admin_create_campaign: {
         Args: {
           p_ends_at: string
@@ -1531,6 +1692,19 @@ export type Database = {
         }
         Returns: string
       }
+      admin_upsert_partner_sale_report: {
+        Args: {
+          p_commission_value: number
+          p_ecommerce_product_id: string
+          p_gross_value: number
+          p_id: string
+          p_list_id: string
+          p_notes: string
+          p_partner_id: string
+          p_school_id: string
+        }
+        Returns: string
+      }
       admin_upsert_product: {
         Args: {
           p_brand: string
@@ -1554,6 +1728,19 @@ export type Database = {
           p_store_id: string
           p_uf: string
           p_whatsapp: string
+        }
+        Returns: string
+      }
+      admin_upsert_store_sale_report: {
+        Args: {
+          p_id: string
+          p_list_id: string
+          p_notes: string
+          p_quoted_value: number
+          p_sale_value: number
+          p_school_id: string
+          p_status: string
+          p_store_id: string
         }
         Returns: string
       }
@@ -1723,6 +1910,7 @@ export type Database = {
       report_status: "OPEN" | "RESOLVED" | "DISMISSED"
       review_status: "PENDING" | "APPROVED" | "REJECTED"
       school_type: "PUBLIC" | "PRIVATE"
+      store_sale_status: "REQUESTED" | "QUOTED" | "CONVERTED" | "LOST"
       submission_status:
         | "DRAFT"
         | "SUBMITTED"
@@ -1873,6 +2061,7 @@ export const Constants = {
       report_status: ["OPEN", "RESOLVED", "DISMISSED"],
       review_status: ["PENDING", "APPROVED", "REJECTED"],
       school_type: ["PUBLIC", "PRIVATE"],
+      store_sale_status: ["REQUESTED", "QUOTED", "CONVERTED", "LOST"],
       submission_status: [
         "DRAFT",
         "SUBMITTED",
