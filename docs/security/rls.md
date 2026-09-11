@@ -81,10 +81,28 @@ essas ações são naturalmente add/remove, não edição in-place.
 ## Funções de segurança (`supabase/migrations/20260910200900_rls_helper_functions.sql`)
 
 - `is_admin()`, `is_staff()`, `is_school_manager(uuid)`, `is_store_manager(uuid)` — `SECURITY DEFINER`, `search_path` fixo, usadas dentro das policies acima.
-- `EXECUTE` nessas 4 funções foi **revogado de `anon`** (nenhuma policy visível a `anon` as chama) e **mantido para `authenticated`** (as policies `to authenticated` precisam poder chamá-las — revogar quebraria RLS, já que o chamador precisa de `EXECUTE` independente de `SECURITY DEFINER`).
-- `handle_new_user()` e `guard_submission_status_transition()` são só-trigger: `EXECUTE` revogado de `anon` e `authenticated` — nunca chamadas diretamente, só disparadas por trigger (que não depende do grant do papel que fez o DML).
-- `approve_submission(uuid)`, `reject_submission(uuid, text)`, `request_submission_correction(uuid, text)` são a superfície de RPC de moderação: `EXECUTE` revogado de `anon`, mantido para `authenticated` (é assim que o admin chama via RPC; a função barra não-admin internamente com `is_admin()`).
+- `EXECUTE` nessas 4 funções está **revogado de `PUBLIC`** (ver correção abaixo) e **mantido para `authenticated`** (as policies `to authenticated` precisam poder chamá-las — revogar quebraria RLS, já que o chamador precisa de `EXECUTE` independente de `SECURITY DEFINER`).
+- `handle_new_user()` e `guard_submission_status_transition()` são só-trigger: `EXECUTE` revogado de `PUBLIC`, sem grant para nenhum papel — nunca chamadas diretamente, só disparadas por trigger (que não depende do grant do papel que fez o DML).
+- `approve_submission(uuid)`, `reject_submission(uuid, text)`, `request_submission_correction(uuid, text)` são a superfície de RPC de moderação: `EXECUTE` revogado de `PUBLIC`, mantido para `authenticated` (é assim que o admin chama via RPC; a função barra não-admin internamente com `is_admin()`).
 - Verificado via `get_advisors(security)` + consulta direta a `information_schema.routine_privileges` (o advisor cacheia e não refletiu a mudança na mesma sessão — a consulta direta é que confirmou o estado real).
+
+**Correção (Prompt 16):** a afirmação original acima ("revogado de `anon`") era
+**incorreta** e ficou sem efeito real por 13 prompts — `revoke execute ... from
+anon` (`20260910201900_advisor_fixes.sql`) é um no-op quando o único acesso do
+papel vem da concessão implícita a `PUBLIC` que toda function ganha ao ser
+criada (Postgres nunca registrou `anon` como grantee direto; só `PUBLIC` em
+si podia ser revogado). `is_admin()`/`is_staff()`/`is_school_manager()`/
+`is_store_manager()`/`handle_new_user()`/`guard_submission_status_transition()`
+continuaram chamáveis via `/rest/v1/rpc/...` só com a `apikey` pública — sem
+sessão — até `20260911200000_security_audit_fixes.sql` revogar de `PUBLIC` de
+verdade (mesmo padrão já usado em `moderation_guards_fix_public_grant.sql`/
+`admin_crud_fix_anon_grant.sql`, que corrigiram o mesmo no-op para as funções
+de moderação e admin — essas quatro helper functions e as duas trigger-only
+tinham ficado de fora até então). Não era um achado explorável (as quatro
+primeiras só leem `auth.uid()` do próprio chamador — `null` para `anon`,
+sempre `false`; as duas trigger-only recusam execução fora de contexto de
+trigger, independente de grant) — ver `docs/security/final-audit.md` para o
+achado completo.
 
 ## `guard_submission_status_transition` (trigger em `list_submissions`)
 
