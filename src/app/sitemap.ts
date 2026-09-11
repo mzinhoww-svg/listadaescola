@@ -9,6 +9,17 @@ import { getSiteBaseUrl } from "@/lib/seo/site-url";
 // Escopo inicial do PRD é só MT -- ver CLAUDE.md.
 const UF = "MT";
 
+// Same reasoning as every other Supabase-backed route in this project
+// (force-dynamic, never statically generated): without this, Next.js
+// prerenders sitemap.ts at `next build` time -- the very first build-time
+// Supabase dependency this codebase would have had (every other page is
+// already force-dynamic, evaluated per-request). That baked a stale
+// snapshot into the static output and depends on the build sandbox having
+// working Supabase connectivity, which broke the Vercel build for this PR.
+// Serving it per-request instead keeps it always current and matches how
+// every other data-driven route already runs here.
+export const dynamic = "force-dynamic";
+
 /**
  * Next.js file-based Metadata Route -- served at /sitemap.xml automatically,
  * no route handler needed. A single sitemap is well within Google's
