@@ -81,3 +81,81 @@ export const getListBySlug = cache(async (slug: string): Promise<ListDetail | nu
     items,
   };
 });
+
+export interface PublicListCard {
+  id: string;
+  slug: string;
+  educationLevel: string;
+  seriesName: string;
+  schoolYear: number;
+  updatedAt: string;
+  school: { name: string; slug: string; uf: string; municipality: string };
+}
+
+export interface PublicListsPage {
+  items: PublicListCard[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+}
+
+const LISTS_PAGE_SIZE = 20;
+
+/**
+ * Prompt 20 (gap analysis): `/listas` plain listing was in the PRD
+ * sitemap but never built. Same public-visibility rule as getListBySlug
+ * (RN-006: APPROVED + a PUBLISHED version + active school).
+ *
+ * `count: "exact"` counts matched rows, not distinct lists -- a list with
+ * more than one PUBLISHED version (approve_submission() never archives a
+ * superseded one) is joined once per matching version and de-duped below,
+ * so `total`/pageCount can be a small overcount in that rare case. Exact
+ * distinct counting would need a dedicated SQL function; not worth it for
+ * this listing's priority today.
+ */
+export async function getPublicLists(page = 1): Promise<PublicListsPage> {
+  const supabase = createPublicClient();
+  const safePage = Math.max(1, page);
+  const from = (safePage - 1) * LISTS_PAGE_SIZE;
+  const to = from + LISTS_PAGE_SIZE - 1;
+
+  const { data, error, count } = await supabase
+    .from("school_lists")
+    .select(
+      `id, slug, education_level, series_name, school_year, updated_at,
+       schools!inner (name, slug, uf, municipality, is_active),
+       school_list_versions!inner (status)`,
+      { count: "exact" }
+    )
+    .eq("status", "APPROVED")
+    .eq("schools.is_active", true)
+    .eq("school_list_versions.status", "PUBLISHED")
+    .order("updated_at", { ascending: false })
+    .range(from, to);
+
+  if (error) throw new Error(`getPublicLists failed: ${error.message}`);
+
+  const seen = new Set<string>();
+  const items = (data ?? []).filter((row) => {
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  });
+
+  return {
+    items: items.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      educationLevel: row.education_level,
+      seriesName: row.series_name,
+      schoolYear: row.school_year,
+      updatedAt: row.updated_at,
+      school: row.schools,
+    })),
+    total: count ?? 0,
+    page: safePage,
+    pageSize: LISTS_PAGE_SIZE,
+    pageCount: Math.max(1, Math.ceil((count ?? 0) / LISTS_PAGE_SIZE)),
+  };
+}

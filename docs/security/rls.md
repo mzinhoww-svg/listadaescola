@@ -18,7 +18,7 @@ teste no banco).
 
 ## Princípios
 
-- Toda tabela pública tem RLS habilitado — todas as 29 tabelas do schema `public` têm.
+- Toda tabela pública tem RLS habilitado — todas as tabelas do schema `public` têm (34 atualmente; a contagem de "29" de quando este documento foi escrito ficou desatualizada por várias prompts desde então que adicionaram tabelas).
 - Leitura pública é explicitamente limitada a registros ativos/publicados.
 - Escrita do usuário é limitada ao próprio ownership.
 - Ações administrativas usam `is_admin()`/`is_staff()` ou funções equivalentes e nunca dependem de esconder UI.
@@ -43,7 +43,7 @@ de usuários não podem tornar conteúdo público sem aprovação").
 
 | Tabela | Anon SELECT | Auth SELECT | Auth INSERT | Auth UPDATE | Admin |
 |---|---|---|---|---|---|
-| schools | ativos | ativos | não | não | full |
+| schools | ativos | ativos | não | não | **full, sem DELETE** |
 | school_profiles | ativos | ativos | manager | manager | full |
 | school_contacts | públicos+ativos | públicos+ativos | manager | manager | full |
 | school_images | aprovadas | aprovadas | manager | manager | full |
@@ -51,9 +51,9 @@ de usuários não podem tornar conteúdo público sem aprovação").
 | school_series | ativos | ativos | manager | não | full |
 | school_managers | não | próprio | não | não | full |
 | school_suggestions | não | próprias | próprias | não | full |
-| school_lists | aprovadas | aprovadas | **não (só via função)** | **não (só via função)** | full |
-| school_list_versions | publicados | publicados | **não (só via função)** | **não (só via função)** | full |
-| school_list_items | publicados | publicados | **não (só via função)** | **não (só via função)** | full |
+| school_lists | aprovadas | aprovadas | **não (só via função)** | **não (só via função)** | **full, sem DELETE** |
+| school_list_versions | publicados | publicados | **não (só via função)** | **não (só via função)** | **full, sem DELETE** |
+| school_list_items | publicados | publicados | **não (só via função)** | **não (só via função)** | **full, sem DELETE** |
 | list_submissions | não | próprias | próprias (só DRAFT) | próprias (DRAFT/NEEDS_CORRECTION) | full |
 | submission_items | não | próprios | próprios (submission editável) | próprios (submission editável) | full |
 | submission_attachments | não | próprios | próprios (submission editável) | — (sem update; delete próprio) | full |
@@ -72,11 +72,27 @@ de usuários não podem tornar conteúdo público sem aprovação").
 | campaigns | não | não | não | não | full |
 | analytics_events | não | não | server (bypassa RLS) | não | **read** (não full) |
 | audit_logs | não | não | trigger/função | não | **read** (não full) |
+| auth_login_attempts | não | não | função (inclusive anon) | não | **nenhum** (nem admin) |
 
 `manager` = `is_school_manager(school_id)` ou `is_store_manager(store_id)`
 (ambas fazem `OR is_admin()` internamente). Onde a coluna diz "— (delete
 próprio)", existe só policy de DELETE além de SELECT/INSERT, não UPDATE —
 essas ações são naturalmente add/remove, não edição in-place.
+
+**`auth_login_attempts` (SEC-008, Prompt 20)**: sem nenhuma policy (RLS
+habilitado, zero policies) -- só `check_login_rate_limit`/
+`record_login_attempt` (`SECURITY DEFINER`) tocam a tabela, e essas duas
+são a única exceção deste projeto a "só `authenticated`": precisam
+funcionar para `anon` porque o rate limit de login roda antes da
+autenticação.
+
+**RN-006/RN-007 (Prompt 20)**: `schools`/`school_lists`/
+`school_list_versions`/`school_list_items` são master/histórico
+versionado e não devem ser fisicamente excluídos (status/inativação em
+vez disso). A policy `for all` original de admin incluía DELETE por
+padrão; `20260911220000_gap_fixes_prompt20.sql` a substitui por policies
+explícitas de SELECT/INSERT/UPDATE (sem DELETE) nessas 4 tabelas —
+nenhuma outra capacidade de admin muda.
 
 ## Funções de segurança (`supabase/migrations/20260910200900_rls_helper_functions.sql`)
 

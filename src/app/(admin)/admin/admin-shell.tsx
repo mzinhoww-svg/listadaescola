@@ -17,6 +17,7 @@ const navItems = [
   { label: "Patrocínios", href: "/admin/patrocinios" },
   { label: "Analytics", href: "/admin/analytics" },
   { label: "Vendas", href: "/admin/vendas" },
+  { label: "Usuários", href: "/admin/usuarios" },
 ];
 
 function AdminNav({ onNavigate }: { onNavigate?: () => void }) {

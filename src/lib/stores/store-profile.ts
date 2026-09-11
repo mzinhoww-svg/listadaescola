@@ -93,8 +93,13 @@ export interface StoreListItem {
 // function, so capping this one doesn't touch sitemap completeness.
 const MAX_ROWS = 500;
 
-/** Papelarias index page -- every active store in the given UF. */
-export async function getActiveStores(uf: string): Promise<StoreListItem[]> {
+/**
+ * Papelarias index page -- every active store in the given UF. `cache()`
+ * so the new /papelarias/[uf]/[cidade] page can call this once in
+ * generateMetadata and once in the page body without doubling the
+ * Supabase round trip -- same reasoning as getStoreBySlug above.
+ */
+export const getActiveStores = cache(async (uf: string): Promise<StoreListItem[]> => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("stores")
@@ -107,4 +112,4 @@ export async function getActiveStores(uf: string): Promise<StoreListItem[]> {
 
   if (error) throw new Error(`getActiveStores failed: ${error.message}`);
   return data ?? [];
-}
+});

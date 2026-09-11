@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { getSafeRedirect } from "@/lib/safe-redirect";
@@ -36,6 +37,21 @@ async function getSiteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
+/**
+ * SEC-008: rate-limit key for login attempts. Combines email + a
+ * best-effort client IP (x-forwarded-for) rather than email alone, so an
+ * attacker spamming failed attempts against a victim's email from one
+ * network doesn't also lock that victim out of logging in from their own
+ * -- see the migration this reads from (gap_fixes_prompt20.sql) for the
+ * full reasoning.
+ */
+async function getLoginRateLimitIdentifier(email: string) {
+  const headersList = await headers();
+  const forwardedFor = headersList.get("x-forwarded-for");
+  const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
+  return `${email.toLowerCase()}:${ip}`;
+}
+
 export async function signInAction(_prevState: FormState, formData: FormData): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -46,7 +62,18 @@ export async function signInAction(_prevState: FormState, formData: FormData): P
   }
 
   const supabase = await createClient();
+  const identifier = await getLoginRateLimitIdentifier(email);
+
+  // Fails open on an unexpected RPC error (`allowed` stays null/undefined,
+  // never strictly `false`) -- a secondary safety check should never
+  // become a primary outage vector for the whole login flow.
+  const { data: allowed } = await supabase.rpc("check_login_rate_limit", { p_identifier: identifier });
+  if (allowed === false) {
+    return { error: "Muitas tentativas de login. Aguarde alguns minutos e tente novamente." };
+  }
+
   const { error } = await supabase.auth.signInWithPassword({ email, password });
+  void supabase.rpc("record_login_attempt", { p_identifier: identifier, p_success: !error });
   if (error) {
     // Deliberately generic: never reveal whether the email exists.
     return { error: "E-mail ou senha inválidos." };
@@ -140,6 +167,29 @@ export async function updatePasswordAction(
   }
 
   redirect("/minha-conta");
+}
+
+/**
+ * Only touches `full_name` -- role is never in the update payload, so the
+ * profiles_update_own RLS check (role must stay equal to its current
+ * stored value) always passes here regardless of the caller's role.
+ */
+export async function updateProfileAction(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  if (!fullName) return { fieldErrors: { full_name: "Informe seu nome." } };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sessão expirada. Entre novamente." };
+
+  const { error } = await supabase.from("profiles").update({ full_name: fullName }).eq("id", user.id);
+  if (error) return { error: "Não foi possível salvar. Tente novamente." };
+
+  revalidatePath("/minha-conta");
+  revalidatePath("/minha-conta/perfil");
+  return { success: "Perfil atualizado." };
 }
 
 export async function resendVerificationAction(
