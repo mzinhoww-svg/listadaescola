@@ -1,14 +1,26 @@
 import type { ResolvedLocation } from "@/lib/geocoding/types";
 
-/** Builds a new /escolas query string from the current one plus updates; null/'' deletes a key. Changing anything except page resets pagination. */
-export function buildResultsUrl(current: URLSearchParams, updates: Record<string, string | null>): string {
+/**
+ * Builds a query string against `basePath` (default `/escolas`) from the
+ * current one plus updates; null/'' deletes a key. Changing anything
+ * except page resets pagination. `basePath` lets the Prompt 15 estado/
+ * cidade landing pages (/escolas/[uf], /escolas/[uf]/[cidade]) reuse
+ * PaginationControls for their own "próxima página" links instead of
+ * always pointing back at the generic /escolas search.
+ */
+export function buildResultsUrl(
+  current: URLSearchParams,
+  updates: Record<string, string | null>,
+  basePath = "/escolas"
+): string {
   const params = new URLSearchParams(current.toString());
   for (const [key, value] of Object.entries(updates)) {
     if (value === null || value === "") params.delete(key);
     else params.set(key, value);
   }
   if (!("page" in updates)) params.delete("page");
-  return `/escolas?${params.toString()}`;
+  const query = params.toString();
+  return query ? `${basePath}?${query}` : basePath;
 }
 
 export function locationToResultsUrl(location: ResolvedLocation): string {

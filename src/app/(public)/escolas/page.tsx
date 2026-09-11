@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { searchSchools, type SortMode } from "@/lib/schools/search-schools";
 import { recordAnalyticsEvent, recordSchoolImpressions } from "@/lib/analytics/record-event";
 import { SchoolCard } from "@/components/schools/school-card";
@@ -7,12 +9,52 @@ import { LocationBanner } from "@/components/schools/location-banner";
 import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Database } from "@/lib/supabase/database.types";
+import { slugify } from "@/lib/utils";
 
 interface EscolasPageProps {
   searchParams: Promise<Record<string, string | undefined>>;
 }
 
 const SORT_MODES: SortMode[] = ["relevance", "proximity", "popularity", "rating"];
+
+/**
+ * `lat`/`lon`/`cep`/`label` are geolocation-derived/ephemeral, `sort`/
+ * `page` don't change the result set's identity -- none belong in a
+ * canonical URL. `q` (free-text search) has no dedicated landing page, so
+ * it canonicalizes to the plain search entry point. `uf`/`municipality`
+ * now DO have one each (Prompt 15's new /escolas/[uf] and
+ * /escolas/[uf]/[cidade] routes) -- canonicalizing to them there instead
+ * of self-referencing avoids indexing /escolas as a near-duplicate of
+ * every one of those pages.
+ */
+function buildCanonical(params: Record<string, string | undefined>): string {
+  const uf = (params.uf || "MT").toLowerCase();
+  if (params.q?.trim()) return "/escolas";
+  if (params.municipality?.trim()) return `/escolas/${uf}/${slugify(params.municipality)}`;
+  return `/escolas/${uf}`;
+}
+
+export async function generateMetadata({ searchParams }: EscolasPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const uf = params.uf || "MT";
+
+  let title = "Escolas";
+  let description = `Encontre escolas em ${uf} por cidade, CEP ou nome e veja as listas de material escolar.`;
+  if (params.q?.trim()) {
+    title = `Busca: "${params.q.trim()}"`;
+    description = `Resultados para "${params.q.trim()}" entre as escolas de ${uf}.`;
+  } else if (params.municipality?.trim()) {
+    title = `Escolas em ${params.municipality.trim()}`;
+    description = `Escolas ativas em ${params.municipality.trim()}, ${uf}, com listas de material escolar.`;
+  }
+
+  return {
+    title,
+    description,
+    alternates: { canonical: buildCanonical(params) },
+    openGraph: { title, description, type: "website" },
+  };
+}
 
 export default async function EscolasPage({ searchParams }: EscolasPageProps) {
   const params = await searchParams;

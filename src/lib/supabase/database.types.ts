@@ -1765,6 +1765,13 @@ export type Database = {
       }
       is_staff: { Args: never; Returns: boolean }
       is_store_manager: { Args: { target_store_id: string }; Returns: boolean }
+      list_municipalities: {
+        Args: { p_uf: string }
+        Returns: {
+          municipality: string
+          school_count: number
+        }[]
+      }
       mark_submission_under_review: {
         Args: { p_submission_id: string }
         Returns: undefined
@@ -1853,6 +1860,10 @@ export type Database = {
       request_submission_correction: {
         Args: { p_notes: string; p_submission_id: string }
         Returns: undefined
+      }
+      resolve_municipality_slug: {
+        Args: { p_slug: string; p_uf: string }
+        Returns: string
       }
       search_schools: {
         Args: {

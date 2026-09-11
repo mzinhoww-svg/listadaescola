@@ -14,6 +14,8 @@ import { ShareButton } from "@/components/lists/share-button";
 import { PartnerOfferButton } from "@/components/commerce/partner-offer-button";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { Badge } from "@/components/ui/badge";
+import { jsonLdScript } from "@/lib/seo/json-ld";
+import { getSiteBaseUrl } from "@/lib/seo/site-url";
 
 // Same reasoning as Home/perfil da escola: data depends on Supabase at
 // request time, must never be statically prerendered at `next build`.
@@ -58,8 +60,33 @@ export default async function ListPage({ params }: ListPageProps) {
   const requiredCount = list.items.filter((item) => item.is_required).length;
   const optionalCount = list.items.length - requiredCount;
 
+  const siteUrl = getSiteBaseUrl();
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Lista de material — ${list.seriesName} (${list.schoolYear}) — ${list.school.name}`,
+    numberOfItems: list.items.length,
+    itemListElement: list.items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.quantity > 1 ? `${item.quantity}x ${item.name}` : item.name,
+    })),
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Início", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: list.school.name, item: `${siteUrl}${schoolHref(list.school)}` },
+      { "@type": "ListItem", position: 3, name: "Lista", item: `${siteUrl}${path}` },
+    ],
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd) }} />
+
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-neutral-500">
         <Link href="/" className="hover:text-primary-700">
           Início

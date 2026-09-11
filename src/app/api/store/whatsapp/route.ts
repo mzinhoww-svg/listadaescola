@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
-import { buildWhatsappMessage, normalizeWhatsappNumber } from "@/lib/stores/whatsapp";
+import { buildGenericWhatsappMessage, buildWhatsappMessage, normalizeWhatsappNumber } from "@/lib/stores/whatsapp";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -18,6 +18,13 @@ function isUuid(value: string | null): value is string {
  * built. wa.me only pre-fills WhatsApp's own compose screen; it never
  * sends on its own ("não enviar automaticamente").
  *
+ * `school`/`list` are optional (Prompt 15): the standalone papelaria
+ * detail page has no school-list context to build an itemized message
+ * from, so it links here with only `store` and gets a generic message
+ * instead of a 404-to-home. When both are present, behavior is unchanged
+ * from Prompt 09 -- the itemized message still requires a real, published
+ * list with at least one item.
+ *
  * `whatsapp_click` is awaited, same reasoning as `/api/commerce/click`:
  * this Route Handler ends the instant it returns its redirect response,
  * so a detached insert risks never flushing.
@@ -25,22 +32,27 @@ function isUuid(value: string | null): value is string {
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const storeId = searchParams.get("store");
-  const schoolId = searchParams.get("school");
-  const listId = searchParams.get("list");
+  const schoolIdParam = searchParams.get("school");
+  const listIdParam = searchParams.get("list");
+  const hasListContext = schoolIdParam !== null || listIdParam !== null;
 
-  if (!isUuid(storeId) || !isUuid(schoolId) || !isUuid(listId)) {
+  if (!isUuid(storeId) || (hasListContext && (!isUuid(schoolIdParam) || !isUuid(listIdParam)))) {
     return NextResponse.redirect(new URL("/", origin));
   }
+  const schoolId = hasListContext ? (schoolIdParam as string) : null;
+  const listId = hasListContext ? (listIdParam as string) : null;
 
   const supabase = createPublicClient();
 
   const [{ data: store }, { data: school }, { data: list }] = await Promise.all([
     supabase.from("stores").select("name, whatsapp").eq("id", storeId).eq("is_active", true).maybeSingle(),
-    supabase.from("schools").select("name").eq("id", schoolId).maybeSingle(),
-    supabase.from("school_lists").select("series_name, school_year").eq("id", listId).eq("status", "APPROVED").maybeSingle(),
+    schoolId ? supabase.from("schools").select("name").eq("id", schoolId).maybeSingle() : Promise.resolve({ data: null }),
+    listId
+      ? supabase.from("school_lists").select("series_name, school_year").eq("id", listId).eq("status", "APPROVED").maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
-  if (!store || !school || !list) {
+  if (!store || (hasListContext && (!school || !list))) {
     return NextResponse.redirect(new URL("/", origin));
   }
 
@@ -50,30 +62,35 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/", origin));
   }
 
-  const { data: version } = await supabase
-    .from("school_list_versions")
-    .select("id, school_list_items (name, quantity, unit)")
-    .eq("school_list_id", listId)
-    .eq("status", "PUBLISHED")
-    .order("version_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  let message: string;
+  if (school && list && listId) {
+    const { data: version } = await supabase
+      .from("school_list_versions")
+      .select("id, school_list_items (name, quantity, unit)")
+      .eq("school_list_id", listId)
+      .eq("status", "PUBLISHED")
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (!version || version.school_list_items.length === 0) {
-    return NextResponse.redirect(new URL("/", origin));
+    if (!version || version.school_list_items.length === 0) {
+      return NextResponse.redirect(new URL("/", origin));
+    }
+
+    message = buildWhatsappMessage({
+      schoolName: school.name,
+      seriesName: list.series_name,
+      schoolYear: list.school_year,
+      items: version.school_list_items,
+    });
+  } else {
+    message = buildGenericWhatsappMessage(store.name);
   }
-
-  const message = buildWhatsappMessage({
-    schoolName: school.name,
-    seriesName: list.series_name,
-    schoolYear: list.school_year,
-    items: version.school_list_items,
-  });
 
   await recordAnalyticsEvent({
     eventType: "whatsapp_click",
-    schoolId,
-    listId,
+    schoolId: schoolId ?? undefined,
+    listId: listId ?? undefined,
     storeId,
   });
 

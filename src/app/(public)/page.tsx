@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 
@@ -6,6 +7,15 @@ import { HomeNameSearch } from "@/components/home/home-name-search";
 import { SchoolCard } from "@/components/schools/school-card";
 import { Button } from "@/components/ui/button";
 import { getFeaturedSchools, getRecentLists } from "@/lib/schools/home-queries";
+
+const DESCRIPTION =
+  "Encontre escolas de Mato Grosso por cidade, CEP ou nome, veja a lista de material escolar e resolva a compra online ou em papelarias próximas.";
+
+export const metadata: Metadata = {
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: { title: "Listada Escola", description: DESCRIPTION, type: "website" },
+};
 
 // Rendered per-request (like every other data-driven page in this
 // project) rather than statically generated: a static/ISR Home would run
