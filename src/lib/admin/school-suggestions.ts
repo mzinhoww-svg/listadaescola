@@ -18,6 +18,10 @@ export interface SuggestionQueueItem {
   suggestedBy: { fullName: string | null };
 }
 
+// Prompt 18 (performance audit): unbounded before -- see admin/lists.ts's
+// MAX_ROWS comment for the reasoning (same fix, same follow-up note).
+const MAX_ROWS = 200;
+
 /** Same "oldest first is the priority" convention as
  * getModerationQueue -- no fabricated priority column here either. */
 export async function getSchoolSuggestionQueue(
@@ -28,7 +32,8 @@ export async function getSchoolSuggestionQueue(
     .from("school_suggestions")
     .select(`id, status, name, municipality, uf, created_at, profiles!school_suggestions_suggested_by_fkey (full_name)`)
     .in("status", statuses)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .range(0, MAX_ROWS - 1);
 
   if (error) throw new Error(`getSchoolSuggestionQueue failed: ${error.message}`);
 

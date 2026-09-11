@@ -3,9 +3,17 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type AdminProduct = Database["public"]["Tables"]["products"]["Row"];
 
+// Prompt 18 (performance audit): unbounded before -- see admin/lists.ts's
+// MAX_ROWS comment for the reasoning (same fix, same follow-up note).
+const MAX_ROWS = 200;
+
 export async function getAdminProducts(): Promise<AdminProduct[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("products").select("*").order("name", { ascending: true });
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("name", { ascending: true })
+    .range(0, MAX_ROWS - 1);
   if (error) throw new Error(`getAdminProducts failed: ${error.message}`);
   return data ?? [];
 }
@@ -31,7 +39,8 @@ export async function getAdminEcommerceProducts(): Promise<AdminEcommerceProduct
       `id, partner_id, product_id, external_url, price_hint, is_active,
        ecommerce_partners!inner (name), products!inner (name)`
     )
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(0, MAX_ROWS - 1);
 
   if (error) throw new Error(`getAdminEcommerceProducts failed: ${error.message}`);
 

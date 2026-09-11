@@ -69,6 +69,7 @@ export default async function AdminAnalyticsPage({ searchParams }: AnalyticsPage
         </nav>
       </div>
 
+      <h2 className="sr-only">Métricas do período</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>

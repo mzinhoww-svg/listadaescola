@@ -9,6 +9,12 @@ import { getSafeRedirect } from "@/lib/safe-redirect";
 export interface FormState {
   error?: string;
   success?: string;
+  /** Per-field messages, keyed by form field `name`, so a form can pass
+   * each one to its own Input as `errorText` (aria-describedby/aria-invalid)
+   * instead of a single summary the screen reader has no way to tie back
+   * to the offending field. `error` stays for messages that aren't about
+   * one specific field (a failed request, an expired link). */
+  fieldErrors?: Record<string, string>;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,12 +61,12 @@ export async function signUpAction(_prevState: FormState, formData: FormData): P
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirm_password") ?? "");
 
-  if (!fullName) return { error: "Informe seu nome." };
-  if (!isValidEmail(email)) return { error: "Informe um e-mail válido." };
+  if (!fullName) return { fieldErrors: { full_name: "Informe seu nome." } };
+  if (!isValidEmail(email)) return { fieldErrors: { email: "Informe um e-mail válido." } };
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` };
+    return { fieldErrors: { password: `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` } };
   }
-  if (password !== confirmPassword) return { error: "As senhas não coincidem." };
+  if (password !== confirmPassword) return { fieldErrors: { confirm_password: "As senhas não coincidem." } };
 
   const siteUrl = await getSiteUrl();
   const supabase = await createClient();
@@ -75,7 +81,7 @@ export async function signUpAction(_prevState: FormState, formData: FormData): P
 
   if (error) {
     if (error.message.toLowerCase().includes("already registered")) {
-      return { error: "Este e-mail já está cadastrado. Tente entrar ou recuperar sua senha." };
+      return { fieldErrors: { email: "Este e-mail já está cadastrado. Tente entrar ou recuperar sua senha." } };
     }
     return { error: "Não foi possível criar a conta. Tente novamente." };
   }
@@ -94,7 +100,7 @@ export async function requestPasswordResetAction(
   formData: FormData
 ): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
-  if (!isValidEmail(email)) return { error: "Informe um e-mail válido." };
+  if (!isValidEmail(email)) return { fieldErrors: { email: "Informe um e-mail válido." } };
 
   const siteUrl = await getSiteUrl();
   const supabase = await createClient();
@@ -116,9 +122,9 @@ export async function updatePasswordAction(
   const confirmPassword = String(formData.get("confirm_password") ?? "");
 
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` };
+    return { fieldErrors: { password: `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` } };
   }
-  if (password !== confirmPassword) return { error: "As senhas não coincidem." };
+  if (password !== confirmPassword) return { fieldErrors: { confirm_password: "As senhas não coincidem." } };
 
   const supabase = await createClient();
   const {
@@ -141,7 +147,7 @@ export async function resendVerificationAction(
   formData: FormData
 ): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
-  if (!isValidEmail(email)) return { error: "Informe um e-mail válido." };
+  if (!isValidEmail(email)) return { fieldErrors: { email: "Informe um e-mail válido." } };
 
   const siteUrl = await getSiteUrl();
   const supabase = await createClient();

@@ -22,7 +22,7 @@ export default async function EntrarPage({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Entrar</CardTitle>
+        <CardTitle as="h1">Entrar</CardTitle>
         <CardDescription>Acesse sua conta para contribuir com listas.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -20,6 +20,27 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: "11mb",
   },
   /**
+   * Prompt 18 (performance audit) finding: no `images.remotePatterns` was
+   * configured, so `next/image` would hard-reject any URL from the
+   * Supabase Storage `public-assets` bucket (getPublicAssetUrl(),
+   * src/lib/supabase/storage.ts) the moment a school-logo/photo feature
+   * starts rendering one -- nothing renders such an image today (the URL
+   * is only used in JSON-LD/OpenGraph metadata so far), so this is
+   * readiness, not a fix for a current broken image. Wildcarded host
+   * (rather than reading NEXT_PUBLIC_SUPABASE_URL here) so this keeps
+   * working unchanged across any Supabase project (dev/preview/prod);
+   * pathname scoped to the public object path, not the whole host.
+   */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
+  /**
    * Prompt 16 (security audit) finding: no security headers were set
    * anywhere (confirmed -- neither here, nor a vercel.json, nor the
    * proxy/middleware). These three are safe additions with zero risk of

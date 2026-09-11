@@ -14,8 +14,21 @@ export function SignupForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <Input label="Nome completo" name="full_name" autoComplete="name" required />
-      <Input label="E-mail" name="email" type="email" autoComplete="email" required />
+      <Input
+        label="Nome completo"
+        name="full_name"
+        autoComplete="name"
+        required
+        errorText={state?.fieldErrors?.full_name}
+      />
+      <Input
+        label="E-mail"
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        errorText={state?.fieldErrors?.email}
+      />
       <Input
         label="Senha"
         name="password"
@@ -24,6 +37,7 @@ export function SignupForm() {
         minLength={8}
         helperText="Mínimo de 8 caracteres."
         required
+        errorText={state?.fieldErrors?.password}
       />
       <Input
         label="Confirmar senha"
@@ -32,6 +46,7 @@ export function SignupForm() {
         autoComplete="new-password"
         minLength={8}
         required
+        errorText={state?.fieldErrors?.confirm_password}
       />
       {state?.error && (
         <p role="alert" className="text-sm text-danger-600">

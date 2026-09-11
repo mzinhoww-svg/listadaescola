@@ -33,7 +33,7 @@ export default async function AdminListDetailPage({ params }: { params: Promise<
 
       <Card>
         <CardHeader>
-          <CardTitle>Ação</CardTitle>
+          <CardTitle as="h2">Ação</CardTitle>
           <CardDescription>Arquivar não apaga versões anteriores (RN-006/RN-007).</CardDescription>
         </CardHeader>
         <CardContent>
@@ -44,7 +44,7 @@ export default async function AdminListDetailPage({ params }: { params: Promise<
       {list.versions.map((version) => (
         <Card key={version.id}>
           <CardHeader>
-            <CardTitle>
+            <CardTitle as="h2">
               Versão {version.versionNumber} <Badge variant={version.status === "PUBLISHED" ? "success" : "neutral"}>{version.status}</Badge>
             </CardTitle>
             <CardDescription>Publicada em {new Date(version.publishedAt).toLocaleDateString("pt-BR")}</CardDescription>

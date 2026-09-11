@@ -25,6 +25,12 @@ export interface QueueItem {
   submittedBy: { fullName: string | null };
 }
 
+// Prompt 18 (performance audit): unbounded before -- see admin/lists.ts's
+// MAX_ROWS comment for the reasoning (same fix, same follow-up note). The
+// default (pending-only) view self-limits somewhat since items leave once
+// reviewed, but the history tabs (APPROVED/REJECTED) grow forever.
+const MAX_ROWS = 200;
+
 /**
  * "Fila por prioridade" (PRD): no stored priority column exists (and none
  * is fabricated) -- oldest-submitted-first IS the priority, exactly like
@@ -42,7 +48,8 @@ export async function getModerationQueue(statuses: readonly ModerationStatus[] =
        profiles!list_submissions_submitted_by_fkey (full_name)`
     )
     .in("status", statuses)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .range(0, MAX_ROWS - 1);
 
   if (error) throw new Error(`getModerationQueue failed: ${error.message}`);
 

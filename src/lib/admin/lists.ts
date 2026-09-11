@@ -22,6 +22,13 @@ export interface AdminListItem {
  * archived, since admin_set_school_list_status only ever flips the
  * list-level status, not per-version status.
  */
+// Prompt 18 (performance audit): this had no bound at all -- a full-table,
+// full-embed scan that grows with every school_list ever published. A hard
+// cap closes the unbounded-scan risk now; real page-by-page navigation
+// (mirroring getAdminSchools' .range()+count pattern) is the natural
+// follow-up once this view alone actually needs paging through.
+const MAX_ROWS = 200;
+
 export async function getAdminLists(): Promise<AdminListItem[]> {
   const supabase = await createClient();
 
@@ -32,7 +39,8 @@ export async function getAdminLists(): Promise<AdminListItem[]> {
        schools!inner (name, municipality),
        school_list_versions (version_number, status, published_at, school_list_items (id))`
     )
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .range(0, MAX_ROWS - 1);
 
   if (error) throw new Error(`getAdminLists failed: ${error.message}`);
 

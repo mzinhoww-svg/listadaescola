@@ -13,7 +13,7 @@ export default async function RedefinirSenhaPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Redefinir senha</CardTitle>
+        <CardTitle as="h1">Redefinir senha</CardTitle>
         <CardDescription>Escolha uma nova senha para sua conta.</CardDescription>
       </CardHeader>
       <CardContent>

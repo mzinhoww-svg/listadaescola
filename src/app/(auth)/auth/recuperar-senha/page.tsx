@@ -9,7 +9,7 @@ export default function RecuperarSenhaPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recuperar senha</CardTitle>
+        <CardTitle as="h1">Recuperar senha</CardTitle>
         <CardDescription>Enviaremos um link para você redefinir sua senha.</CardDescription>
       </CardHeader>
       <CardContent>

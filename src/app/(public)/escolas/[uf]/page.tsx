@@ -95,7 +95,7 @@ export default async function EstadoPage({ params, searchParams }: EstadoPagePro
                 href={`/escolas/${uf.toLowerCase()}/${municipality.slug}`}
                 className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:border-primary-300 hover:text-primary-700"
               >
-                {municipality.name} <span className="text-neutral-400">({municipality.schoolCount})</span>
+                {municipality.name} <span className="text-neutral-600">({municipality.schoolCount})</span>
               </Link>
             ))}
           </div>

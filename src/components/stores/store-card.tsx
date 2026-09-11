@@ -66,7 +66,7 @@ export function StoreCard({ store, schoolId, listId }: StoreCardProps) {
 
       <div className="mt-3">
         {whatsappHref ? (
-          <Button asChild size="sm" className="w-full sm:w-auto">
+          <Button asChild className="w-full sm:w-auto">
             <a href={whatsappHref} target="_blank" rel="nofollow noopener noreferrer">
               <MessageCircle className="size-4" aria-hidden="true" />
               Pedir orçamento no WhatsApp

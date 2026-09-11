@@ -34,10 +34,27 @@ function Header({
 }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const menuId = React.useId();
+  const toggleRef = React.useRef<HTMLButtonElement>(null);
+
+  /** Closing without moving focus back to the toggle drops it wherever the
+   * browser sends focus when the focused element becomes `hidden` (usually
+   * <body>) -- a keyboard user loses their place entirely. */
+  function closeMobileMenu() {
+    setMobileOpen(false);
+    toggleRef.current?.focus();
+  }
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setMobileOpen(false);
+      if (event.key !== "Escape") return;
+      // Functional update so this only refocuses the toggle when the menu
+      // was actually open -- an unconditional focus() here would steal
+      // focus from unrelated Escape presses elsewhere on the page (e.g. a
+      // Dialog also listening for Escape).
+      setMobileOpen((open) => {
+        if (open) toggleRef.current?.focus();
+        return false;
+      });
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -79,6 +96,7 @@ function Header({
 
         {navItems.length > 0 && (
           <button
+            ref={toggleRef}
             type="button"
             className="inline-flex size-11 items-center justify-center rounded-lg text-neutral-700 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 md:hidden"
             aria-expanded={mobileOpen}
@@ -107,7 +125,7 @@ function Header({
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={closeMobileMenu}
                   className="block rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                 >
                   {item.label}

@@ -20,6 +20,7 @@ export default async function MinhaContaPage() {
       <h1 className="text-2xl font-semibold text-neutral-900">
         {profile?.full_name ? `Olá, ${profile.full_name}` : "Minha conta"}
       </h1>
+      <h2 className="sr-only">Resumo da conta</h2>
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         {summaryCards.map(({ icon: Icon, title, description }) => (
           <Card key={title}>

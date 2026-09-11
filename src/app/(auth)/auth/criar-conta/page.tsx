@@ -14,7 +14,7 @@ export default async function CriarContaPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Criar conta</CardTitle>
+        <CardTitle as="h1">Criar conta</CardTitle>
         <CardDescription>Crie uma conta para enviar listas e sugerir escolas.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -9,7 +9,7 @@ export default function SugerirEscolaPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sugerir uma escola</CardTitle>
+        <CardTitle as="h1">Sugerir uma escola</CardTitle>
         <CardDescription>
           Não encontrou a escola na nossa base? Conte pra gente e nossa equipe avalia a inclusão.
         </CardDescription>
