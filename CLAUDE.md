@@ -44,17 +44,27 @@ inicial: Mato Grosso (MT).
 Nunca editar o branch padrão diretamente para mudanças não triviais →
 branch de trabalho → implementar → testar → corrigir → revisar diff →
 commit → push → abrir PR → solicitar auto-merge nativo do GitHub
-(`mcp__github__enable_pr_auto_merge`) → o GitHub decide quando mergear,
-nunca o agente por si só → nunca declarar merge concluído sem confirmação
-real da API → nunca usar `--no-verify` ou bypass de proteção de branch →
-nunca merge com CI vermelho ou conflito não resolvido.
+(`mcp__github__enable_pr_auto_merge`). Se houver required status check
+pendente, o GitHub mergeia sozinho quando ele passar. Se a chamada
+retornar "already in clean status" (nada pendente), o agente confirma via
+API (status combinado `success`, `mergeable_state` `clean`, sem review
+pendente) e então chama `mcp__github__merge_pull_request`
+(`merge_method: "squash"`) diretamente, sem perguntar a cada PR —
+autorização explícita do usuário em 2026-09-11, ver
+`docs/development/automation-contract.md` ("Regra de merge") e
+`docs/development/WORKFLOW.md` ("Merge direto autorizado") para as
+condições completas e o histórico. Continuam absolutas: nunca declarar
+merge concluído sem confirmação real da API (`merged: true`), nunca usar
+`--no-verify` ou bypass de proteção de branch, nunca merge com CI
+vermelho ou conflito não resolvido.
 
 Este ambiente não tem `gh` nem `supabase` CLI — use as ferramentas MCP
 (`mcp__github__*`, `mcp__Supabase__*`). Branch padrão atual é
 `claude/eager-galileo-d8hdtc` (não existe `main` ainda — ver WORKFLOW.md).
-Branch protection e a opção "Allow auto-merge" do repositório **não estão
-configuradas** e nenhuma ferramenta disponível permite configurá-las — isso
-precisa ser feito manualmente no GitHub (passos em WORKFLOW.md).
+O usuário configurou manualmente um ruleset no branch padrão exigindo o
+check `Vercel` antes de merge (reportado pelo usuário; nenhuma ferramenta
+MCP disponível permite ler/configurar branch protection diretamente para
+confirmar via API — ver WORKFLOW.md).
 
 ## Stitch MCP
 

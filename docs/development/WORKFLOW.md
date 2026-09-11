@@ -163,6 +163,80 @@ vai tentar `enable_pr_auto_merge` e reportar exatamente o que acontecer
 (sucesso, falha, ou merge que já é possível de forma direta caso não haja
 nenhuma proteção configurada).
 
+**Superado em parte a partir de 2026-09-11 — ver "Merge direto
+autorizado" logo abaixo:** o usuário configurou manualmente o ruleset que
+faltava e autorizou o agente a mergear diretamente quando o GitHub não
+tiver nada pendente para o auto-merge esperar. O registro acima (PR #1,
+PR #2) continua válido como histórico de como o comportamento era antes
+dessa configuração existir.
+
+## Merge direto autorizado
+
+**2026-09-11 — autorização explícita do usuário.** O padrão observado nas
+PRs #1 e #2 (seção acima) se repetiu de forma consistente nas PRs
+seguintes: sem required status check configurado, `enable_pr_auto_merge`
+nunca tinha nada para esperar e sempre retornava "already in clean
+status... merge directly", então todo merge final dependia do usuário
+mergear manualmente pela UI do GitHub. O usuário perguntou "Como deixar
+automatizar você mesmo fazer o Merge?". A primeira resposta, escolhida via
+`AskUserQuestion`, foi "GitHub auto-merge + branch protection" — ou seja,
+configurar um gate real no GitHub em vez do agente mergear por conta
+própria. Nessa mesma janela o usuário configurou manualmente um ruleset
+no branch padrão exigindo o check `Vercel` antes de merge (precisou de um
+segundo ajuste — o erro inicial "This ruleset does not target any
+resources and will not be applied" foi resolvido adicionando "Target
+branches" com o nome exato do branch ao ruleset).
+
+Pouco depois, o usuário deu uma instrução direta e explícita — "Merge a
+PR #10" — contradizendo a escolha anterior. O agente honrou a instrução
+pontual: mergeou a PR #10 diretamente via `mcp__github__merge_pull_request`
+(`merge_method: "squash"`) — primeiro caso real de merge direto pelo
+agente neste projeto — e confirmou via `pull_request_read` depois:
+`merged: true`, commit squash `24e3f291f263220f8e76af80c4aa7f8517311392`,
+`merged_at: 2026-09-11T11:55:43Z`. Ao fazer isso, o agente sinalizou
+explicitamente a tensão com a regra então vigente no
+`automation-contract.md` ("o agente nunca decide mergear, só o GitHub") e
+perguntou se o usuário queria formalizar isso como política permanente.
+A resposta:
+
+> done, e u já faça isso sozinho daqui pra frente (sem precisar pedir a
+> cada PR), e atualize o automation-contract.md pra formalizar isso
+
+Isso substitui a escolha inicial ("GitHub auto-merge + branch protection"
+sem merge direto do agente) por uma política combinada, formalizada em
+`docs/development/automation-contract.md` (seção "Regra de merge"): o
+auto-merge nativo continua sendo a primeira tentativa em toda PR (deixa o
+GitHub travar em required status checks quando há algo pendente), mas
+quando não há nada pendente ("already in clean status") o agente agora
+chama `merge_pull_request` diretamente, sem perguntar a cada PR, desde
+que confirme antes — com leitura fresca via API — que o status combinado
+é `success`, `mergeable_state` é `clean` e não há review humano pendente.
+
+**O que não mudou:** todas as proibições absolutas continuam valendo —
+nunca merge com CI vermelho, nunca com conflito não resolvido, nunca
+bypass/`--admin` de proteção de branch, sempre confirmar `merged: true`
+via API antes de declarar sucesso. A mudança é só sobre quem aciona o
+merge quando o GitHub já reporta tudo limpo; a chamada continua sujeita a
+qualquer branch protection/ruleset real configurado no branch padrão — se
+o required check não tiver passado de verdade, o próprio GitHub recusa o
+merge.
+
+**Sobre a configuração do ruleset — ainda não confirmada por API:** o
+usuário reportou (durante a troca sobre o erro "This ruleset does not
+target any resources") ter configurado manualmente um ruleset no branch
+padrão exigindo o check `Vercel` antes de merge. Isso nunca foi
+confirmado de forma independente por nenhuma ferramenta MCP — o servidor
+MCP do GitHub conectado nesta sessão não expõe nenhuma tool de branch
+protection/ruleset/repository-settings (mesma limitação já documentada na
+seção acima). A única confirmação possível é comportamental: se uma PR
+futura, com o check `Vercel` ainda em andamento no momento do
+`enable_pr_auto_merge`, fizer o auto-merge realmente armar/esperar (em
+vez de retornar "already in clean status" imediatamente), isso confirma o
+ruleset ativo na prática. A PR #10 não serve como esse teste — o check já
+estava verde quando o agente chamou `enable_pr_auto_merge`. **Ainda não
+observado neste registro** — anotar aqui o resultado da próxima PR em que
+isso puder ser testado.
+
 ## Limitação real conhecida — deleção de branch remota pós-merge
 
 O passo 8 do fluxo acima ("deletar o branch de feature") **falha hoje via
