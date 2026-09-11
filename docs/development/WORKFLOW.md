@@ -233,9 +233,53 @@ futura, com o check `Vercel` ainda em andamento no momento do
 `enable_pr_auto_merge`, fizer o auto-merge realmente armar/esperar (em
 vez de retornar "already in clean status" imediatamente), isso confirma o
 ruleset ativo na prática. A PR #10 não serve como esse teste — o check já
-estava verde quando o agente chamou `enable_pr_auto_merge`. **Ainda não
-observado neste registro** — anotar aqui o resultado da próxima PR em que
-isso puder ser testado.
+estava verde quando o agente chamou `enable_pr_auto_merge`.
+
+**Atualização (PR #11, segundo caso — ainda inconclusivo):** esta própria
+PR (`docs/formalize-direct-merge-policy`, mudança só de documentação) foi
+o primeiro teste real do fluxo formalizado acima. `enable_pr_auto_merge`
+retornou de novo "already in clean status... merge directly" — o check
+`Vercel` já tinha terminado (`success`, "Deployment has completed") antes
+mesmo da chamada, provavelmente porque o build de um preview sem mudança
+de código é rápido. O agente confirmou via leitura fresca da API (status
+combinado `success`, `mergeable_state: clean`, `get_reviews` vazio, único
+comentário era o do `vercel[bot]`) e chamou `merge_pull_request`
+diretamente (`squash`, `expectedHeadSha` = head da PR). Confirmado depois
+via `pull_request_read`: `merged: true`, `merged_by: mzinhoww-svg`,
+`merged_at: 2026-09-11T12:07:36Z`, commit squash
+`3792ad65d2109f626a8d0ec84abbb55d801cd7d4`. **Ainda não é a confirmação
+comportamental do ruleset** (mesma situação da PR #10: o check já estava
+verde antes da chamada) — só confirma que o fluxo de merge direto em si
+funciona ponta a ponta. Achado extra: o branch remoto da PR #11 já não
+existia mais no momento da tentativa de deleção pós-merge — ver
+"Limitação real conhecida — deleção de branch remota pós-merge" abaixo,
+seção "Atualização (PR #11, comportamento mudou)".
+
+**Atualização (PR #12, confirmação comportamental real do ruleset):** a
+própria PR que registrava o adendo acima (`docs/record-pr11-merge-outcome`,
+#12) forneceu o teste que faltava. `enable_pr_auto_merge` chamado logo
+após abrir a PR (antes do preview da Vercel terminar) **não** retornou
+"already in clean status" desta vez — retornou um erro novo: `The pull
+request is in unstable status (required checks are failing). Fix the
+failing checks before enabling auto-merge.` Antes de assumir uma falha de
+verdade, o agente conferiu `pull_request_read` (`get_status` e `get`):
+o status do commit era `state: "pending"` (`context: "Vercel"`,
+`description: "Vercel is deploying your app"`) — não `failure` — e
+`mergeable_state: "unstable"`, que no GitHub significa "required status
+check ainda não terminou", não necessariamente falhou. A mensagem de erro
+da ferramenta MCP ("required checks are failing") é enganosa nesse caso:
+o check só estava pendente, ainda rodando. **Esta é a primeira
+confirmação comportamental real, nesta sessão, de que existe um required
+status check de verdade bloqueando merge no branch padrão** — nas PRs
+#10 e #11 o check já sempre estava verde antes da chamada de
+`enable_pr_auto_merge`, o que deixava em aberto se isso era por não haver
+gate nenhum ou só porque o check era rápido demais para pegar a tempo;
+agora está confirmado que é a segunda opção, e que o gate existe e
+funciona. Não fazia sentido chamar `enable_pr_auto_merge` de novo depois
+disso (o SDK já recusou uma vez) — o próximo passo é aguardar o webhook
+de CI (`subscribe_pr_activity`, já ativo nesta PR) confirmar sucesso do
+check e então seguir direto para o merge verificado
+(`merge_pull_request`), sem tentar re-armar o auto-merge.
 
 ## Limitação real conhecida — deleção de branch remota pós-merge
 
@@ -259,6 +303,23 @@ momento; o agente vai continuar tentando deletar localmente (branch local,
 que funciona via `git branch -d`) e reportando quando a deleção remota
 falhar, sem insistir/repetir a tentativa (ver `/root/.ccr/README.md`:
 "do not retry... report them instead").
+
+**Atualização (PR #11, comportamento mudou):** depois do merge direto da
+PR #11 (`docs/formalize-direct-merge-policy` → primeira PR mergeada sob a
+nova regra formalizada em "Merge direto autorizado" acima), `git push
+origin --delete docs/formalize-direct-merge-policy` retornou um erro
+diferente do HTTP 403 histórico: `remote ref does not exist` — confirmado
+via `git ls-remote --heads origin` que o branch remoto já não existia mais
+antes mesmo da tentativa de deleção. Ou seja, o branch já tinha sido
+deletado automaticamente pelo GitHub no momento do merge (provável opção
+"Automatically delete head branches" do repositório, possivelmente
+ativada pelo usuário na mesma janela em que configurou o ruleset). Isso
+não invalida o achado original (HTTP 403 nas PRs #1/#2) — só indica que a
+configuração do repositório mudou depois. **Continua sem ferramenta MCP
+para deletar branch diretamente**, mas na prática, a partir daqui, pode
+já não ser mais necessário tentar: vale checar com `git ls-remote
+--heads origin <branch>` antes de tentar deletar, em vez de assumir que
+vai falhar com 403.
 
 ## Vercel
 
