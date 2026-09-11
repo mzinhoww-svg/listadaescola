@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useActionState } from "react";
 import { Pencil, Plus } from "lucide-react";
 
 import { upsertEcommerceProductAction, type FormState } from "@/lib/admin/catalog-actions";
@@ -12,8 +11,7 @@ import { Drawer, DrawerTrigger, DrawerContent } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "@/components/auth/submit-button";
-import { useCloseOnActionSuccess } from "@/hooks/use-close-on-action-success";
+import { useDrawerFormAction } from "@/hooks/use-drawer-form-action";
 
 const initialState: FormState = {};
 
@@ -27,13 +25,18 @@ export function EcommerceProductFormDrawer({
   products: AdminProduct[];
 }) {
   const [open, setOpen] = React.useState(false);
-  const [state, formAction] = useActionState(upsertEcommerceProductAction, initialState);
-  useCloseOnActionSuccess(state, setOpen);
+  const { state, pending, handleSubmit, resetState } = useDrawerFormAction(upsertEcommerceProductAction, initialState, () => setOpen(false));
 
   const disabled = partners.length === 0 || products.length === 0;
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) resetState();
+      }}
+    >
       <DrawerTrigger asChild>
         {ecommerceProduct ? (
           <Button variant="ghost" size="icon" aria-label="Editar oferta">
@@ -47,7 +50,7 @@ export function EcommerceProductFormDrawer({
         )}
       </DrawerTrigger>
       <DrawerContent title={ecommerceProduct ? "Editar oferta" : "Nova oferta de parceiro"}>
-        <form action={formAction} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {ecommerceProduct && <input type="hidden" name="ecommerce_product_id" value={ecommerceProduct.id} />}
           <Select label="Parceiro" name="partner_id" defaultValue={ecommerceProduct?.partnerId ?? ""} required>
             <option value="" disabled>
@@ -92,7 +95,9 @@ export function EcommerceProductFormDrawer({
           )}
 
           <div className="flex justify-end">
-            <SubmitButton>{ecommerceProduct ? "Salvar" : "Criar oferta"}</SubmitButton>
+            <Button type="submit" loading={pending}>
+              {ecommerceProduct ? "Salvar" : "Criar oferta"}
+            </Button>
           </div>
         </form>
       </DrawerContent>
