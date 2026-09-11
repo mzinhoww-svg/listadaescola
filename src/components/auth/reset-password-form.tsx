@@ -21,6 +21,7 @@ export function ResetPasswordForm() {
         minLength={8}
         helperText="Mínimo de 8 caracteres."
         required
+        errorText={state?.fieldErrors?.password}
       />
       <Input
         label="Confirmar nova senha"
@@ -29,6 +30,7 @@ export function ResetPasswordForm() {
         autoComplete="new-password"
         minLength={8}
         required
+        errorText={state?.fieldErrors?.confirm_password}
       />
       {state?.error && (
         <p role="alert" className="text-sm text-danger-600">

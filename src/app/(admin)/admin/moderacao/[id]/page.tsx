@@ -58,7 +58,7 @@ export default async function ModerationDetailPage({ params }: { params: Promise
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Documento original</CardTitle>
+            <CardTitle as="h2">Documento original</CardTitle>
             <CardDescription>Anexado pelo autor da submissão</CardDescription>
           </CardHeader>
           <CardContent>
@@ -103,7 +103,7 @@ export default async function ModerationDetailPage({ params }: { params: Promise
 
         <Card>
           <CardHeader>
-            <CardTitle>Dados submetidos</CardTitle>
+            <CardTitle as="h2">Dados submetidos</CardTitle>
             <CardDescription>{submission.items.length} itens digitados pelo autor</CardDescription>
           </CardHeader>
           <CardContent>

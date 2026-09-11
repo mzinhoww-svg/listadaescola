@@ -59,6 +59,16 @@ export function SchoolPicker({ onSelect }: { onSelect: (school: SchoolSearchOpti
         </Button>
       </div>
 
+      {/* Dedicated, visually-hidden announcer -- a screen-reader user who
+       * clicks "Buscar" otherwise gets no indication results appeared,
+       * since nothing here moves focus and the visible list/EmptyState
+       * below isn't itself a live region. */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {pending && "Buscando escolas..."}
+        {!pending && results && results.length === 0 && "Nenhuma escola encontrada."}
+        {!pending && results && results.length > 0 && `${results.length} escola(s) encontrada(s).`}
+      </div>
+
       {pending && <LoadingState label="Buscando escolas..." />}
 
       {!pending && results && results.length === 0 && (

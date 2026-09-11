@@ -28,6 +28,7 @@ export function ResendVerificationForm({ defaultEmail }: { defaultEmail?: string
         autoComplete="email"
         defaultValue={defaultEmail}
         required
+        errorText={state?.fieldErrors?.email}
       />
       {state?.error && (
         <p role="alert" className="text-sm text-danger-600">

@@ -23,9 +23,16 @@ function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement
   );
 }
 
-function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  /** Real heading level for this title. Defaults to h3 (a Card is usually a
+   * subsection), but a page that uses a Card as its main/only content block
+   * needs h1 or h2 here to keep the document's heading hierarchy unbroken. */
+  as?: "h1" | "h2" | "h3" | "h4";
+}
+
+function CardTitle({ className, as: Heading = "h3", ...props }: CardTitleProps) {
   return (
-    <h3
+    <Heading
       className={cn("text-base font-semibold text-neutral-900", className)}
       {...props}
     />
@@ -36,7 +43,7 @@ function CardDescription({
   className,
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-sm text-neutral-500", className)} {...props} />;
+  return <p className={cn("text-sm text-neutral-600", className)} {...props} />;
 }
 
 function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

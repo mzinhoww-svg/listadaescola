@@ -34,7 +34,7 @@ export default async function AdminSchoolDetailPage({ params }: { params: Promis
 
       <Card>
         <CardHeader>
-          <CardTitle>Dados INEP (fonte oficial, somente leitura)</CardTitle>
+          <CardTitle as="h2">Dados INEP (fonte oficial, somente leitura)</CardTitle>
           <CardDescription>
             Atualizados apenas pela importação (Prompt 04) -- {school.source}. Endereço: {school.address ?? "não informado"}.
           </CardDescription>
@@ -43,7 +43,7 @@ export default async function AdminSchoolDetailPage({ params }: { params: Promis
 
       <Card>
         <CardHeader>
-          <CardTitle>Perfil editorial</CardTitle>
+          <CardTitle as="h2">Perfil editorial</CardTitle>
           <CardDescription>Contato, descrição, verificação e visibilidade -- controlados pelo admin.</CardDescription>
         </CardHeader>
         <CardContent>

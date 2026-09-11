@@ -45,12 +45,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-1">
-      <a
-        href="#conteudo-principal"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary-600 focus:px-4 focus:py-2 focus:text-white"
-      >
-        Pular para o conteúdo principal
-      </a>
+      {/* Root layout (src/app/layout.tsx) already renders a skip link to
+          this same #conteudo-principal target on every page -- a second
+          one here just makes a keyboard user tab through two identical
+          links before reaching content. */}
 
       <aside className="hidden w-60 shrink-0 flex-col gap-1 border-r border-neutral-800 bg-neutral-900 p-4 lg:flex">
         <Link href="/admin" className="mb-4 px-2 text-sm font-semibold text-white">

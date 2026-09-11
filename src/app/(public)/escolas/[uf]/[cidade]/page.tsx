@@ -98,6 +98,7 @@ export default async function CidadePage({ params, searchParams }: CidadePagePro
         <EmptyState title="Nenhuma escola encontrada" description="Ainda não há escolas ativas nesta cidade." />
       ) : (
         <>
+          <h2 className="sr-only">Resultados</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {result.schools.map((school) => (
               <SchoolCard key={school.id} school={school} />

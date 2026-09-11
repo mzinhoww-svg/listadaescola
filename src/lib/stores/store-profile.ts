@@ -86,7 +86,14 @@ export interface StoreListItem {
   address: string | null;
 }
 
-/** Papelarias index page + sitemap -- every active store in the given UF. */
+// Prompt 18 (performance audit): unbounded before -- see admin/lists.ts's
+// MAX_ROWS comment for the reasoning. Stores are admin-curated (not
+// bulk-imported like schools), so 500 has real headroom; the sitemap uses
+// its own paginated getAllActiveStoreEntries (sitemap-data.ts), not this
+// function, so capping this one doesn't touch sitemap completeness.
+const MAX_ROWS = 500;
+
+/** Papelarias index page -- every active store in the given UF. */
 export async function getActiveStores(uf: string): Promise<StoreListItem[]> {
   const supabase = createPublicClient();
   const { data, error } = await supabase
@@ -95,7 +102,8 @@ export async function getActiveStores(uf: string): Promise<StoreListItem[]> {
     .eq("uf", uf)
     .eq("is_active", true)
     .order("municipality", { ascending: true })
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .range(0, MAX_ROWS - 1);
 
   if (error) throw new Error(`getActiveStores failed: ${error.message}`);
   return data ?? [];

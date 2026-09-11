@@ -27,6 +27,12 @@ export interface AdminStoreSaleReport {
   updatedAt: string;
 }
 
+// Prompt 18 (performance audit): unbounded before -- see admin/lists.ts's
+// MAX_ROWS comment for the reasoning (same fix, same follow-up note). Sale
+// reports specifically accumulate forever with real usage, no archival --
+// the highest-growth-risk case in this batch.
+const MAX_ROWS = 200;
+
 export interface AdminPartnerSaleReport {
   id: string;
   partnerId: string;
@@ -63,7 +69,8 @@ export async function getStoreSaleReports(): Promise<AdminStoreSaleReport[]> {
     .select(
       "id, store_id, school_id, status, quoted_value, sale_value, notes, created_at, updated_at, stores(name), schools(name)"
     )
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(0, MAX_ROWS - 1);
   if (error) throw new Error(`getStoreSaleReports failed: ${error.message}`);
 
   return (data ?? []).map((row) => ({
@@ -86,7 +93,8 @@ export async function getPartnerSaleReports(): Promise<AdminPartnerSaleReport[]>
   const { data, error } = await supabase
     .from("partner_sale_reports")
     .select("id, partner_id, school_id, gross_value, commission_value, notes, created_at, ecommerce_partners(name), schools(name)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(0, MAX_ROWS - 1);
   if (error) throw new Error(`getPartnerSaleReports failed: ${error.message}`);
 
   return (data ?? []).map((row) => ({

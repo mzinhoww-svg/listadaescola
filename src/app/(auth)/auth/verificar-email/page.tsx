@@ -17,7 +17,7 @@ export default async function VerificarEmailPage({
     <Card>
       <CardHeader>
         <MailCheck className="size-8 text-primary-600" aria-hidden="true" />
-        <CardTitle>Verifique seu e-mail</CardTitle>
+        <CardTitle as="h1">Verifique seu e-mail</CardTitle>
         <CardDescription>
           {email ? (
             <>

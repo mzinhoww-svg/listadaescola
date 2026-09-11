@@ -46,7 +46,7 @@ export default async function SchoolSuggestionDetailPage({ params }: { params: P
 
       <Card>
         <CardHeader>
-          <CardTitle>Dados sugeridos</CardTitle>
+          <CardTitle as="h2">Dados sugeridos</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-3 text-sm sm:grid-cols-2">

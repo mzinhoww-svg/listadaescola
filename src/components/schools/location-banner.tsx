@@ -56,7 +56,7 @@ export function LocationBanner({ label, hasLocation }: LocationBannerProps) {
         <MapPin className="size-4 text-primary-600" aria-hidden="true" />
         Mostrando resultados perto de <strong className="font-medium">{label}</strong>
       </p>
-      <Button variant="ghost" size="sm" onClick={() => setChanging(true)}>
+      <Button variant="ghost" onClick={() => setChanging(true)}>
         <Pencil className="size-3.5" aria-hidden="true" />
         Trocar localização
       </Button>

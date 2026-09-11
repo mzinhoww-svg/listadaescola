@@ -11,6 +11,19 @@ import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 
+// Prompt 18 (performance audit) investigated switching this to ISR
+// (`export const revalidate = 3600`) since, unlike every other public
+// page, this one reads no searchParams/cookies/headers. Reverted after
+// live verification: Next.js's route-segment `revalidate` (this app's
+// caching model, no `cacheComponents` flag) only governs `fetch()`-based
+// requests -- confirmed live via Supabase edge_logs that the REST call
+// inside getStoreBySlug() still ran on every request regardless, so the
+// change was a silent no-op, not a real fix. The correct mechanism is
+// `unstable_cache()` wrapping getStoreBySlug() with `tags`, plus a
+// `revalidateTag()` call added to upsertStoreAction (admin/store-actions.ts)
+// so an admin's edit doesn't sit stale on the public page for the whole
+// window -- real work with real invalidation-correctness risk, not a
+// one-line change, so left as a follow-up rather than shipped half-done.
 // Same reasoning as every other Supabase-backed public page: never
 // statically prerendered.
 export const dynamic = "force-dynamic";
@@ -176,7 +189,7 @@ export default async function StorePage({ params }: StorePageProps) {
           <ul className="flex flex-col gap-2 text-sm text-neutral-700">
             {store.contacts.map((contact, index) => (
               <li key={index} className="flex items-center gap-2">
-                <span className="text-neutral-400">{contact.contactType}:</span> {contact.value}
+                <span className="text-neutral-600">{contact.contactType}:</span> {contact.value}
               </li>
             ))}
           </ul>

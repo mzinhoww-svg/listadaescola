@@ -26,6 +26,7 @@ export default async function EnviarListaPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <h1 className="text-xl font-semibold text-neutral-900">Enviar lista</h1>
       {drafts.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="text-base font-semibold text-neutral-900">Continuar envio</h2>

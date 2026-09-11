@@ -225,7 +225,7 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
             )}
             {school.school_contacts.map((contact) => (
               <li key={contact.id} className="flex items-center gap-2">
-                <span className="text-neutral-400">{contact.contact_type}:</span> {contact.value}
+                <span className="text-neutral-600">{contact.contact_type}:</span> {contact.value}
               </li>
             ))}
           </ul>

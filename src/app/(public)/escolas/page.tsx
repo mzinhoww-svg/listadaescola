@@ -117,7 +117,7 @@ export default async function EscolasPage({ searchParams }: EscolasPageProps) {
             />
           ) : (
             <>
-              <p className="mb-3 text-sm text-neutral-500">{result.totalCount} escolas encontradas</p>
+              <h2 className="mb-3 text-sm text-neutral-500">{result.totalCount} escolas encontradas</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 {result.schools.map((school) => (
                   <SchoolCard key={school.id} school={school} />

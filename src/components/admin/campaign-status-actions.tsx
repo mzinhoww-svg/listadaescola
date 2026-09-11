@@ -27,7 +27,7 @@ function StatusButton({ campaignId, status, label, variant }: {
 }
 
 export function CampaignStatusActions({ campaignId, status }: { campaignId: string; status: CampaignStatus }) {
-  if (status === "ENDED") return <span className="text-sm text-neutral-400">—</span>;
+  if (status === "ENDED") return <span className="text-sm text-neutral-600">—</span>;
 
   return (
     <div className="flex flex-wrap gap-2">

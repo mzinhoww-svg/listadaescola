@@ -56,19 +56,23 @@ export const getSubmissionModerationDetail = cache(
     if (error) throw new Error(`getSubmissionModerationDetail failed: ${error.message}`);
     if (!data) return null;
 
-    const attachments = await Promise.all(
-      data.submission_attachments.map(async (attachment) => {
-        const { data: signed } = await supabase.storage
-          .from("submissions")
-          .createSignedUrl(attachment.storage_path, 600);
-        return {
-          id: attachment.id,
-          fileName: attachment.file_name,
-          mimeType: attachment.mime_type,
-          signedUrl: signed?.signedUrl ?? null,
-        };
-      })
-    );
+    // Prompt 18 (performance audit): one createSignedUrl() round trip per
+    // attachment -> one batched createSignedUrls() call instead. Matched
+    // back by `path`, not array position, since that's what the SDK
+    // actually returns to key off of.
+    const storagePaths = data.submission_attachments.map((attachment) => attachment.storage_path);
+    const { data: signedUrlResults } =
+      storagePaths.length > 0
+        ? await supabase.storage.from("submissions").createSignedUrls(storagePaths, 600)
+        : { data: [] };
+    const signedUrlByPath = new Map((signedUrlResults ?? []).map((entry) => [entry.path, entry.signedUrl]));
+
+    const attachments = data.submission_attachments.map((attachment) => ({
+      id: attachment.id,
+      fileName: attachment.file_name,
+      mimeType: attachment.mime_type,
+      signedUrl: signedUrlByPath.get(attachment.storage_path) ?? null,
+    }));
 
     return {
       id: data.id,

@@ -15,6 +15,10 @@ export interface AdminCampaign {
   status: CampaignStatus;
 }
 
+// Prompt 18 (performance audit): unbounded before -- see admin/lists.ts's
+// MAX_ROWS comment for the reasoning (same fix, same follow-up note).
+const MAX_ROWS = 200;
+
 /**
  * campaigns.entity_id is polymorphic (SCHOOL or STORE, no FK possible
  * across two tables) -- resolved here with two batched lookups instead
@@ -26,7 +30,8 @@ export async function getAdminCampaigns(): Promise<AdminCampaign[]> {
   const { data: campaigns, error } = await supabase
     .from("campaigns")
     .select("id, entity_type, entity_id, starts_at, ends_at, priority, status")
-    .order("starts_at", { ascending: false });
+    .order("starts_at", { ascending: false })
+    .range(0, MAX_ROWS - 1);
 
   if (error) throw new Error(`getAdminCampaigns failed: ${error.message}`);
   if (!campaigns || campaigns.length === 0) return [];
