@@ -1441,6 +1441,10 @@ export type Database = {
       }
       is_staff: { Args: never; Returns: boolean }
       is_store_manager: { Args: { target_store_id: string }; Returns: boolean }
+      mark_submission_under_review: {
+        Args: { p_submission_id: string }
+        Returns: undefined
+      }
       merge_inep_staging: {
         Args: {
           p_lat_max?: number
