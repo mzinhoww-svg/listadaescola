@@ -12,6 +12,7 @@ import { getOffersByListItemId } from "@/lib/commerce/offers";
 import { SaveButton } from "@/components/favorites/save-button";
 import { ShareButton } from "@/components/lists/share-button";
 import { PartnerOfferButton } from "@/components/commerce/partner-offer-button";
+import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { Badge } from "@/components/ui/badge";
 
 // Same reasoning as Home/perfil da escola: data depends on Supabase at
@@ -168,6 +169,14 @@ export default async function ListPage({ params }: ListPageProps) {
           </div>
         </section>
       )}
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-neutral-900">Comprar local</h2>
+        <p className="mb-4 text-sm text-neutral-500">
+          Peça orçamento em papelarias próximas da escola direto pelo WhatsApp.
+        </p>
+        <NearbyStoresSheet schoolId={list.school.id} listId={list.id} />
+      </section>
     </div>
   );
 }
