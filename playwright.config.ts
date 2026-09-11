@@ -26,10 +26,22 @@ export default defineConfig({
   retries: 0,
   reporter: "list",
   timeout: 30_000,
+  // Default (5s) is too tight against `next dev`'s cold-compile-on-first-
+  // request for a route no earlier test in the run has hit yet.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
+    // Unset by default -- Playwright resolves its own managed browser
+    // normally (`npx playwright install`). Only set this when the
+    // installed @playwright/test version's expected browser revision
+    // doesn't match what's already on disk (e.g. a sandboxed CI image
+    // with a pre-baked Chromium at a fixed path) and downloading a new
+    // one isn't an option.
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+      : {},
   },
   projects: [
     {
