@@ -58,20 +58,30 @@ O contrato original foi escrito assumindo a CLI `gh`. Neste ambiente de execuç�
 | `git status --short --branch`, `git fetch`, `git switch -c`, `git add`, `git commit`, `git push` | Iguais — `git` está disponível normalmente. |
 | `gh pr create --base main --head <branch> --title ... --body-file ...` | `mcp__github__create_pull_request` |
 | `gh pr checks <pr-number> --watch` | Não há um "watch" bloqueante equivalente. Usar `subscribe_pr_activity` (recebe eventos de CI/review como wake da sessão) e/ou `mcp__github__pull_request_read` / `get_check_run` para consultar status pontualmente. |
-| `gh pr merge <pr-number> --auto --squash --delete-branch` | `mcp__github__enable_pr_auto_merge` (habilita auto-merge nativo do GitHub na PR; o merge real só acontece quando o GitHub decidir que os requisitos foram satisfeitos). Deleção de branch pós-merge é feita via git normal (`push --delete` ou API), não é automática pela ferramenta. |
+| `gh pr merge <pr-number> --auto --squash --delete-branch` | `mcp__github__enable_pr_auto_merge` primeiro (deixa o GitHub mergear sozinho quando os required status checks configurados no branch padrão passarem); se retornar "already in clean status... merge directly" (nada pendente para o auto-merge esperar), `mcp__github__merge_pull_request` com `merge_method: "squash"` — ver "Regra de merge" abaixo para as condições exigidas antes dessa chamada. Deleção de branch pós-merge é feita via git normal (`push --delete` ou API), não é automática pela ferramenta. |
 | `gh pr merge <pr-number> --admin` | **Não existe equivalente e não deve ser usado/buscado.** Proibido pelo próprio contrato. |
 
 Não há CLI `supabase` instalada neste ambiente; operações de banco usam as ferramentas MCP `mcp__Supabase__*`.
 
-## Regra de merge (auto-merge nativo do GitHub, não decisão unilateral do agente)
+## Regra de merge (auto-merge nativo do GitHub primeiro; merge direto autorizado como segunda etapa)
 
-O agente **não** decide "critérios batem, vou rodar o comando de merge". Em vez disso:
+**Atualizado em 2026-09-11, a pedido explícito do usuário** (ver
+`docs/development/WORKFLOW.md`, seção "Merge direto autorizado", para o
+histórico completo da decisão). Substitui a regra original ("o agente
+nunca decide mergear, só o GitHub") deste mesmo documento — aquela regra
+existia porque não havia nenhum gate real configurado; agora existe.
 
 1. Depois de abrir a PR e validar localmente (lint/typecheck/test/build), o agente solicita auto-merge via `mcp__github__enable_pr_auto_merge`.
-2. O GitHub é quem decide quando o merge de fato acontece — só dispara quando os required status checks (quando configurados) passam e as regras de proteção de branch (quando configuradas) são satisfeitas.
-3. O agente nunca reporta "merge concluído" sem checar o estado real da PR via API depois.
+2. Se o GitHub tiver algo pendente para esperar (required status check ainda rodando), o auto-merge nativo dispara sozinho quando esse check passar — o agente não precisa fazer mais nada além de acompanhar.
+3. Se a chamada retornar "already in clean status... merge directly" (nada pendente — o caso mais comum neste repositório, já que o único check é o build do Vercel, normalmente rápido), o agente confirma, com uma leitura fresca via API imediatamente antes de mergear, que:
+   - o status combinado da PR é `success` (Vercel verde);
+   - `mergeable_state` é `clean` (sem conflito);
+   - não há comentário de review humano pendente/não endereçado.
+   Se as três condições valerem, o agente chama `mcp__github__merge_pull_request` (`merge_method: "squash"`, mesmo método já usado em todas as PRs deste projeto) diretamente — sem perguntar de novo a cada PR. Isso não é bypass: a chamada de merge continua sujeita a qualquer branch protection/ruleset configurado no branch padrão (se o required status check não tiver passado de verdade, o próprio GitHub recusa o merge).
+4. O agente nunca reporta "merge concluído" sem checar o estado real (`merged: true`) via `pull_request_read` depois — continua proibido declarar sucesso só pela resposta da própria chamada de merge.
+5. Continuam absolutas as proibições já existentes: nunca mergear com CI vermelho, nunca mergear com conflito não resolvido, nunca usar `--admin`/bypass de proteção de branch para forçar um merge que o GitHub recusaria de outra forma, nunca pular a confirmação via API.
 
-**Pré-requisito que ainda não existe neste repositório:** auto-merge nativo do GitHub só é uma trava real se existir (a) a opção "Allow auto-merge" habilitada nas configurações do repositório e (b) branch protection/ruleset com required status checks configurados no branch padrão. Nenhum dos dois está configurado hoje, e nenhuma ferramenta MCP disponível nesta sessão permite configurá-los (não há tool de branch protection/ruleset/repository-settings no servidor MCP do GitHub conectado — apenas `enable_pr_auto_merge`/`disable_pr_auto_merge` em nível de PR). Ver `docs/development/WORKFLOW.md` para o status atual e os passos manuais necessários.
+**Sobre branch protection/required status checks:** o usuário configurou manualmente um ruleset no branch padrão (`claude/eager-galileo-d8hdtc`) exigindo o check `Vercel` antes de merge — nenhuma ferramenta MCP disponível nesta sessão permite ler ou configurar isso diretamente (não há tool de branch protection/ruleset/repository-settings no servidor MCP do GitHub conectado), então essa configuração nunca foi verificada por uma chamada de API, só reportada pelo usuário. O comportamento observado nas próximas PRs (auto-merge realmente esperando o check em vez de retornar "already in clean status" imediatamente) é a confirmação prática — ver WORKFLOW.md para o registro de cada caso real.
 
 ## Requisitos mínimos de PR
 
