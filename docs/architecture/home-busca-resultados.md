@@ -134,14 +134,24 @@ essas seções** em vez de mostrar um "sem destaques ainda" ou, pior, uma
 amostra arbitrária disfarçada de curadoria. Vai aparecer sozinho assim
 que Prompt 11/12/13 (moderação, admin, patrocínio) gerarem conteúdo real.
 
-## Performance: Home é ISR, Resultados é sempre dinâmica
+## Performance: Home e Resultados são sempre dinâmicas
 
-`/` declara `export const revalidate = 300` — sem isso, `next build`
-gerava a Home como página 100% estática (as queries de destaques/listas
-rodam em build time, ficando presas até o próximo deploy). Com ISR de 5
-minutos, mantém o benefício de CDN/SEO da página estática mas atualiza
-periodicamente. `/escolas` já nasce dinâmica (Next.js detecta o uso de
-`searchParams` automaticamente) — cada combinação de filtro é uma URL
+`/` declara `export const dynamic = "force-dynamic"`. Descoberto durante
+o deploy deste PR: sem isso, `next build` gera a Home como página 100%
+estática, o que roda `getFeaturedSchools()`/`getRecentLists()` **durante
+o próprio build** — a primeira página deste projeto cujo build passa a
+depender do Supabase estar acessível *em build time*, não só em request
+time (toda página anterior só chama Supabase quando alguém de fato
+acessa a rota). Isso quebrou o deploy de preview do Vercel (build
+`failure` — nenhuma página anterior tinha esse tipo de dependência para
+revelar o problema antes). `force-dynamic` renderiza a Home a cada
+request, igual toda outra página do projeto que depende de dado real —
+mesmo HTML final, mesmo requisito de SEO (princípio 8) atendido, só que
+gerado por request em vez de preso no momento do build. ISR (`revalidate`)
+ficaria bem aqui de novo assim que houver confirmação de que builds no
+Vercel sempre têm acesso ao Supabase — não descartado, só adiado.
+`/escolas` já nasce dinâmica (Next.js detecta o uso de `searchParams`
+automaticamente) — cada combinação de filtro é uma URL
 renderizada no servidor, nunca client-only.
 
 ## Testado
