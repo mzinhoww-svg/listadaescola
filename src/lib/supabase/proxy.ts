@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 
 import type { Database } from "@/lib/supabase/database.types";
 import { getSafeRedirect } from "@/lib/safe-redirect";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 /** Route prefixes that require an authenticated user. Role-specific checks
  * (e.g. admin) happen server-side in that area's own layout, backed by a
@@ -21,10 +22,11 @@ function isProtected(pathname: string) {
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const { url, anonKey } = getSupabaseEnv();
 
   const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {

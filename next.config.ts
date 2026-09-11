@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prompt 19 (produção): removes the `X-Powered-By: Next.js` response
+  // header (confirmed present via curl before this change) -- no
+  // functional value to a real visitor, just tells an attacker which
+  // framework/version to target.
+  poweredByHeader: false,
   /**
    * Prompt 17 (E2E tests) finding: Next.js's own platform-level request
    * body cap defaults to ~10MB and truncates the multipart body BEFORE

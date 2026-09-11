@@ -347,6 +347,20 @@ vai falhar com 403.
   (`get_project_deployment_protection`, `get_web_analytics`, etc.) mas
   ainda não foram usadas/necessárias — a integração até agora é 100%
   automática via GitHub App, sem intervenção do agente.
+- **Confirmado (Prompt 19): as ferramentas `mcp__Vercel__*` desta sessão
+  não enxergam este projeto.** `get_git_deployment_context` retorna só o
+  time `mzinhoww-gmailcoms-projects` (projetos: theloyal, teste,
+  milhasbot-modern, mentormatch, cia-do-visto-landing) — nenhum deles é
+  `listadaescola`, cujo projeto Vercel real vive no time
+  `mazinhoww-5476s-projects`. A sessão está autenticada numa conta/time
+  Vercel diferente do que hospeda este repositório; nenhuma leitura
+  (nem escrita) de env vars/domains/deployments deste projeto específico
+  é possível via essas ferramentas hoje. A integração continua 100%
+  automática via GitHub App (webhook de deploy + commit status), o que
+  não depende dessas ferramentas — só confirmação/config manual (ex.:
+  quais env vars estão setadas) que exigiria o dashboard real.
+  Ver `docs/architecture/producao.md` para o levantamento completo do
+  que ficou bloqueado por esse motivo.
 
 ## Supabase
 
