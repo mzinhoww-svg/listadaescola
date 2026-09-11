@@ -3,6 +3,7 @@
 import { unstable_cache } from "next/cache";
 
 import { createPublicClient } from "@/lib/supabase/public";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { resolveCep } from "./cep";
 import { matchMunicipality } from "./municipality";
 import { searchPlace } from "./nominatim";
@@ -44,15 +45,20 @@ export async function resolveLocationByTextAction(
   const input = rawInput.trim();
   if (!input) return unresolvedLocation(rawInput);
 
+  let resolved: ResolvedLocation;
   if (looksLikeCep(input)) {
-    return resolveCep(input);
+    resolved = await resolveCep(input);
+  } else {
+    const known = await getKnownMunicipalities(uf);
+    resolved = matchMunicipality(input, known, uf) ?? (await searchPlace(`${input}, ${uf}, Brasil`));
   }
 
-  const known = await getKnownMunicipalities(uf);
-  const municipalityMatch = matchMunicipality(input, known, uf);
-  if (municipalityMatch) return municipalityMatch;
+  void recordAnalyticsEvent({
+    eventType: "location_search",
+    metadata: { query: input, uf, source: resolved.source },
+  });
 
-  return searchPlace(`${input}, ${uf}, Brasil`);
+  return resolved;
 }
 
 /**
@@ -70,6 +76,11 @@ export async function resolveLocationByCoordsAction(lat: number, lon: number): P
   const supabase = createPublicClient();
   const { data } = await supabase.rpc("nearby_schools", { p_lat: lat, p_lon: lon, p_limit: 1 });
   const nearest = data?.[0];
+
+  void recordAnalyticsEvent({
+    eventType: "location_detected",
+    metadata: { municipality: nearest?.municipality ?? null },
+  });
 
   return {
     source: "coords",

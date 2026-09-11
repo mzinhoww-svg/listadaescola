@@ -34,6 +34,7 @@ mode não foi implementado — fora do escopo pedido nesta etapa.
 |---|---|---|
 | `Button` | própria + `Slot` (asChild) | variantes primary/secondary/outline/ghost/danger; `loading` |
 | `Input` | própria | label obrigatório, `helperText`/`errorText`, aria-describedby |
+| `Select` | própria (`<select>` nativo) | label obrigatório; acessível por padrão, sem dependência extra (Prompt 06) |
 | `Card` | própria | `CardHeader/Title/Description/Content/Footer` |
 | `Badge` | própria | variantes por estado (`success`/`warning`/... /`sponsored`) |
 | `Modal` | Radix Dialog | diálogo central, foco preso, Escape/overlay fecham |

@@ -1478,6 +1478,18 @@ export type Database = {
           uf: string
         }[]
       }
+      record_analytics_event: {
+        Args: {
+          p_event_type: string
+          p_list_id?: string
+          p_metadata?: Json
+          p_partner_id?: string
+          p_school_id?: string
+          p_session_id?: string
+          p_store_id?: string
+        }
+        Returns: undefined
+      }
       reject_submission: {
         Args: { p_reason: string; p_submission_id: string }
         Returns: undefined
@@ -1485,6 +1497,45 @@ export type Database = {
       request_submission_correction: {
         Args: { p_notes: string; p_submission_id: string }
         Returns: undefined
+      }
+      search_schools: {
+        Args: {
+          p_cep?: string
+          p_education_level?: string
+          p_lat?: number
+          p_limit?: number
+          p_lon?: number
+          p_min_rating?: number
+          p_municipality?: string
+          p_name_query?: string
+          p_offset?: number
+          p_radius_km?: number
+          p_school_type?: Database["public"]["Enums"]["school_type"]
+          p_sort?: string
+          p_uf?: string
+        }
+        Returns: {
+          address: string
+          avg_rating: number
+          distance_km: number
+          favorite_count: number
+          id: string
+          inep_code: string
+          is_sponsored: boolean
+          is_verified: boolean
+          latitude: number
+          list_count: number
+          location_type: Database["public"]["Enums"]["location_type"]
+          longitude: number
+          municipality: string
+          name: string
+          relevance_score: number
+          review_count: number
+          school_type: Database["public"]["Enums"]["school_type"]
+          slug: string
+          total_count: number
+          uf: string
+        }[]
       }
       slugify: { Args: { input: string }; Returns: string }
     }
