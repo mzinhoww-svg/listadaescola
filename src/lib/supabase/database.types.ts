@@ -1478,6 +1478,30 @@ export type Database = {
           uf: string
         }[]
       }
+      nearby_stores: {
+        Args: {
+          p_lat?: number
+          p_limit?: number
+          p_lon?: number
+          p_municipality?: string
+          p_offset?: number
+          p_radius_km?: number
+          p_uf?: string
+        }
+        Returns: {
+          address: string
+          distance_km: number
+          id: string
+          municipality: string
+          name: string
+          offers_delivery: boolean
+          offers_pickup: boolean
+          opening_hours: string
+          slug: string
+          uf: string
+          whatsapp: string
+        }[]
+      }
       record_analytics_event: {
         Args: {
           p_event_type: string
