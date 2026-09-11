@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
-  getModerationQueue,
-  QUEUE_DEFAULT_STATUSES,
-  QUEUE_FILTERABLE_STATUSES,
-  type ModerationStatus,
-} from "@/lib/moderation/queue";
+  getSchoolSuggestionQueue,
+  SUGGESTION_QUEUE_DEFAULT_STATUSES,
+  SUGGESTION_QUEUE_FILTERABLE_STATUSES,
+  type SuggestionStatus,
+} from "@/lib/admin/school-suggestions";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Moderação" };
+export const metadata: Metadata = { title: "Sugestões de escola" };
 
-const STATUS_LABEL: Record<ModerationStatus, string> = {
+const STATUS_LABEL: Record<SuggestionStatus, string> = {
   DRAFT: "Rascunho",
   SUBMITTED: "Enviada",
   UNDER_REVIEW: "Em revisão",
@@ -24,7 +24,7 @@ const STATUS_LABEL: Record<ModerationStatus, string> = {
   ARCHIVED: "Arquivada",
 };
 
-const STATUS_BADGE: Record<ModerationStatus, BadgeProps["variant"]> = {
+const STATUS_BADGE: Record<SuggestionStatus, BadgeProps["variant"]> = {
   DRAFT: "neutral",
   SUBMITTED: "info",
   UNDER_REVIEW: "warning",
@@ -34,55 +34,47 @@ const STATUS_BADGE: Record<ModerationStatus, BadgeProps["variant"]> = {
   ARCHIVED: "neutral",
 };
 
-function daysAgo(isoDate: string): string {
-  const days = Math.floor((Date.now() - new Date(isoDate).getTime()) / (1000 * 60 * 60 * 24));
-  if (days <= 0) return "hoje";
-  if (days === 1) return "há 1 dia";
-  return `há ${days} dias`;
-}
-
-export default async function ModerationQueuePage({
+export default async function SchoolSuggestionQueuePage({
   searchParams,
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status: statusParam } = await searchParams;
   const activeStatus =
-    statusParam && (QUEUE_FILTERABLE_STATUSES as readonly string[]).includes(statusParam)
-      ? (statusParam as ModerationStatus)
+    statusParam && (SUGGESTION_QUEUE_FILTERABLE_STATUSES as readonly string[]).includes(statusParam)
+      ? (statusParam as SuggestionStatus)
       : null;
 
-  const statuses = activeStatus ? [activeStatus] : QUEUE_DEFAULT_STATUSES;
-  const queue = await getModerationQueue(statuses);
+  const statuses = activeStatus ? [activeStatus] : SUGGESTION_QUEUE_DEFAULT_STATUSES;
+  const queue = await getSchoolSuggestionQueue(statuses);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold text-neutral-900">Moderação</h1>
-          <Link href="/admin/moderacao/sugestoes" className="text-sm font-medium text-primary-700 hover:underline">
-            Sugestões de escola →
-          </Link>
-        </div>
+        <Link href="/admin/moderacao" className="text-sm text-neutral-500 hover:text-neutral-700">
+          ← Fila de listas
+        </Link>
+        <h1 className="text-2xl font-semibold text-neutral-900">Sugestões de escola</h1>
         <p className="text-sm text-neutral-500">
-          Fila ordenada pelas mais antigas primeiro -- é a submissão esperando há mais tempo, não a &ldquo;mais urgente&rdquo;.
+          Aprovar aqui só marca a sugestão como revisada -- criar a escola de verdade (com código INEP) continua manual
+          (PRD RF-008: sugestão nunca cria registro oficial diretamente).
         </p>
       </div>
 
       <nav aria-label="Filtrar por status" className="flex flex-wrap gap-2">
         <Link
-          href="/admin/moderacao"
+          href="/admin/moderacao/sugestoes"
           className={cn(
             "rounded-lg px-3 py-1.5 text-sm font-medium",
             !activeStatus ? "bg-primary-600 text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
           )}
         >
-          Fila (pendentes)
+          Pendentes
         </Link>
-        {QUEUE_FILTERABLE_STATUSES.filter((s) => !QUEUE_DEFAULT_STATUSES.includes(s)).map((status) => (
+        {SUGGESTION_QUEUE_FILTERABLE_STATUSES.filter((s) => !SUGGESTION_QUEUE_DEFAULT_STATUSES.includes(s)).map((status) => (
           <Link
             key={status}
-            href={`/admin/moderacao?status=${status}`}
+            href={`/admin/moderacao/sugestoes?status=${status}`}
             className={cn(
               "rounded-lg px-3 py-1.5 text-sm font-medium",
               activeStatus === status ? "bg-primary-600 text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -94,18 +86,16 @@ export default async function ModerationQueuePage({
       </nav>
 
       {queue.length === 0 ? (
-        <EmptyState title="Nada por aqui" description="Nenhuma submissão neste filtro." />
+        <EmptyState title="Nada por aqui" description="Nenhuma sugestão neste filtro." />
       ) : (
         <Table>
-          <TableCaption>Fila de moderação de listas escolares</TableCaption>
+          <TableCaption>Fila de sugestões de escola</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Status</TableHead>
-              <TableHead>Escola</TableHead>
+              <TableHead>Nome sugerido</TableHead>
               <TableHead>Cidade</TableHead>
-              <TableHead>Série/Ano</TableHead>
-              <TableHead>Enviado por</TableHead>
-              <TableHead>Data</TableHead>
+              <TableHead>Sugerido por</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -115,16 +105,14 @@ export default async function ModerationQueuePage({
                   <Badge variant={STATUS_BADGE[item.status]}>{STATUS_LABEL[item.status]}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/admin/moderacao/${item.id}`} className="font-medium text-primary-700 hover:underline">
-                    {item.school.name}
+                  <Link href={`/admin/moderacao/sugestoes/${item.id}`} className="font-medium text-primary-700 hover:underline">
+                    {item.name}
                   </Link>
                 </TableCell>
-                <TableCell>{item.school.municipality}</TableCell>
                 <TableCell>
-                  {item.seriesName} · {item.schoolYear}
+                  {item.municipality}/{item.uf}
                 </TableCell>
-                <TableCell>{item.submittedBy.fullName ?? "—"}</TableCell>
-                <TableCell>{daysAgo(item.createdAt)}</TableCell>
+                <TableCell>{item.suggestedBy.fullName ?? "—"}</TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -13,6 +13,7 @@ const navItems = [
   { label: "Moderação", href: "/admin/moderacao" },
   { label: "Papelarias", href: "/admin/papelarias" },
   { label: "Parceiros", href: "/admin/ecommerce" },
+  { label: "Catálogo", href: "/admin/catalogo" },
   { label: "Patrocínios", href: "/admin/patrocinios" },
 ];
 

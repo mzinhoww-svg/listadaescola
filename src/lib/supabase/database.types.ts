@@ -1023,6 +1023,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           school_type: Database["public"]["Enums"]["school_type"] | null
@@ -1038,6 +1039,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           school_type?: Database["public"]["Enums"]["school_type"] | null
@@ -1053,6 +1055,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           school_type?: Database["public"]["Enums"]["school_type"] | null
@@ -1424,6 +1427,75 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_school_list_status: {
+        Args: { p_school_list_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_update_school: {
+        Args: {
+          p_description: string
+          p_instagram: string
+          p_is_active: boolean
+          p_is_verified: boolean
+          p_logo_url: string
+          p_school_id: string
+          p_website: string
+          p_whatsapp: string
+        }
+        Returns: undefined
+      }
+      admin_upsert_ecommerce_partner: {
+        Args: {
+          p_integration_type: string
+          p_is_active: boolean
+          p_logo_url: string
+          p_name: string
+          p_partner_id: string
+          p_website: string
+        }
+        Returns: string
+      }
+      admin_upsert_ecommerce_product: {
+        Args: {
+          p_ecommerce_product_id: string
+          p_external_url: string
+          p_is_active: boolean
+          p_partner_id: string
+          p_price_hint: number
+          p_product_id: string
+        }
+        Returns: string
+      }
+      admin_upsert_product: {
+        Args: {
+          p_brand: string
+          p_category: string
+          p_name: string
+          p_product_id: string
+        }
+        Returns: string
+      }
+      admin_upsert_store: {
+        Args: {
+          p_address: string
+          p_is_active: boolean
+          p_latitude: number
+          p_longitude: number
+          p_municipality: string
+          p_name: string
+          p_offers_delivery: boolean
+          p_offers_pickup: boolean
+          p_opening_hours: string
+          p_store_id: string
+          p_uf: string
+          p_whatsapp: string
+        }
+        Returns: string
+      }
+      approve_school_suggestion: {
+        Args: { p_suggestion_id: string }
+        Returns: undefined
+      }
       approve_submission: { Args: { p_submission_id: string }; Returns: string }
       inep_reconstruct_coordinate: {
         Args: {
@@ -1518,6 +1590,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      reject_school_suggestion: {
+        Args: { p_reason: string; p_suggestion_id: string }
+        Returns: undefined
+      }
       reject_submission: {
         Args: { p_reason: string; p_submission_id: string }
         Returns: undefined
@@ -1566,6 +1642,10 @@ export type Database = {
         }[]
       }
       slugify: { Args: { input: string }; Returns: string }
+      unique_slug: {
+        Args: { p_base: string; p_exclude_id?: string; p_table: string }
+        Returns: string
+      }
     }
     Enums: {
       campaign_entity_type: "SCHOOL" | "STORE"

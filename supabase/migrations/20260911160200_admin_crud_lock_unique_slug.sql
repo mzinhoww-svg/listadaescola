@@ -1,0 +1,14 @@
+-- Small follow-up to 20260911160100_admin_crud_fix_anon_grant.sql, same
+-- session: unique_slug was meant to be a fully internal helper (its own
+-- header comment in 20260911160000_admin_crud.sql says so), but the
+-- project's default-privilege grant to `authenticated` (the sibling of
+-- the anon one just fixed) meant it was still directly callable via
+-- /rest/v1/rpc/unique_slug by any signed-in user -- confirmed via
+-- get_advisors(security), authenticated_security_definer_function_executable.
+-- Not a data-exposure path (p_table is safely identifier-quoted via
+-- format %I, no injection), but it does let a caller probe whether an
+-- arbitrary public table has slug/id columns via the error message, which
+-- was never the intent -- this function only exists to be called from
+-- inside the other SECURITY DEFINER admin functions in this file, which
+-- run as their owner regardless of grants on functions they call.
+revoke execute on function public.unique_slug(text, text, uuid) from authenticated;
