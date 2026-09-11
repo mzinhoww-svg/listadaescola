@@ -7,10 +7,15 @@ import { SchoolCard } from "@/components/schools/school-card";
 import { Button } from "@/components/ui/button";
 import { getFeaturedSchools, getRecentLists } from "@/lib/schools/home-queries";
 
-// Destaques/listas recentes change when admin/moderation approves new
-// content, not on every request -- ISR keeps Home on the CDN/static path
-// (PRD principle 8, SEO) while still refreshing every 5 minutes.
-export const revalidate = 300;
+// Rendered per-request (like every other data-driven page in this
+// project) rather than statically generated: a static/ISR Home would run
+// getFeaturedSchools()/getRecentLists() during `next build` itself,
+// making a successful Vercel deployment depend on Supabase being
+// reachable *at build time* -- a real, first-time failure mode this
+// page introduced (every prior page's Supabase calls only ever ran at
+// request time). Same PRD SEO requirement (principle 8) is met either
+// way: the rendered HTML is identical, just generated per-request.
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [featuredSchools, recentLists] = await Promise.all([getFeaturedSchools(), getRecentLists()]);
