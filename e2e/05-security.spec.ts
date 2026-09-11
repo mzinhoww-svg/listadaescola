@@ -26,7 +26,7 @@ test("IDOR: usuário B não acessa submissão do usuário A por id direto", asyn
 test("IDOR público: lista não aprovada/publicada -> 404, não conteúdo", async ({ page }) => {
   const response = await page.goto("/listas/e2e-p17-nao-existe-nunca-foi-criada");
   expect(response?.status()).toBe(404);
-  await expect(page.getByText("This page could not be found.")).toBeVisible();
+  await expect(page.getByText("Página não encontrada")).toBeVisible();
 });
 
 test("RBAC: visitante anônimo em /admin é redirecionado para login", async ({ page }) => {
