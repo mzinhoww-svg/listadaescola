@@ -8,8 +8,10 @@ import { schoolHref } from "@/components/schools/school-card";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isFavorited } from "@/lib/favorites/queries";
+import { getOffersByListItemId } from "@/lib/commerce/offers";
 import { SaveButton } from "@/components/favorites/save-button";
 import { ShareButton } from "@/components/lists/share-button";
+import { PartnerOfferButton } from "@/components/commerce/partner-offer-button";
 import { Badge } from "@/components/ui/badge";
 
 // Same reasoning as Home/perfil da escola: data depends on Supabase at
@@ -41,9 +43,13 @@ export default async function ListPage({ params }: ListPageProps) {
   const list = await getListBySlug(slug);
   if (!list) notFound();
 
-  const user = await getCurrentUser();
+  const [user, offersByItem] = await Promise.all([
+    getCurrentUser(),
+    getOffersByListItemId(list.items.map((item) => item.id)),
+  ]);
   const favorited = user ? await isFavorited("LIST", list.id) : false;
   const path = `/listas/${list.slug}`;
+  const itemsWithOffers = list.items.filter((item) => (offersByItem.get(item.id)?.length ?? 0) > 0);
 
   // Best-effort (RF-015): never blocks or fails the page render.
   void recordAnalyticsEvent({ eventType: "list_view", schoolId: list.school.id, listId: list.id });
@@ -134,6 +140,34 @@ export default async function ListPage({ params }: ListPageProps) {
           ))}
         </ul>
       </section>
+
+      {itemsWithOffers.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold text-neutral-900">Comprar online</h2>
+          <p className="mb-4 text-sm text-neutral-500">
+            Você será redirecionado para o site do parceiro para continuar a compra — o Listada não processa
+            pagamentos.
+          </p>
+          <div className="flex flex-col gap-4">
+            {itemsWithOffers.map((item) => (
+              <div key={item.id}>
+                <p className="mb-2 text-sm font-medium text-neutral-700">{item.name}</p>
+                <div className="flex flex-wrap gap-2">
+                  {offersByItem.get(item.id)!.map((offer) => (
+                    <PartnerOfferButton
+                      key={offer.ecommerceProductId}
+                      offer={offer}
+                      schoolListItemId={item.id}
+                      schoolId={list.school.id}
+                      listId={list.id}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
