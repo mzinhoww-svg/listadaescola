@@ -1,26 +1,22 @@
 import type { Metadata } from "next";
 
-import { ScaffoldNotice } from "@/components/dev/scaffold-notice";
+import { SuggestSchoolForm } from "@/components/contributions/suggest-school-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Sugerir escola" };
 
 export default function SugerirEscolaPage() {
   return (
-    <>
-      <ScaffoldNotice promptRef="Prompt 10 — wizard de contribuição de lista (sugestão de escola)" />
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados da escola</CardTitle>
-          <CardDescription>Etapa 1 de 4 · Dados → Endereço → Contato → Revisão</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Input label="Nome da escola" placeholder="Como a escola é conhecida" />
-          <Button className="self-start">Continuar</Button>
-        </CardContent>
-      </Card>
-    </>
+    <Card>
+      <CardHeader>
+        <CardTitle>Sugerir uma escola</CardTitle>
+        <CardDescription>
+          Não encontrou a escola na nossa base? Conte pra gente e nossa equipe avalia a inclusão.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <SuggestSchoolForm />
+      </CardContent>
+    </Card>
   );
 }
