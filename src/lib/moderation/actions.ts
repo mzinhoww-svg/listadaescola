@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { ADMIN_ROLES } from "@/lib/auth/roles";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export interface FormState {
   error?: string;
@@ -11,25 +11,6 @@ export interface FormState {
 }
 
 const MAX_TEXT_LENGTH = 1000;
-
-/**
- * Re-checks admin role in the application layer on top of RLS/the RPC's
- * own internal is_admin() check (SEC-003: never trust the frontend) --
- * turns what would otherwise be a raw Postgres exception into a clean,
- * actionable error for the UI, same pattern as toggleFavoriteAction.
- */
-async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "not_authenticated" as const };
-
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !ADMIN_ROLES.includes(profile.role)) {
-    return { error: "not_admin" as const };
-  }
-  return { user };
-}
 
 function revalidateModerationPaths(submissionId: string) {
   revalidatePath("/admin/moderacao");
