@@ -1,18 +1,288 @@
-import { ScaffoldNotice } from "@/components/dev/scaffold-notice";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { AtSign, BadgeCheck, Globe, MapPin, MessageCircle, Phone } from "lucide-react";
+
+import { getSchoolBySlug, getSchoolLists, groupEtapasSeriesListas } from "@/lib/schools/school-profile";
+import { schoolHref } from "@/components/schools/school-card";
+import { getPublicAssetUrl } from "@/lib/supabase/storage";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
+import { getCurrentUser } from "@/lib/auth/session";
+import { isFavorited } from "@/lib/favorites/queries";
+import { SaveButton } from "@/components/favorites/save-button";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Map } from "@/components/map/map";
+
+// Same reasoning as Home (src/app/(public)/page.tsx): this page's data
+// depends on Supabase at request time, so it must never be statically
+// prerendered at `next build`.
+export const dynamic = "force-dynamic";
 
 interface SchoolPageProps {
   params: Promise<{ uf: string; cidade: string; slug: string }>;
 }
 
+function jsonLdScript(data: unknown) {
+  // JSON.stringify doesn't escape "</script>" -- without this replace, a
+  // description containing that literal string could break out of the
+  // script tag (SEC-005).
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
+export async function generateMetadata({ params }: SchoolPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const school = await getSchoolBySlug(slug);
+  if (!school) return {};
+
+  const description =
+    school.school_profiles?.description?.slice(0, 155) ??
+    `${school.name} em ${school.municipality}, ${school.uf}. Etapas de ensino, contato e listas escolares.`;
+
+  return {
+    title: `${school.name} — ${school.municipality}/${school.uf}`,
+    description,
+    alternates: { canonical: schoolHref(school) },
+    openGraph: { title: school.name, description, type: "website" },
+  };
+}
+
 export default async function SchoolPage({ params }: SchoolPageProps) {
   const { uf, cidade, slug } = await params;
+  const school = await getSchoolBySlug(slug);
+  if (!school) notFound();
+
+  const canonicalPath = schoolHref(school);
+  if (canonicalPath !== `/escolas/${uf}/${cidade}/${slug}`) {
+    redirect(canonicalPath);
+  }
+
+  const [lists, user] = await Promise.all([getSchoolLists(school.id), getCurrentUser()]);
+  const favorited = user ? await isFavorited("SCHOOL", school.id) : false;
+  const etapaGroups = groupEtapasSeriesListas(school.school_series, lists);
+  const profile = school.school_profiles;
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordAnalyticsEvent({ eventType: "school_view", schoolId: school.id });
+
+  const hasContact = Boolean(school.phone || profile?.website || profile?.instagram || profile?.whatsapp) ||
+    school.school_contacts.length > 0;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "School",
+    name: school.name,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: school.address ?? undefined,
+      addressLocality: school.municipality,
+      addressRegion: school.uf,
+      postalCode: school.cep ?? undefined,
+      addressCountry: "BR",
+    },
+    ...(school.latitude !== null && school.longitude !== null
+      ? { geo: { "@type": "GeoCoordinates", latitude: school.latitude, longitude: school.longitude } }
+      : {}),
+  };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <ScaffoldNotice promptRef="Prompt 07 — escola, série e lista" />
-      <p className="text-sm text-neutral-500">
-        /escolas/{uf}/{cidade}/{slug}
-      </p>
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
+
+      <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-neutral-500">
+        <Link href="/" className="hover:text-primary-700">
+          Início
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link href={`/escolas?uf=${school.uf}`} className="hover:text-primary-700">
+          Escolas
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link
+          href={`/escolas?uf=${school.uf}&municipality=${encodeURIComponent(school.municipality)}`}
+          className="hover:text-primary-700"
+        >
+          {school.municipality}
+        </Link>
+      </nav>
+
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {profile?.is_sponsored && (
+            <Badge variant="sponsored" className="w-fit">
+              PATROCINADA
+            </Badge>
+          )}
+          <Badge variant={school.school_type === "PUBLIC" ? "info" : "neutral"}>
+            {school.school_type === "PUBLIC" ? "Pública" : "Privada"}
+          </Badge>
+          {profile?.is_verified && (
+            <Badge variant="success">
+              <BadgeCheck className="size-3" aria-hidden="true" />
+              Verificada
+            </Badge>
+          )}
+        </div>
+
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">{school.name}</h1>
+
+        <p className="flex items-start gap-1.5 text-neutral-600">
+          <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>
+            {school.address ? `${school.address} — ` : ""}
+            {school.municipality}, {school.uf}
+          </span>
+        </p>
+
+        <div>
+          <SaveButton
+            targetType="SCHOOL"
+            targetId={school.id}
+            isAuthenticated={Boolean(user)}
+            initialFavorited={favorited}
+            path={canonicalPath}
+          />
+        </div>
+      </header>
+
+      {school.latitude !== null && school.longitude !== null && (
+        <section className="mt-6">
+          <Map
+            center={{ lat: school.latitude, lon: school.longitude }}
+            markers={[{ id: school.id, lat: school.latitude, lon: school.longitude, label: school.name }]}
+            className="overflow-hidden rounded-xl"
+            height={280}
+          />
+        </section>
+      )}
+
+      {profile?.description && (
+        <section className="mt-8">
+          <h2 className="mb-2 text-lg font-semibold text-neutral-900">Sobre</h2>
+          <p className="whitespace-pre-line text-neutral-700">{profile.description}</p>
+        </section>
+      )}
+
+      <section className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold text-neutral-900">Contato</h2>
+        {hasContact ? (
+          <ul className="flex flex-col gap-2 text-sm text-neutral-700">
+            {school.phone && (
+              <li className="flex items-center gap-2">
+                <Phone className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
+                {school.phone}
+              </li>
+            )}
+            {profile?.website && (
+              <li className="flex items-center gap-2">
+                <Globe className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
+                <a
+                  href={profile.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-700 hover:underline"
+                >
+                  {profile.website}
+                </a>
+              </li>
+            )}
+            {profile?.instagram && (
+              <li className="flex items-center gap-2">
+                <AtSign className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
+                {profile.instagram}
+              </li>
+            )}
+            {profile?.whatsapp && (
+              <li className="flex items-center gap-2">
+                <MessageCircle className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
+                {profile.whatsapp}
+              </li>
+            )}
+            {school.school_contacts.map((contact) => (
+              <li key={contact.id} className="flex items-center gap-2">
+                <span className="text-neutral-400">{contact.contact_type}:</span> {contact.value}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-neutral-500">Nenhum contato público informado ainda.</p>
+        )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold text-neutral-900">Etapas de ensino</h2>
+        {school.school_education_levels.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {school.school_education_levels.map((level) => (
+              <Badge key={level.id} variant="neutral">
+                {level.education_level}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-neutral-500">Etapas de ensino não informadas.</p>
+        )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-1 text-lg font-semibold text-neutral-900">Séries e listas escolares</h2>
+        <p className="mb-4 text-sm text-neutral-500">Escolha a série e o ano letivo para ver a lista de material.</p>
+        {etapaGroups.length === 0 ? (
+          <EmptyState
+            title="Nenhuma lista publicada ainda"
+            description="Assim que uma lista desta escola for aprovada, ela aparece aqui."
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {etapaGroups.map((group) => (
+              <details key={group.etapa} className="rounded-xl border border-neutral-200 p-4" open>
+                <summary className="cursor-pointer list-none text-base font-medium text-neutral-900">
+                  {group.etapa}
+                </summary>
+                <div className="mt-3 flex flex-col gap-3">
+                  {group.series.map((serie) => (
+                    <div key={serie.serieName}>
+                      <p className="text-sm font-medium text-neutral-700">{serie.serieName}</p>
+                      {serie.lists.length > 0 ? (
+                        <div className="mt-1.5 flex flex-wrap gap-2">
+                          {serie.lists.map((list) => (
+                            <Link
+                              key={list.id}
+                              href={`/listas/${list.slug}`}
+                              className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-sm font-medium text-primary-700 hover:bg-primary-100"
+                            >
+                              Ano letivo {list.schoolYear}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-sm text-neutral-500">Ainda sem lista publicada para esta série.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {school.school_images.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold text-neutral-900">Fotos</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {school.school_images.map((image) => (
+              // eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase Storage host, no next/image remotePatterns configured yet.
+              <img
+                key={image.id}
+                src={getPublicAssetUrl(image.storage_path)}
+                alt={image.caption ?? school.name}
+                className="aspect-square w-full rounded-lg object-cover"
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
