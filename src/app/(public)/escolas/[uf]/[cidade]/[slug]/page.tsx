@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AtSign, BadgeCheck, Globe, MapPin, MessageCircle, Phone } from "lucide-react";
+import { AtSign, BadgeCheck, Globe, MapPin, MessageCircle, Phone, Star } from "lucide-react";
 
 import { getSchoolBySlug, getSchoolLists, groupEtapasSeriesListas } from "@/lib/schools/school-profile";
 import { schoolHref } from "@/components/schools/school-card";
@@ -9,13 +9,15 @@ import { getPublicAssetUrl } from "@/lib/supabase/storage";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isFavorited } from "@/lib/favorites/queries";
+import { getApprovedReviews, getOwnReview } from "@/lib/reviews/queries";
 import { SaveButton } from "@/components/favorites/save-button";
+import { ReviewForm } from "@/components/reviews/review-form";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
-import { slugify } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 
 // Same reasoning as Home (src/app/(public)/page.tsx): this page's data
 // depends on Supabase at request time, so it must never be statically
@@ -60,7 +62,11 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
   }
 
   const [lists, user] = await Promise.all([getSchoolLists(school.id), getCurrentUser()]);
-  const favorited = user ? await isFavorited("SCHOOL", school.id) : false;
+  const [favorited, reviews, ownReview] = await Promise.all([
+    user ? isFavorited("SCHOOL", school.id) : Promise.resolve(false),
+    getApprovedReviews(school.id),
+    user ? getOwnReview(school.id) : Promise.resolve(null),
+  ]);
   const etapaGroups = groupEtapasSeriesListas(school.school_series, lists);
   const profile = school.school_profiles;
 
@@ -308,6 +314,60 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
           </div>
         </section>
       )}
+
+      <section className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold text-neutral-900">Avaliações</h2>
+
+        {reviews.length > 0 ? (
+          <>
+            <Badge variant="neutral" className="mb-4 w-fit">
+              <Star className="size-3" aria-hidden="true" />
+              {(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)} (
+              {reviews.length})
+            </Badge>
+            <ul className="mb-6 flex flex-col gap-3">
+              {reviews.map((review) => (
+                <li key={review.id} className="rounded-xl border border-neutral-200 p-4">
+                  <div className="flex items-center gap-0.5 text-warning-500" aria-label={`Nota ${review.rating} de 5`}>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Star
+                        key={index}
+                        className={cn("size-4", index < review.rating ? "fill-current" : "text-neutral-300")}
+                        aria-hidden="true"
+                      />
+                    ))}
+                  </div>
+                  {review.comment && <p className="mt-2 text-sm text-neutral-700">{review.comment}</p>}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="mb-4 text-sm text-neutral-500">Nenhuma avaliação publicada ainda.</p>
+        )}
+
+        {user ? (
+          !ownReview || ownReview.status === "PENDING" ? (
+            <ReviewForm schoolId={school.id} path={canonicalPath} existing={ownReview ?? undefined} />
+          ) : (
+            <p className="text-sm text-neutral-600">
+              {ownReview.status === "APPROVED"
+                ? "Sua avaliação foi publicada. Obrigado!"
+                : "Sua avaliação não foi aprovada."}
+            </p>
+          )
+        ) : (
+          <p className="text-sm text-neutral-600">
+            <Link
+              href={`/auth/entrar?next=${encodeURIComponent(canonicalPath)}`}
+              className="font-medium text-primary-700 hover:underline"
+            >
+              Entre na sua conta
+            </Link>{" "}
+            para avaliar esta escola.
+          </p>
+        )}
+      </section>
     </div>
   );
 }

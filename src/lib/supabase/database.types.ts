@@ -135,6 +135,27 @@ export type Database = {
           },
         ]
       }
+      auth_login_attempts: {
+        Row: {
+          created_at: string
+          id: number
+          identifier: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          identifier: string
+          success: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          identifier?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           created_at: string
@@ -1629,6 +1650,10 @@ export type Database = {
           view_count: number
         }[]
       }
+      admin_approve_review: {
+        Args: { p_review_id: string }
+        Returns: undefined
+      }
       admin_create_campaign: {
         Args: {
           p_ends_at: string
@@ -1639,12 +1664,17 @@ export type Database = {
         }
         Returns: string
       }
+      admin_reject_review: { Args: { p_review_id: string }; Returns: undefined }
       admin_set_campaign_status: {
         Args: { p_campaign_id: string; p_status: string }
         Returns: undefined
       }
       admin_set_school_list_status: {
         Args: { p_school_list_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_set_user_role: {
+        Args: { p_role: string; p_user_id: string }
         Returns: undefined
       }
       admin_update_ranking_weights: {
@@ -1749,6 +1779,10 @@ export type Database = {
         Returns: undefined
       }
       approve_submission: { Args: { p_submission_id: string }; Returns: string }
+      check_login_rate_limit: {
+        Args: { p_identifier: string }
+        Returns: boolean
+      }
       inep_reconstruct_coordinate: {
         Args: {
           candidate_int_digits: number[]
@@ -1847,6 +1881,10 @@ export type Database = {
           p_session_id?: string
           p_store_id?: string
         }
+        Returns: undefined
+      }
+      record_login_attempt: {
+        Args: { p_identifier: string; p_success: boolean }
         Returns: undefined
       }
       reject_school_suggestion: {

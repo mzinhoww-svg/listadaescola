@@ -60,9 +60,14 @@ export default async function ModerationQueuePage({
       <div>
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold text-neutral-900">Moderação</h1>
-          <Link href="/admin/moderacao/sugestoes" className="text-sm font-medium text-primary-700 hover:underline">
-            Sugestões de escola →
-          </Link>
+          <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <Link href="/admin/moderacao/sugestoes" className="text-sm font-medium text-primary-700 hover:underline">
+              Sugestões de escola →
+            </Link>
+            <Link href="/admin/moderacao/avaliacoes" className="text-sm font-medium text-primary-700 hover:underline">
+              Avaliações →
+            </Link>
+          </div>
         </div>
         <p className="text-sm text-neutral-500">
           Fila ordenada pelas mais antigas primeiro -- é a submissão esperando há mais tempo, não a &ldquo;mais urgente&rdquo;.

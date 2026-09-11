@@ -54,6 +54,59 @@ export async function getOwnDraftSubmissions(): Promise<OwnDraftSubmission[]> {
   }));
 }
 
+export interface OwnSubmission {
+  id: string;
+  status: Database["public"]["Enums"]["submission_status"];
+  educationLevel: string;
+  seriesName: string;
+  schoolYear: number;
+  correctionNotes: string | null;
+  rejectionReason: string | null;
+  updatedAt: string;
+  school: { id: string; name: string; slug: string; uf: string; municipality: string };
+}
+
+/**
+ * Every submission this user owns, optionally narrowed to `statuses` --
+ * unlike getOwnDraftSubmissions above (deliberately narrowed to what's
+ * still resumable), this backs /minha-conta/listas's full history view
+ * (PRD's separate rascunhos/em-analise/publicadas/precisa-correcao/
+ * rejeitadas routes, consolidated into one page with status tabs).
+ */
+export async function getOwnSubmissions(
+  statuses?: Database["public"]["Enums"]["submission_status"][]
+): Promise<OwnSubmission[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  let query = supabase
+    .from("list_submissions")
+    .select(
+      `id, status, education_level, series_name, school_year, correction_notes, rejection_reason, updated_at,
+       schools!inner (id, name, slug, uf, municipality)`
+    )
+    .eq("submitted_by", user.id);
+  if (statuses && statuses.length > 0) query = query.in("status", statuses);
+
+  const { data, error } = await query.order("updated_at", { ascending: false });
+  if (error) throw new Error(`getOwnSubmissions failed: ${error.message}`);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    status: row.status,
+    educationLevel: row.education_level,
+    seriesName: row.series_name,
+    schoolYear: row.school_year,
+    correctionNotes: row.correction_notes,
+    rejectionReason: row.rejection_reason,
+    updatedAt: row.updated_at,
+    school: row.schools,
+  }));
+}
+
 export interface SubmissionDetail {
   id: string;
   status: Database["public"]["Enums"]["submission_status"];
