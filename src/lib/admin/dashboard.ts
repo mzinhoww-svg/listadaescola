@@ -10,12 +10,11 @@ export interface DashboardStats {
 }
 
 /**
- * Real counts only -- no visitas/buscas/cliques/conversão here (those
- * need analytics_events aggregation, explicitly "Prompt 14
- * (analytics-vendas)" per the PRD's own admin dashboard spec). Showing a
- * fabricated number would violate the same "nunca fabricar" principle
- * already applied to distance/rating elsewhere in this codebase -- an
- * honest, smaller dashboard beats a fuller, fake one.
+ * Real counts only -- visitas/buscas/cliques/conversão live on their own
+ * page (/admin/analytics, getAnalyticsEventCounts) rather than duplicated
+ * here, same reasoning campaigns/patrocinios got its own page instead of
+ * being crammed into this one: PRD section 17's wireframe list treats
+ * "Analytics" as its own screen (#25), separate from "Dashboard" (#1-ish).
  */
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();

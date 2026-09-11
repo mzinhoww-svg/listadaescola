@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 
 export interface FormState {
   error?: string;
@@ -38,6 +39,17 @@ export async function approveSubmissionAction(_prevState: FormState, formData: F
   const submissionId = String(formData.get("submission_id") ?? "");
   const { error } = await supabase.rpc("approve_submission", { p_submission_id: submissionId });
   if (error) return { error: error.message };
+
+  const { data: approved } = await supabase
+    .from("list_submissions")
+    .select("school_id")
+    .eq("id", submissionId)
+    .maybeSingle();
+  await recordAnalyticsEvent({
+    eventType: "submission_approved",
+    schoolId: approved?.school_id,
+    metadata: { submissionId },
+  });
 
   revalidateModerationPaths(submissionId);
   return { success: "Lista aprovada e publicada." };

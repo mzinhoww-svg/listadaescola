@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { EDITABLE_SUBMISSION_STATUSES, EDUCATION_LEVELS, SCHOOL_YEAR_OPTIONS } from "@/lib/contributions/constants";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 
 export interface FormState {
   error?: string;
@@ -28,7 +29,7 @@ async function requireOwnEditableSubmission(supabase: Awaited<ReturnType<typeof 
 
   const { data: submission, error } = await supabase
     .from("list_submissions")
-    .select("id, submitted_by, status")
+    .select("id, submitted_by, status, school_id")
     .eq("id", submissionId)
     .maybeSingle();
 
@@ -136,6 +137,11 @@ export async function startSubmissionAction(
   if (error || !created) {
     return { error: "Não foi possível iniciar o envio. Tente novamente." };
   }
+
+  // Only the freshly-created-draft path counts as "started" -- the
+  // existing-draft-reused branch above redirects before reaching here,
+  // since resuming a draft isn't a new start.
+  await recordAnalyticsEvent({ eventType: "submission_started", schoolId, metadata: { submissionId: created.id } });
 
   redirect(`/enviar-lista/${created.id}/itens`);
 }
@@ -245,6 +251,12 @@ export async function submitSubmissionAction(_prevState: FormState, formData: Fo
     .update({ status: "SUBMITTED" })
     .eq("id", submissionId);
   if (error) return { error: "Não foi possível enviar a lista. Tente novamente." };
+
+  await recordAnalyticsEvent({
+    eventType: "submission_submitted",
+    schoolId: gate.submission.school_id,
+    metadata: { submissionId },
+  });
 
   redirect(`/enviar-lista/${submissionId}/confirmacao`);
 }

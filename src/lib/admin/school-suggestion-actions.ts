@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
+import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 
 export interface FormState {
   error?: string;
@@ -25,6 +26,11 @@ export async function approveSchoolSuggestionAction(_prevState: FormState, formD
   const suggestionId = String(formData.get("suggestion_id") ?? "");
   const { error } = await supabase.rpc("approve_school_suggestion", { p_suggestion_id: suggestionId });
   if (error) return { error: error.message };
+
+  await recordAnalyticsEvent({
+    eventType: "submission_approved",
+    metadata: { kind: "school_suggestion", suggestionId },
+  });
 
   revalidateSuggestionPaths(suggestionId);
   return { success: "Sugestão aprovada." };
