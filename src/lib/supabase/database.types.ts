@@ -292,6 +292,84 @@ export type Database = {
           },
         ]
       }
+      inep_import_staging: {
+        Row: {
+          id: number
+          loaded_at: string
+          raw_address: string | null
+          raw_administrative_dependency: string | null
+          raw_attendance_restriction: string | null
+          raw_cep: string | null
+          raw_cep_source: string | null
+          raw_differentiated_location: string | null
+          raw_education_council_regulation: string | null
+          raw_education_offerings: string | null
+          raw_inep_code: string | null
+          raw_latitude: string | null
+          raw_location_type: string | null
+          raw_longitude: string | null
+          raw_municipality: string | null
+          raw_name: string | null
+          raw_other_education_offerings: string | null
+          raw_phone: string | null
+          raw_private_school_category: string | null
+          raw_public_power_agreement: string | null
+          raw_school_size: string | null
+          raw_school_type: string | null
+          raw_uf: string | null
+        }
+        Insert: {
+          id?: never
+          loaded_at?: string
+          raw_address?: string | null
+          raw_administrative_dependency?: string | null
+          raw_attendance_restriction?: string | null
+          raw_cep?: string | null
+          raw_cep_source?: string | null
+          raw_differentiated_location?: string | null
+          raw_education_council_regulation?: string | null
+          raw_education_offerings?: string | null
+          raw_inep_code?: string | null
+          raw_latitude?: string | null
+          raw_location_type?: string | null
+          raw_longitude?: string | null
+          raw_municipality?: string | null
+          raw_name?: string | null
+          raw_other_education_offerings?: string | null
+          raw_phone?: string | null
+          raw_private_school_category?: string | null
+          raw_public_power_agreement?: string | null
+          raw_school_size?: string | null
+          raw_school_type?: string | null
+          raw_uf?: string | null
+        }
+        Update: {
+          id?: never
+          loaded_at?: string
+          raw_address?: string | null
+          raw_administrative_dependency?: string | null
+          raw_attendance_restriction?: string | null
+          raw_cep?: string | null
+          raw_cep_source?: string | null
+          raw_differentiated_location?: string | null
+          raw_education_council_regulation?: string | null
+          raw_education_offerings?: string | null
+          raw_inep_code?: string | null
+          raw_latitude?: string | null
+          raw_location_type?: string | null
+          raw_longitude?: string | null
+          raw_municipality?: string | null
+          raw_name?: string | null
+          raw_other_education_offerings?: string | null
+          raw_phone?: string | null
+          raw_private_school_category?: string | null
+          raw_public_power_agreement?: string | null
+          raw_school_size?: string | null
+          raw_school_type?: string | null
+          raw_uf?: string | null
+        }
+        Relationships: []
+      }
       list_product_mappings: {
         Row: {
           created_at: string
@@ -1347,6 +1425,15 @@ export type Database = {
     }
     Functions: {
       approve_submission: { Args: { p_submission_id: string }; Returns: string }
+      inep_reconstruct_coordinate: {
+        Args: {
+          candidate_int_digits: number[]
+          hi: number
+          lo: number
+          raw: string
+        }
+        Returns: number
+      }
       is_admin: { Args: never; Returns: boolean }
       is_school_manager: {
         Args: { target_school_id: string }
@@ -1354,6 +1441,16 @@ export type Database = {
       }
       is_staff: { Args: never; Returns: boolean }
       is_store_manager: { Args: { target_store_id: string }; Returns: boolean }
+      merge_inep_staging: {
+        Args: {
+          p_lat_max?: number
+          p_lat_min?: number
+          p_lon_max?: number
+          p_lon_min?: number
+          p_state_code: string
+        }
+        Returns: Json
+      }
       reject_submission: {
         Args: { p_reason: string; p_submission_id: string }
         Returns: undefined
