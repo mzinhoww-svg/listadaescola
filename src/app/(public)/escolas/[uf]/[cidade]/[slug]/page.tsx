@@ -13,6 +13,9 @@ import { SaveButton } from "@/components/favorites/save-button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Map } from "@/components/map/map";
+import { jsonLdScript } from "@/lib/seo/json-ld";
+import { getSiteBaseUrl } from "@/lib/seo/site-url";
+import { slugify } from "@/lib/utils";
 
 // Same reasoning as Home (src/app/(public)/page.tsx): this page's data
 // depends on Supabase at request time, so it must never be statically
@@ -23,13 +26,6 @@ interface SchoolPageProps {
   params: Promise<{ uf: string; cidade: string; slug: string }>;
 }
 
-function jsonLdScript(data: unknown) {
-  // JSON.stringify doesn't escape "</script>" -- without this replace, a
-  // description containing that literal string could break out of the
-  // script tag (SEC-005).
-  return JSON.stringify(data).replace(/</g, "\\u003c");
-}
-
 export async function generateMetadata({ params }: SchoolPageProps): Promise<Metadata> {
   const { slug } = await params;
   const school = await getSchoolBySlug(slug);
@@ -38,12 +34,18 @@ export async function generateMetadata({ params }: SchoolPageProps): Promise<Met
   const description =
     school.school_profiles?.description?.slice(0, 155) ??
     `${school.name} em ${school.municipality}, ${school.uf}. Etapas de ensino, contato e listas escolares.`;
+  const logoUrl = school.school_profiles?.logo_url ? getPublicAssetUrl(school.school_profiles.logo_url) : undefined;
 
   return {
     title: `${school.name} — ${school.municipality}/${school.uf}`,
     description,
     alternates: { canonical: schoolHref(school) },
-    openGraph: { title: school.name, description, type: "website" },
+    openGraph: {
+      title: school.name,
+      description,
+      type: "website",
+      images: logoUrl ? [{ url: logoUrl }] : undefined,
+    },
   };
 }
 
@@ -68,6 +70,9 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
   const hasContact = Boolean(school.phone || profile?.website || profile?.instagram || profile?.whatsapp) ||
     school.school_contacts.length > 0;
 
+  const logoUrl = profile?.logo_url ? getPublicAssetUrl(profile.logo_url) : undefined;
+  const imageUrls = school.school_images.map((image) => getPublicAssetUrl(image.storage_path));
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "School",
@@ -83,23 +88,43 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
     ...(school.latitude !== null && school.longitude !== null
       ? { geo: { "@type": "GeoCoordinates", latitude: school.latitude, longitude: school.longitude } }
       : {}),
+    ...(logoUrl ? { logo: logoUrl } : {}),
+    ...(imageUrls.length > 0 ? { image: imageUrls } : {}),
+  };
+
+  const siteUrl = getSiteBaseUrl();
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Início", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: "Escolas", item: `${siteUrl}/escolas/${school.uf.toLowerCase()}` },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: school.municipality,
+        item: `${siteUrl}${canonicalPath.split("/").slice(0, 4).join("/")}`,
+      },
+      { "@type": "ListItem", position: 4, name: school.name, item: `${siteUrl}${canonicalPath}` },
+    ],
   };
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd) }} />
 
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-neutral-500">
         <Link href="/" className="hover:text-primary-700">
           Início
         </Link>
         <span aria-hidden="true">/</span>
-        <Link href={`/escolas?uf=${school.uf}`} className="hover:text-primary-700">
+        <Link href={`/escolas/${school.uf.toLowerCase()}`} className="hover:text-primary-700">
           Escolas
         </Link>
         <span aria-hidden="true">/</span>
         <Link
-          href={`/escolas?uf=${school.uf}&municipality=${encodeURIComponent(school.municipality)}`}
+          href={`/escolas/${school.uf.toLowerCase()}/${slugify(school.municipality)}`}
           className="hover:text-primary-700"
         >
           {school.municipality}

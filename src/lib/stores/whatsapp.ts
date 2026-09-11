@@ -47,6 +47,14 @@ export interface WhatsappMessageInput {
   items: WhatsappMessageItem[];
 }
 
+/** Same "prefilled only" rule as buildWhatsappMessage -- used when there's
+ * no school/list context to build an itemized message from (Prompt 15's
+ * standalone papelaria detail page, reached directly, not from a school's
+ * list). */
+export function buildGenericWhatsappMessage(storeName: string): string {
+  return `Olá! Vi a ${storeName} no Listada Escola e gostaria de saber sobre produtos, preços e disponibilidade para material escolar.`;
+}
+
 /** Prefilled text only -- wa.me opens WhatsApp's own compose screen, it never sends by itself. */
 export function buildWhatsappMessage({ schoolName, seriesName, schoolYear, items }: WhatsappMessageInput): string {
   const itemLines = items

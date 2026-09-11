@@ -8,9 +8,10 @@ export interface PaginationControlsProps {
   page: number;
   pageCount: number;
   searchParams: URLSearchParams;
+  basePath?: string;
 }
 
-export function PaginationControls({ page, pageCount, searchParams }: PaginationControlsProps) {
+export function PaginationControls({ page, pageCount, searchParams, basePath }: PaginationControlsProps) {
   if (pageCount <= 1) return null;
 
   const linkClasses =
@@ -19,7 +20,7 @@ export function PaginationControls({ page, pageCount, searchParams }: Pagination
   return (
     <nav aria-label="Paginação de resultados" className="flex items-center justify-between gap-3">
       <Link
-        href={buildResultsUrl(searchParams, { page: page > 1 ? String(page - 1) : null })}
+        href={buildResultsUrl(searchParams, { page: page > 1 ? String(page - 1) : null }, basePath)}
         aria-disabled={page <= 1}
         className={cn(linkClasses)}
       >
@@ -30,7 +31,7 @@ export function PaginationControls({ page, pageCount, searchParams }: Pagination
         Página {page} de {pageCount}
       </span>
       <Link
-        href={buildResultsUrl(searchParams, { page: String(Math.min(pageCount, page + 1)) })}
+        href={buildResultsUrl(searchParams, { page: String(Math.min(pageCount, page + 1)) }, basePath)}
         aria-disabled={page >= pageCount}
         className={cn(linkClasses)}
       >
