@@ -8,6 +8,7 @@ import { DiscardDraftButton } from "@/components/contributions/discard-draft-but
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toDisplayCase } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Enviar lista" };
 
@@ -34,13 +35,20 @@ export default async function EnviarListaPage() {
             <Card key={draft.id}>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Badge variant={draft.status === "NEEDS_CORRECTION" ? "warning" : "neutral"}>
+                  <Badge variant={draft.status === "NEEDS_CORRECTION" ? "danger" : "neutral"}>
                     {STATUS_LABEL[draft.status] ?? draft.status}
                   </Badge>
                 </div>
-                <CardTitle>{draft.school.name}</CardTitle>
+                {/* Série/ano promoted into the title line -- it's the only
+                    thing that distinguishes two drafts for the same school
+                    (e.g. a parent managing lists for two children), and it
+                    used to sit in small gray text under an identical bold
+                    school name on every card. */}
+                <CardTitle>
+                  {toDisplayCase(draft.school.name)} — {draft.seriesName}
+                </CardTitle>
                 <CardDescription>
-                  {draft.educationLevel} · {draft.seriesName} · {draft.schoolYear}
+                  {draft.educationLevel} · {draft.schoolYear}
                 </CardDescription>
                 {draft.status === "NEEDS_CORRECTION" && draft.correctionNotes && (
                   <p className="mt-2 flex items-start gap-2 rounded-lg bg-warning-50 p-3 text-sm text-warning-700">

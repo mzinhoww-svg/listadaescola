@@ -107,6 +107,25 @@ export async function getOwnSubmissions(
   }));
 }
 
+/**
+ * The list_submissions -> school_list_versions link (approve_submission()
+ * sets versions.submission_id) is the only way to find which published
+ * list a given approved submission actually became -- confirmacao/page.tsx
+ * needs it to link "Lista aprovada!" to somewhere real instead of leaving
+ * the visitor with no way to see what they just contributed. Public data
+ * once APPROVED (school_lists_select_approved), so no ownership check
+ * needed beyond what the caller already did to reach this submission id.
+ */
+export async function getPublishedListSlugForSubmission(submissionId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("school_list_versions")
+    .select("school_lists(slug)")
+    .eq("submission_id", submissionId)
+    .maybeSingle();
+  return data?.school_lists?.slug ?? null;
+}
+
 export interface SubmissionDetail {
   id: string;
   status: Database["public"]["Enums"]["submission_status"];

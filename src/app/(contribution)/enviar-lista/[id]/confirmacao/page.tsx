@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Clock, XCircle, PartyPopper } from "lucide-react";
 
-import { getOwnSubmissionDetail } from "@/lib/contributions/queries";
+import { getOwnSubmissionDetail, getPublishedListSlugForSubmission } from "@/lib/contributions/queries";
 import { EDITABLE_SUBMISSION_STATUSES } from "@/lib/contributions/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ export default async function SubmissionConfirmationPage({ params }: { params: P
 
   const content = STATUS_CONTENT[submission.status] ?? STATUS_CONTENT.SUBMITTED;
   const Icon = content.icon;
+  const listSlug = submission.status === "APPROVED" ? await getPublishedListSlugForSubmission(id) : null;
 
   return (
     <Card>
@@ -71,9 +72,16 @@ export default async function SubmissionConfirmationPage({ params }: { params: P
         <p className="text-sm text-neutral-500">
           {submission.school.name} · {submission.educationLevel} · {submission.seriesName} · {submission.schoolYear}
         </p>
-        <Button asChild className="mt-2">
-          <Link href="/enviar-lista">Voltar</Link>
-        </Button>
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          {listSlug && (
+            <Button asChild>
+              <Link href={`/listas/${listSlug}`}>Ver lista publicada</Link>
+            </Button>
+          )}
+          <Button asChild variant={listSlug ? "outline" : "primary"}>
+            <Link href="/enviar-lista">Voltar</Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

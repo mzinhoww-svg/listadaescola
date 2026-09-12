@@ -8,6 +8,7 @@ import { WizardSteps } from "@/components/contributions/wizard-steps";
 import { SubmitReviewForm } from "@/components/contributions/submit-review-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toDisplayCase } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Revisar lista" };
 
@@ -29,7 +30,7 @@ export default async function SubmissionReviewPage({ params }: { params: Promise
 
       <Card>
         <CardHeader>
-          <CardTitle>{submission.school.name}</CardTitle>
+          <CardTitle>{toDisplayCase(submission.school.name)}</CardTitle>
           <CardDescription>
             {submission.educationLevel} · {submission.seriesName} · {submission.schoolYear}
           </CardDescription>
@@ -51,11 +52,11 @@ export default async function SubmissionReviewPage({ params }: { params: Promise
             </ul>
           </div>
 
-          {submission.attachments.length > 0 && (
-            <div>
-              <h2 className="mb-2 text-sm font-semibold text-neutral-900">
-                Anexos ({submission.attachments.length})
-              </h2>
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-neutral-900">
+              Anexos ({submission.attachments.length})
+            </h2>
+            {submission.attachments.length > 0 ? (
               <ul className="flex flex-col gap-1.5 text-sm text-neutral-700">
                 {submission.attachments.map((attachment) => (
                   <li key={attachment.id} className="flex items-center gap-2">
@@ -68,8 +69,10 @@ export default async function SubmissionReviewPage({ params }: { params: Promise
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-neutral-500">Nenhum anexo (opcional, não enviado).</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 

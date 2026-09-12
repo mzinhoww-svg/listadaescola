@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/use-toast";
 
 type SubmissionItem = Database["public"]["Tables"]["submission_items"]["Row"];
 
@@ -22,13 +23,34 @@ const initialState: FormState = {};
 export function AddItemForm({ submissionId }: { submissionId: string }) {
   const [state, formAction] = useActionState(addSubmissionItemAction, initialState);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const { toast } = useToast();
 
+  // Every mutation in this wizard computes a success string server-side
+  // (state.success) but, before this fix, never displayed it anywhere --
+  // errors got a styled role="alert" paragraph, successes got silence.
   React.useEffect(() => {
-    if (state?.success) formRef.current?.reset();
+    if (state?.success) {
+      formRef.current?.reset();
+      toast({ title: state.success, variant: "success" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toast identity is stable (module-level store), including it would re-fire this on every render.
   }, [state]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-3 rounded-xl border border-neutral-200 p-4">
+    // noValidate: every field here already has a server-side check that
+    // returns a styled, branded error (state.error below) -- native
+    // constraint validation (e.g. quantity's min=1) was intercepting
+    // submission first for that one field, popping an OS-styled tooltip
+    // that looked nothing like the rest of the form's error language,
+    // while every other invalid input still went through the branded
+    // path. Letting all of them reach the server keeps one consistent
+    // error experience.
+    <form
+      ref={formRef}
+      action={formAction}
+      noValidate
+      className="flex flex-col gap-3 rounded-xl border border-neutral-200 p-4"
+    >
       <input type="hidden" name="submission_id" value={submissionId} />
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <Input label="Item" name="name" placeholder="Ex.: Caderno brochura 96 folhas" required />
@@ -66,7 +88,14 @@ export function AddItemForm({ submissionId }: { submissionId: string }) {
 }
 
 function DeleteItemButton({ submissionId, itemId }: { submissionId: string; itemId: string }) {
-  const [, formAction] = useActionState(deleteSubmissionItemAction, initialState);
+  const [state, formAction] = useActionState(deleteSubmissionItemAction, initialState);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    if (state?.success) toast({ title: state.success, variant: "success" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   return (
     <form action={formAction}>
       <input type="hidden" name="submission_id" value={submissionId} />
