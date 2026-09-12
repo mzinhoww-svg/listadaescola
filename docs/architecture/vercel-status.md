@@ -19,6 +19,83 @@ externa não consegue abrir o site e, se conseguisse, toda request falharia.
 > continuam corretas como história. Onde foram superadas pelos fatos, a
 > seção "Estado atual" logo abaixo prevalece.
 
+## Causa-raiz final (2026-09-12 14:40Z) — `Framework Preset = Other`
+
+**O 404 tinha DUAS causas, não uma**, e ambas nascem do mesmo fato: o
+projeto Vercel foi criado quando o repositório ainda estava vazio, então a
+Vercel chutou toda a configuração que normalmente detecta do código.
+
+| # | O que a Vercel chutou | Valor errado | Valor certo | Sintoma |
+|---|---|---|---|---|
+| 1 | Production Branch | `main` (nunca existiu) | `claude/eager-galileo-d8hdtc` | nenhum deployment de Production |
+| 2 | **Framework Preset** | **`Other`** | **`Next.js`** | deployment `Ready` que serve 404 em tudo |
+
+Corrigir só a branch resolveu o item 1 — passaram a existir deployments de
+Production verdes. Mas eles foram construídos com `Framework = Other`, e aí
+a Vercel executa o build command (o log mostra a tabela de rotas do Next.js
+inteira, 43s, verde) e **não transforma o `.next` em funções e assets
+estáticos**. Resultado: artefato sem nada roteável.
+
+Confirmado pelo próprio dashboard, em Settings -> Build and Deployment:
+
+> ⚠️ Configuration Settings in the current Production deployment differ from
+> your current Project Settings.
+> **Production Overrides** -> `listadaescola-idcanjoqk-...`  **Framework: `Other`**
+
+### Como o diagnóstico foi fechado
+
+A sondagem que eliminou todas as outras hipóteses:
+
+```
+/                              404 NOT_FOUND
+/robots.txt                    404 NOT_FOUND
+/termos                        404 NOT_FOUND
+/escolas                       404 NOT_FOUND
+/_next/static/chunks/main.js   404 NOT_FOUND   <- decisivo
+```
+
+`/_next/static/*` é servido direto pela CDN: não passa por middleware, não
+invoca função, não lê variável de ambiente, não toca no Supabase. 404 nele
+prova que **não havia saída publicada**, não que o app falhou.
+
+Os contadores do Observability fecham o caso:
+
+| Métrica | Valor | Leitura |
+|---|---|---|
+| Edge Requests | 53 | as requisições chegam |
+| **Function Invocations** | **0** | nenhuma função foi registrada |
+| Error Rate | 0% | nada roda, então nada falha |
+
+E o que **não** era, apesar de ter parecido:
+
+- Não era alias/domínio: `listadaescola.vercel.app` estava `Valid
+  Configuration`, conectado a Production.
+- Não era Deployment Protection: desligá-la trocou o `302` por `404`,
+  revelando que o 404 já estava lá por baixo.
+- Não era variável de ambiente: as três estão no escopo Production, e o
+  erro é anterior à execução do código (zero invocações).
+- Não era cota: Usage em 214 kB de 100 GB, 160 de 1M edge requests.
+- Não era projeto pausado: Settings -> General mostra o botão "Pause
+  Project", não "Resume".
+- Não era código incompleto: 52 rotas no repo, 42 migrations, E2E 16/16,
+  `HEAD` sem arquivos não commitados, e o build log lista todas as rotas.
+
+### A correção
+
+1. Settings -> Build and Deployment -> **Framework Preset: `Next.js`** (feito).
+2. **Um deployment NOVO** é obrigatório. Trocar o Project Settings não
+   reconstrói o artefato existente, e um `Redeploy` daquele deployment pode
+   reaproveitar os `Production Overrides` gravados nele. O caminho garantido
+   é um push na branch de produção, que gera um build limpo com o preset
+   corrigido.
+
+### Lição para o futuro
+
+Nunca criar o projeto na Vercel antes de o repositório ter código. Sem
+código, a Vercel chuta branch de produção E framework, os dois errados, e
+cada um produz um modo de falha diferente que parece ter causa própria.
+Criar o projeto depois do primeiro push economiza as duas.
+
 ## Estado atual (2026-09-12 13:50Z) — VERIFICADO AO VIVO
 
 ### O que foi corrigido ✅
