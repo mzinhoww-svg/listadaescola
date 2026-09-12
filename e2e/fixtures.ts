@@ -18,19 +18,19 @@ export const FIXTURE = {
     searchTerm: "POMPERMAYER",
   },
   list: {
-    id: "a936d5c2-bc8d-4f04-814a-e85eaab6e2e8",
+    id: "7c1a0ee6-148c-45b8-9ba3-9efe69c24472",
     slug: "e2e-p17-lista-12a1bb8b",
     seriesName: "5º Ano",
     schoolYear: 2026,
   },
   store: {
-    id: "e586345c-8900-4d42-8edf-6da9ee1cd421",
+    id: "a0f15fa3-63ea-4aa6-a3fb-a5e09b45f4b3",
     name: "E2E Prompt17 Papelaria",
   },
   users: {
-    user: { id: "9713b0a9-d828-4a62-aef0-fb6a7d1d58d9", email: "e2e-p17-user@example.com", password: "E2ePr0mpt17!" },
-    userB: { id: "332cb8c5-b8a1-457a-a9e9-bf0b8f6f2f7d", email: "e2e-p17-user-b@example.com", password: "E2ePr0mpt17!" },
-    admin: { id: "3f0de398-c915-4d27-ab17-2d3d3f4f2d41", email: "e2e-p17-admin@example.com", password: "E2ePr0mpt17!" },
+    user: { id: "03a5ba50-cfa7-445f-9705-522148053e46", email: "e2e-p17-user@example.com", password: "E2ePr0mpt17!" },
+    userB: { id: "5b2a06c5-00f2-4845-b903-2bc85a418069", email: "e2e-p17-user-b@example.com", password: "E2ePr0mpt17!" },
+    admin: { id: "4b7af4d1-bf3b-4d22-9e80-d67b33453bdb", email: "e2e-p17-admin@example.com", password: "E2ePr0mpt17!" },
   },
 };
 

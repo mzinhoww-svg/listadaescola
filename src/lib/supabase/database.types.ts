@@ -664,6 +664,27 @@ export type Database = {
           },
         ]
       }
+      rate_limit_hits: {
+        Row: {
+          action: string
+          created_at: string
+          id: number
+          identifier: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: never
+          identifier: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: never
+          identifier?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -830,7 +851,7 @@ export type Database = {
           is_approved: boolean
           school_id: string
           storage_path: string
-          submitted_by: string | null
+          submitted_by: string
         }
         Insert: {
           approved_by?: string | null
@@ -840,7 +861,7 @@ export type Database = {
           is_approved?: boolean
           school_id: string
           storage_path: string
-          submitted_by?: string | null
+          submitted_by: string
         }
         Update: {
           approved_by?: string | null
@@ -850,7 +871,7 @@ export type Database = {
           is_approved?: boolean
           school_id?: string
           storage_path?: string
-          submitted_by?: string | null
+          submitted_by?: string
         }
         Relationships: [
           {
@@ -1783,6 +1804,10 @@ export type Database = {
         Args: { p_identifier: string }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: { p_action: string; p_max_hits: number; p_window_minutes: number }
+        Returns: boolean
+      }
       inep_reconstruct_coordinate: {
         Args: {
           candidate_int_digits: number[]
@@ -1887,6 +1912,7 @@ export type Database = {
         Args: { p_identifier: string; p_success: boolean }
         Returns: undefined
       }
+      record_rate_limit_hit: { Args: { p_action: string }; Returns: undefined }
       reject_school_suggestion: {
         Args: { p_reason: string; p_suggestion_id: string }
         Returns: undefined

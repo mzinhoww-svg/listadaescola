@@ -91,6 +91,19 @@ export async function startSubmissionAction(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sua sessão expirou. Entre novamente para continuar." };
 
+  // SEC-008 (hardening pós-MVP): novo envio é a única ação desta tela que
+  // toca a fila de moderação -- as demais (adicionar item, anexo) editam
+  // um rascunho já existente. 10/hora é generoso para um contribuidor
+  // real, alto o bastante para barrar só abuso automatizado.
+  const { data: allowed } = await supabase.rpc("check_rate_limit", {
+    p_action: "submission_start",
+    p_max_hits: 10,
+    p_window_minutes: 60,
+  });
+  if (allowed === false) {
+    return { error: "Muitos envios em pouco tempo. Aguarde um pouco e tente novamente." };
+  }
+
   const schoolId = String(formData.get("school_id") ?? "");
   const educationLevel = String(formData.get("education_level") ?? "");
   const seriesName = String(formData.get("series_name") ?? "").trim();
@@ -140,8 +153,11 @@ export async function startSubmissionAction(
 
   // Only the freshly-created-draft path counts as "started" -- the
   // existing-draft-reused branch above redirects before reaching here,
-  // since resuming a draft isn't a new start.
+  // since resuming a draft isn't a new start. Same reasoning applies to
+  // the rate-limit hit below: resuming an existing draft never counts
+  // against the limit.
   await recordAnalyticsEvent({ eventType: "submission_started", schoolId, metadata: { submissionId: created.id } });
+  await supabase.rpc("record_rate_limit_hit", { p_action: "submission_start" });
 
   redirect(`/enviar-lista/${created.id}/itens`);
 }
