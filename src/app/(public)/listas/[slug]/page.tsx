@@ -181,7 +181,7 @@ export default async function ListPage({ params }: ListPageProps) {
       <section className="mt-10">
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-neutral-900">Onde comprar</h2>
-          <p className="mt-1 text-sm text-neutral-600">
+          <p className="mt-1 max-w-[65ch] text-sm text-neutral-600">
             Escolha como resolver esta lista. O Listada não processa pagamentos: você compra direto no
             site do parceiro ou combina com a papelaria pelo WhatsApp.
           </p>
