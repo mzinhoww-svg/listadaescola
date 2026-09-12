@@ -37,7 +37,12 @@ export function ResetPasswordForm() {
           {state.error}
         </p>
       )}
-      <SubmitButton className="mt-2">Redefinir senha</SubmitButton>
+      {state?.success && (
+        <p role="status" className="text-sm text-success-700">
+          {state.success}
+        </p>
+      )}
+      <SubmitButton className="mt-2 w-fit">Redefinir senha</SubmitButton>
     </form>
   );
 }

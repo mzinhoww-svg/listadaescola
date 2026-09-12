@@ -6,6 +6,7 @@ const navItems = [
   { label: "Perfil", href: "/minha-conta/perfil" },
   { label: "Minhas listas", href: "/minha-conta/listas" },
   { label: "Escolas salvas", href: "/minha-conta/escolas-salvas" },
+  { label: "Listas salvas", href: "/minha-conta/listas-salvas" },
   { label: "Configurações", href: "/minha-conta/configuracoes" },
 ];
 

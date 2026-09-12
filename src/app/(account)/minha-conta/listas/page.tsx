@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { cn } from "@/lib/utils";
+import { cn, toDisplayCase } from "@/lib/utils";
 import type { Database } from "@/lib/supabase/database.types";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,11 @@ const STATUS_BADGE: Record<SubmissionStatus, BadgeProps["variant"]> = {
   DRAFT: "neutral",
   SUBMITTED: "info",
   UNDER_REVIEW: "warning",
-  NEEDS_CORRECTION: "warning",
+  // Distinct from UNDER_REVIEW (passive, nothing to do): this is the one
+  // status that requires the user to act (it blocks publication), so it
+  // gets the more urgent variant instead of sharing "warning" with a
+  // purely informational state.
+  NEEDS_CORRECTION: "danger",
   APPROVED: "success",
   REJECTED: "danger",
   ARCHIVED: "neutral",
@@ -88,7 +92,7 @@ export default async function MinhasListasPage({ searchParams }: MinhasListasPag
                 <Badge variant={STATUS_BADGE[submission.status]} className="w-fit">
                   {STATUS_LABEL[submission.status]}
                 </Badge>
-                <CardTitle>{submission.school.name}</CardTitle>
+                <CardTitle>{toDisplayCase(submission.school.name)}</CardTitle>
                 <CardDescription>
                   {submission.educationLevel} · {submission.seriesName} · {submission.schoolYear} ·{" "}
                   {submission.school.municipality}
