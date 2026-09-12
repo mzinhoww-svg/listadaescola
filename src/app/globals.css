@@ -1,57 +1,117 @@
 @import "tailwindcss";
 
 /*
- * Design tokens — Listada Escola
+ * Design tokens — Listada Escola / "Caderno Vivo"
  *
- * PROVISÓRIO: não existe referência do Stitch nesta sessão (MCP stitch
- * indisponível — ver docs/implementation/stitch-mapping.md). Estes valores
- * são um ponto de partida coerente e acessível, não uma decisão de marca
- * final. Devem ser conferidos/ajustados contra o Stitch assim que o MCP
- * estiver disponível.
+ * Valores extraídos do export oficial do Stitch (caderno_vivo/DESIGN.md +
+ * os tokens declarados nos code.html das 25 telas). Substituem os valores
+ * PROVISÓRIOS anteriores (aliases genéricos de blue/slate do Tailwind),
+ * que existiam só porque o Stitch nunca esteve disponível nas sessões
+ * anteriores -- ver docs/implementation/stitch-matrix.md.
  *
- * Cores semânticas (primary/success/warning/danger/info) são aliases da
- * paleta padrão do Tailwind v4 — os valores em si já são testados/AA em
- * boa parte das combinações comuns. `whatsapp` é a única cor de marca
- * externa fixa (usada exclusivamente para o CTA de WhatsApp da papelaria,
- * nunca como cor genérica de ação).
+ * Personalidade (DESIGN.md): "warm, utilitarian, structured, profoundly
+ * welcoming... rejects the sterility of modern SaaS and the cold,
+ * unfeeling minimalism of fintech dashboards" -- papel, caderno escolar,
+ * material de papelaria. Daí o canvas levemente quente (#fbf9f8) em vez
+ * de branco puro, os azuis-ardósia suaves e os acentos de papelaria.
+ *
+ * As ESCALAS numeradas (primary-50..900, neutral-50..900) são mantidas de
+ * propósito: todo componente já referencia esses nomes, então trocar
+ * apenas os valores aqui propaga a identidade real para o app inteiro sem
+ * reescrever componente nenhum. Onde o DESIGN.md dá um valor exato para o
+ * papel que o app usa, esse valor exato foi colocado no slot
+ * correspondente (ex.: primary-600 = #5c6b8a, a cor de botão primário
+ * especificada; primary-700 = #4d5a75, o hover especificado).
  */
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a; /* slate-900 */
+  /* Canvas de papel, não branco puro (surface/background do DESIGN.md) */
+  --background: #fbf9f8;
+  /* text-primary: charcoal acessível, sem a dureza do preto puro */
+  --foreground: #3a3a3a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+
+  /* Tipografia: Plus Jakarta Sans (títulos) + Inter (corpo/dados) */
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
 
-  /* Marca / ação primária */
-  --color-primary-50: var(--color-blue-50);
-  --color-primary-100: var(--color-blue-100);
-  --color-primary-200: var(--color-blue-200);
-  --color-primary-300: var(--color-blue-300);
-  --color-primary-400: var(--color-blue-400);
-  --color-primary-500: var(--color-blue-500);
-  --color-primary-600: var(--color-blue-600);
-  --color-primary-700: var(--color-blue-700);
-  --color-primary-800: var(--color-blue-800);
-  --color-primary-900: var(--color-blue-900);
+  /*
+   * Marca / ação primária — azul-ardósia suave ("soft slate-navy").
+   * Âncoras exatas do DESIGN.md: 600 = #5c6b8a (botão primário),
+   * 700 = #4d5a75 (hover documentado), 800 = #445371 (primary),
+   * 900 = #384764; 50 = #ebefff (surface-soft), 100 = #d7e2ff
+   * (primary-fixed), 200 = #b7c7ea (primary-fixed-dim). Os tons 300-500
+   * são interpolações para completar a rampa.
+   */
+  --color-primary-50: #ebefff;
+  --color-primary-100: #d7e2ff;
+  --color-primary-200: #b7c7ea;
+  --color-primary-300: #9aa9c4;
+  --color-primary-400: #7b8aa9;
+  --color-primary-500: #6b7a99;
+  --color-primary-600: #5c6b8a;
+  --color-primary-700: #4d5a75;
+  --color-primary-800: #445371;
+  --color-primary-900: #384764;
 
-  /* Neutros — texto, bordas, superfícies */
-  --color-neutral-50: var(--color-slate-50);
-  --color-neutral-100: var(--color-slate-100);
-  --color-neutral-200: var(--color-slate-200);
-  --color-neutral-300: var(--color-slate-300);
-  --color-neutral-400: var(--color-slate-400);
-  --color-neutral-500: var(--color-slate-500);
-  --color-neutral-600: var(--color-slate-600);
-  --color-neutral-700: var(--color-slate-700);
-  --color-neutral-800: var(--color-slate-800);
-  --color-neutral-900: var(--color-slate-900);
+  /*
+   * Secundária — periwinkle. No DESIGN.md é o acento interativo: badges,
+   * medidor de progresso da checklist, realces e o glow de foco dos
+   * inputs. Escala nova (não existia nos tokens provisórios).
+   */
+  --color-secondary-50: #eef1ff;
+  --color-secondary-100: #dde1ff;
+  --color-secondary-200: #b7c4ff;
+  --color-secondary-300: #96aaff;
+  --color-secondary-400: #93a7fc;
+  --color-secondary-500: #6b82e0;
+  --color-secondary-600: #4559a8;
+  --color-secondary-700: #2b418f;
+  --color-secondary-800: #233987;
+  --color-secondary-900: #001452;
 
-  /* Semânticas de estado */
+  /*
+   * Neutros — superfícies de papel e texto. Âncoras exatas:
+   * 50 = #fbf9f8 (surface), 200 = #e7e9ef (border-subtle, a "paper-crease
+   * border" usada em todo card/header), 400 = #9f9f9f (text-muted),
+   * 700 = #44474d (on-surface-variant), 800 = #3a3a3a (text-primary),
+   * 900 = #1b1c1c (on-surface).
+   */
+  --color-neutral-50: #fbf9f8;
+  --color-neutral-100: #f6f3f2;
+  --color-neutral-200: #e7e9ef;
+  --color-neutral-300: #c5c6ce;
+  --color-neutral-400: #9f9f9f;
+  --color-neutral-500: #75777e;
+  --color-neutral-600: #5f6168;
+  --color-neutral-700: #44474d;
+  --color-neutral-800: #3a3a3a;
+  --color-neutral-900: #1b1c1c;
+
+  /*
+   * Superfícies nomeadas do DESIGN.md. `surface-soft` é o painel
+   * azulado-claro usado como fundo de busca, banners e agrupamentos --
+   * evita o glare do branco puro em telas densas.
+   */
+  --color-paper: #ffffff;
+  --color-surface-soft: #ebefff;
+  --color-border-subtle: #e7e9ef;
+
+  /*
+   * Acentos de papelaria (DESIGN.md, "Named Accents"): indicadores
+   * contextuais de disponibilidade, item verificado e economia. São
+   * preenchimentos de badge, nunca cor de texto corrido.
+   */
+  --color-stationery-amber: #f7b955;
+  --color-stationery-mint: #7bdcb5;
+  --color-stationery-rose: #f87171;
+
+  /* Semânticas de estado — erro usa os valores exatos do DESIGN.md */
   --color-success-50: var(--color-emerald-50);
   --color-success-500: var(--color-emerald-500);
   --color-success-600: var(--color-emerald-600);
@@ -62,10 +122,10 @@
   --color-warning-600: var(--color-amber-600);
   --color-warning-700: var(--color-amber-700);
 
-  --color-danger-50: var(--color-red-50);
-  --color-danger-500: var(--color-red-500);
-  --color-danger-600: var(--color-red-600);
-  --color-danger-700: var(--color-red-700);
+  --color-danger-50: #ffdad6;
+  --color-danger-500: #ba1a1a;
+  --color-danger-600: #ba1a1a;
+  --color-danger-700: #93000a;
 
   --color-info-50: var(--color-sky-50);
   --color-info-500: var(--color-sky-500);
@@ -80,6 +140,24 @@
   /* WhatsApp — uso exclusivo no CTA de orçamento com papelaria */
   --color-whatsapp: #25d366;
   --color-whatsapp-dark: #128c7e;
+
+  /*
+   * Raio — mapeia a convenção de classes já usada pelo app sobre os
+   * valores do DESIGN.md: elementos pequenos (button/input/badge,
+   * rounded-lg) = 0.5rem; cards/painéis (rounded-xl) = 1rem;
+   * sheets/drawers (rounded-2xl) = 1.5rem.
+   */
+  --radius-lg: 0.5rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  /*
+   * Elevação — "physical sheet-of-paper layering", sombras ambientes
+   * suaves e difusas, nunca drop shadows duras (DESIGN.md).
+   */
+  --shadow-sm: 0 4px 16px -4px rgb(22 22 22 / 0.06);
+  --shadow-md: 0 6px 20px -6px rgb(22 22 22 / 0.12);
+  --shadow-lg: 0 8px 24px -8px rgb(22 22 22 / 0.18);
 }
 
 body {
@@ -87,6 +165,23 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Arial, sans-serif;
+}
+
+/*
+ * Títulos em Plus Jakarta Sans com tracking negativo — o "warm, confident,
+ * editorial feel" que o DESIGN.md pede para nomes de escola, séries e
+ * cabeçalhos de papelaria. O corpo permanece em Inter (x-height alto,
+ * melhor em telas baratas, que é o caso do público-alvo).
+ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui,
+    sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /*

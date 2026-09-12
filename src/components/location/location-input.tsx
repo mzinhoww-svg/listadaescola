@@ -96,7 +96,10 @@ export function LocationInput({ uf = "MT", onResolved, className }: LocationInpu
           autoComplete="off"
         />
       </div>
-      <div className="flex gap-2">
+      {/* flex-wrap: "Usar minha localização" + "Buscar" lado a lado estouram
+          a viewport em 390px (o menor alvo mobile do design system); sem o
+          wrap o botão fica cortado fora da tela. */}
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" size="lg" loading={isResolving}>
           <Search className="size-4" aria-hidden="true" />
           Buscar
