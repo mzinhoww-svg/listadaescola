@@ -1,15 +1,122 @@
 # Vercel — status real de deployment
 
-**Atualizado em 2026-09-12** com a **causa-raiz confirmada** por evidência
-objetiva da API do GitHub. A versão anterior deste documento classificava
-o domínio de produção como "DESCONHECIDO"; agora sabemos exatamente por
-que `https://listadaescola.vercel.app` responde 404 — e o que resolve.
+**Atualizado em 2026-09-12 13:50Z.** A causa-raiz diagnosticada nas
+seções 1–2 foi **corrigida pelo usuário** (Production Branch trocada para
+`claude/eager-galileo-d8hdtc`, Opção A) e a Vercel **produziu o primeiro
+deployment real de Production deste projeto**, com sucesso. O 404 original
+está resolvido *na sua causa*.
 
-**Resumo em uma frase:** o projeto Vercel existe, está corretamente ligado
-a este repositório e builda com sucesso a cada push, mas **nunca produziu
-um deployment de Production**, porque a *Production Branch* configurada na
-Vercel não corresponde à branch padrão real deste repositório — por isso o
-domínio de produção nunca foi atribuído a nenhum deployment.
+Mas o site **ainda não é público**, por dois bloqueios **novos e
+diferentes** do original — ambos verificados ao vivo, ambos do lado da
+Vercel, nenhum deles no código.
+
+**Resumo em uma frase:** o deployment de Production existe e buildou com
+sucesso, mas está atrás de Vercel Authentication (SSO) e o escopo
+Production está **sem nenhuma variável de ambiente** — então uma pessoa
+externa não consegue abrir o site e, se conseguisse, toda request falharia.
+
+> As seções 1–7 abaixo são o **registro do diagnóstico original** e
+> continuam corretas como história. Onde foram superadas pelos fatos, a
+> seção "Estado atual" logo abaixo prevalece.
+
+## Estado atual (2026-09-12 13:50Z) — VERIFICADO AO VIVO
+
+### O que foi corrigido ✅
+
+A API de deployments do GitHub mostra um deployment de Production **novo**,
+no commit de merge da PR #26:
+
+```
+id:              6410282331
+environment:     Production
+ref/sha:         10a2e3e1  (merge da PR #26 na branch padrão)
+created_at:      2026-09-12T13:44:21Z
+state:           success            <- buildou com sucesso
+environment_url: https://listadaescola-35lluyfxr-mazinhoww-5476s-projects.vercel.app
+```
+
+Antes desta correção, o único deployment `Production` em 60 era o deploy de
+importação do repositório vazio (seção 1). Agora há um deployment de
+Production **real, do código real, verde**. A troca da Production Branch
+funcionou exatamente como previsto na Opção A (seção 6).
+
+### Bloqueio 1 — Vercel Authentication está ligada ❌
+
+Sondagem ao vivo dos três hostnames do projeto:
+
+| URL | Resposta | Leitura |
+|---|---|---|
+| `listadaescola.vercel.app` | `404` + `x-vercel-error: NOT_FOUND` | alias curto **não atribuído** a este projeto |
+| `listadaescola-mazinhoww-5476s-projects.vercel.app` | `302` → `vercel.com/sso-api` | existe, mas **atrás de SSO** |
+| `listadaescola-35lluyfxr-…vercel.app` (deployment) | `302` → `vercel.com/sso-api` | existe, mas **atrás de SSO** |
+
+O `302` para `vercel.com/sso-api` com cookie `_vercel_sso_nonce` é Vercel
+Authentication. O hostname que **serve** o projeto hoje é o longo
+(`listadaescola-mazinhoww-5476s-projects.vercel.app`), e ele está
+protegido: **uma pessoa externa não consegue abrir o site**.
+
+O alias curto `listadaescola.vercel.app` responde `404 NOT_FOUND` — 404 da
+plataforma, não da aplicação. Ou seja: esse hostname não está atribuído a
+este projeto (nome `.vercel.app` é global e único; provavelmente já estava
+tomado quando o projeto foi criado). **A URL pública correta a testar e a
+divulgar não é essa** — é a longa, ou um domínio customizado.
+
+### Bloqueio 2 — escopo Production sem variáveis de ambiente ❌
+
+Isto era a previsão da seção 4 ("build verde não prova produção
+configurada") e se confirmou. Com o escopo Production vazio, o efeito **não
+é degradação parcial — é indisponibilidade total**:
+
+`src/lib/supabase/env.ts` lança erro explícito quando
+`NEXT_PUBLIC_SUPABASE_URL` ou `NEXT_PUBLIC_SUPABASE_ANON_KEY` faltam, e
+esse módulo é lido por `src/lib/supabase/proxy.ts`, que roda no middleware
+**em toda request**. Logo: toda rota, inclusive as estáticas de navegação,
+falha. O build passou verde mesmo assim, exatamente como a seção 4 previu.
+
+### Variáveis a configurar (lista exata, auditada em `src/`)
+
+| Variável | Necessidade | Onde é usada |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | **obrigatória** | `src/lib/supabase/env.ts` (toda request) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **obrigatória** | `src/lib/supabase/env.ts` (toda request) |
+| `NEXT_PUBLIC_SITE_URL` | recomendada | `src/lib/seo/site-url.ts`, `src/lib/auth/actions.ts` — sem ela, canonical/JSON-LD/OG caem para `VERCEL_URL` (a URL feia de deployment) |
+| `NEXT_PUBLIC_MAP_STYLE_URL` | opcional | `src/lib/map/config.ts` (tem default) |
+| `NEXT_PUBLIC_MAP_TILE_URL_TEMPLATE` | opcional | `src/lib/map/config.ts` (default OSM) |
+| `NEXT_PUBLIC_MAP_ATTRIBUTION` | opcional | `src/lib/map/config.ts` (tem default) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **NÃO ADICIONAR** | zero referências em `src/` — confirmado por `grep -rn SERVICE_ROLE src/`. Adicioná-la só colocaria um segredo de bypass total de RLS num ambiente que não o usa. |
+
+### Fronteira de acesso — reconfirmada com evidência nova
+
+Com o slug do time agora visível na URL do deployment
+(`mazinhoww-5476s-projects`), repeti as chamadas:
+
+- `list_teams` → **um único** time: `mzinhoww-gmailcoms-projects`
+  (`team_SOZVnHod91BcrmLMYmdmvB8k`, hobby).
+- `list_projects` nesse time → 7 projetos (`theloyal`, `teste`,
+  `milhasbot-modern`, `mentormatch`, `cia-do-visto-landing`,
+  `v0-resenha-fc-interface`, `v0-latam-pass-global-account`).
+  **`listadaescola` não está entre eles.**
+- `list_projects` / `get_project_deployment_protection` no time real
+  (`mazinhoww-5476s-projects`) → **403 Forbidden**.
+- `web_fetch_vercel_url` e `get_access_to_vercel_url` nas URLs protegidas →
+  `Unable to create shareable URL` (mesma fronteira).
+
+Conclusão: esta sessão **não consegue** desligar a proteção, adicionar
+variáveis, atribuir domínio, nem furar o SSO para smoke-testar por dentro.
+
+### O que falta, exatamente (dashboard da Vercel, time `mazinhoww-5476s-projects`)
+
+1. **Settings → Environment Variables**, escopo **Production**: adicionar
+   `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   (e, recomendado, `NEXT_PUBLIC_SITE_URL`). **Não** adicionar
+   `SUPABASE_SERVICE_ROLE_KEY`.
+2. **Settings → Deployment Protection**: desligar "Require Log In", ou
+   mudar para um modo que deixe o domínio de produção público.
+3. **Redeploy** — variáveis `NEXT_PUBLIC_*` são embutidas no bundle em
+   build time; adicioná-las **não** afeta o deployment já existente.
+   É obrigatório redeployar depois de configurá-las.
+4. Testar **`https://listadaescola-mazinhoww-5476s-projects.vercel.app`**
+   (não o alias curto, que não é deste projeto).
 
 ## 1. A causa-raiz (CONFIRMADA)
 
@@ -180,6 +287,10 @@ repositório).
   `NEXT_PUBLIC_MAP_ATTRIBUTION`, `VERCEL_URL` (injetada pela Vercel). As
   três de mapa têm default embutido e são opcionais.
 
-**CODE READY sim; PRODUCTION READY ainda não** — falta exclusivamente a
-promoção a Production do lado da Vercel, que exige acesso ao time
-`mazinhoww-5476s-projects`.
+**CODE READY sim; PRODUCTION READY ainda não.**
+
+Atualização de 2026-09-12 13:50Z: a promoção a Production **já aconteceu**
+(deployment `6410282331`, `state: success`). O que falta agora são os dois
+bloqueios da seção "Estado atual": variáveis de ambiente no escopo
+Production e Deployment Protection ligada. Ambos exigem acesso ao time
+`mazinhoww-5476s-projects`, que esta sessão não tem (403 reconfirmado).
