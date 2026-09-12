@@ -10,6 +10,11 @@ import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = { title: "Detalhe da lista" };
 
+const VERSION_STATUS_LABEL: Record<string, string> = {
+  PUBLISHED: "Publicada",
+  ARCHIVED: "Arquivada",
+};
+
 export default async function AdminListDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const list = await getAdminListDetail(id);
@@ -25,7 +30,11 @@ export default async function AdminListDetailPage({ params }: { params: Promise<
         <Badge variant={list.status === "APPROVED" ? "success" : "neutral"}>
           {list.status === "APPROVED" ? "Publicada" : "Arquivada"}
         </Badge>
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">{list.school.name}</h1>
+        <h1 className="mt-1 text-xl font-semibold text-neutral-900">
+          <Link href={`/admin/escolas/${list.school.id}`} className="hover:underline">
+            {list.school.name}
+          </Link>
+        </h1>
         <p className="text-sm text-neutral-500">
           {list.seriesName} · {list.schoolYear} · {list.school.municipality}/{list.school.uf}
         </p>
@@ -45,7 +54,10 @@ export default async function AdminListDetailPage({ params }: { params: Promise<
         <Card key={version.id}>
           <CardHeader>
             <CardTitle as="h2">
-              Versão {version.versionNumber} <Badge variant={version.status === "PUBLISHED" ? "success" : "neutral"}>{version.status}</Badge>
+              Versão {version.versionNumber}{" "}
+              <Badge variant={version.status === "PUBLISHED" ? "success" : "neutral"}>
+                {VERSION_STATUS_LABEL[version.status] ?? version.status}
+              </Badge>
             </CardTitle>
             <CardDescription>Publicada em {new Date(version.publishedAt).toLocaleDateString("pt-BR")}</CardDescription>
           </CardHeader>

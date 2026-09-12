@@ -18,11 +18,28 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "SUPER_ADMIN", label: "Super admin" },
 ];
 
+const ELEVATED_ROLES: UserRole[] = ["ADMIN", "SUPER_ADMIN"];
+
 export function UserRoleForm({ userId, currentRole }: { userId: string; currentRole: UserRole }) {
   const [state, formAction] = useActionState(setUserRoleAction, initialState);
 
   return (
-    <form action={formAction} className="flex items-center gap-2">
+    <form
+      action={formAction}
+      className="flex items-center gap-2"
+      onSubmit={(event) => {
+        const nextRole = new FormData(event.currentTarget).get("role");
+        const nextLabel = ROLE_OPTIONS.find((option) => option.value === nextRole)?.label;
+        if (
+          typeof nextRole === "string" &&
+          nextRole !== currentRole &&
+          ELEVATED_ROLES.includes(nextRole as UserRole) &&
+          !confirm(`Conceder o papel "${nextLabel}" a este usuário? Isso dá acesso administrativo total à plataforma.`)
+        ) {
+          event.preventDefault();
+        }
+      }}
+    >
       <input type="hidden" name="user_id" value={userId} />
       <Select label="Papel" name="role" hideLabel defaultValue={currentRole} className="h-9">
         {ROLE_OPTIONS.map((option) => (

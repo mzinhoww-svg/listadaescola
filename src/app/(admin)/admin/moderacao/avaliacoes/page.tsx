@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Star } from "lucide-react";
 
+import { ChevronLeft } from "lucide-react";
+
 import { getReviewModerationQueue } from "@/lib/admin/reviews";
 import { ReviewModerationActions } from "@/components/admin/review-moderation-actions";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { toDisplayCase } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Avaliações" };
 
@@ -15,8 +18,12 @@ export default async function ReviewModerationPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link href="/admin/moderacao" className="text-sm text-neutral-500 hover:text-neutral-700">
-          ← Fila de listas
+        <Link
+          href="/admin/moderacao"
+          className="mb-2 flex w-fit items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700"
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
+          Fila de listas
         </Link>
         <h1 className="text-2xl font-semibold text-neutral-900">Avaliações pendentes</h1>
       </div>
@@ -48,7 +55,7 @@ export default async function ReviewModerationPage() {
                   {item.comment ?? <span className="text-neutral-500">—</span>}
                 </TableCell>
                 <TableCell>
-                  {item.school.name}
+                  {toDisplayCase(item.school.name)}
                   <span className="block text-sm text-neutral-500">
                     {item.school.municipality}/{item.school.uf}
                   </span>

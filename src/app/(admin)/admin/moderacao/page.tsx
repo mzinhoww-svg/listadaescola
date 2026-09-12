@@ -10,7 +10,7 @@ import {
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { cn } from "@/lib/utils";
+import { cn, toDisplayCase } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Moderação" };
 
@@ -28,7 +28,10 @@ const STATUS_BADGE: Record<ModerationStatus, BadgeProps["variant"]> = {
   DRAFT: "neutral",
   SUBMITTED: "info",
   UNDER_REVIEW: "warning",
-  NEEDS_CORRECTION: "warning",
+  // Distinct from UNDER_REVIEW (passive) -- this is the one status that
+  // needs the submitter to act, same convention now used everywhere else
+  // this status renders (minha-conta/listas, /enviar-lista).
+  NEEDS_CORRECTION: "danger",
   APPROVED: "success",
   REJECTED: "danger",
   ARCHIVED: "neutral",
@@ -121,7 +124,7 @@ export default async function ModerationQueuePage({
                 </TableCell>
                 <TableCell>
                   <Link href={`/admin/moderacao/${item.id}`} className="font-medium text-primary-700 hover:underline">
-                    {item.school.name}
+                    {toDisplayCase(item.school.name)}
                   </Link>
                 </TableCell>
                 <TableCell>{item.school.municipality}</TableCell>

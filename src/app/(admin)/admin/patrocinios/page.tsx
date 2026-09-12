@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { getAdminCampaigns } from "@/lib/admin/campaigns";
 import { getRankingWeights } from "@/lib/admin/ranking";
+import { getAdminStores } from "@/lib/admin/stores";
 import { CampaignFormDrawer } from "@/components/admin/campaign-form-drawer";
 import { CampaignStatusActions } from "@/components/admin/campaign-status-actions";
 import { RankingWeightsForm } from "@/components/admin/ranking-weights-form";
@@ -27,7 +28,7 @@ const STATUS_BADGE: Record<string, BadgeProps["variant"]> = {
 };
 
 export default async function AdminPatrociniosPage() {
-  const [campaigns, weights] = await Promise.all([getAdminCampaigns(), getRankingWeights()]);
+  const [campaigns, weights, stores] = await Promise.all([getAdminCampaigns(), getRankingWeights(), getAdminStores()]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -42,7 +43,7 @@ export default async function AdminPatrociniosPage() {
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-lg font-semibold text-neutral-900">Campanhas</h2>
-          <CampaignFormDrawer />
+          <CampaignFormDrawer stores={stores} />
         </div>
         {campaigns.length === 0 ? (
           <EmptyState title="Nenhuma campanha cadastrada" description="Crie a primeira acima." />

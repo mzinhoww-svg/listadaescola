@@ -8,15 +8,24 @@ import { SubmitButton } from "@/components/auth/submit-button";
 
 const initialState: FormState = {};
 
-function StatusButton({ campaignId, status, label, variant }: {
+function StatusButton({ campaignId, status, label, variant, confirmMessage }: {
   campaignId: string;
   status: CampaignStatus;
   label: string;
   variant?: "primary" | "outline" | "danger";
+  confirmMessage?: string;
 }) {
   const [, formAction] = useActionState(setCampaignStatusAction, initialState);
   return (
-    <form action={formAction} className="inline">
+    <form
+      action={formAction}
+      className="inline"
+      onSubmit={(event) => {
+        if (confirmMessage && !confirm(confirmMessage)) {
+          event.preventDefault();
+        }
+      }}
+    >
       <input type="hidden" name="campaign_id" value={campaignId} />
       <input type="hidden" name="status" value={status} />
       <SubmitButton variant={variant ?? "outline"} size="sm">
@@ -35,7 +44,13 @@ export function CampaignStatusActions({ campaignId, status }: { campaignId: stri
         <StatusButton campaignId={campaignId} status="ACTIVE" label={status === "PAUSED" ? "Retomar" : "Ativar agora"} variant="primary" />
       )}
       {status === "ACTIVE" && <StatusButton campaignId={campaignId} status="PAUSED" label="Pausar" />}
-      <StatusButton campaignId={campaignId} status="ENDED" label="Encerrar" variant="danger" />
+      <StatusButton
+        campaignId={campaignId}
+        status="ENDED"
+        label="Encerrar"
+        variant="danger"
+        confirmMessage="Encerrar esta campanha? Essa ação não pode ser desfeita -- a campanha não pode ser reativada depois."
+      />
     </div>
   );
 }

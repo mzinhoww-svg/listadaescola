@@ -114,10 +114,16 @@ export default async function AdminAnalyticsPage({ searchParams }: AnalyticsPage
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Taxa de abertura de lista</CardTitle>
+            <CardTitle>Aberturas de lista por visualização de escola</CardTitle>
             <CardDescription className="text-2xl font-semibold text-neutral-900">
-              {listOpenRate !== null ? formatPercent(listOpenRate) : "Sem dados no período"}
+              {listOpenRate !== null ? listOpenRate.toFixed(2).replace(".", ",") : "Sem dados no período"}
             </CardDescription>
+            {listOpenRate !== null && (
+              <p className="text-xs text-neutral-500">
+                Não é uma taxa limitada a 100% -- uma lista pode ser aberta por link direto/compartilhado sem
+                passar pela página da escola, então o valor pode passar de 1,00.
+              </p>
+            )}
           </CardHeader>
         </Card>
       </div>

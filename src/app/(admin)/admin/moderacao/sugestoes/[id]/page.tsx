@@ -6,7 +6,7 @@ import { ChevronLeft } from "lucide-react";
 import { getSchoolSuggestionDetail } from "@/lib/admin/school-suggestions";
 import { SuggestionActions } from "@/components/admin/suggestion-actions";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 
 export const metadata: Metadata = { title: "Detalhe da sugestão" };
 
@@ -14,6 +14,17 @@ const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "Enviada",
   APPROVED: "Aprovada",
   REJECTED: "Rejeitada",
+};
+
+const STATUS_BADGE: Record<string, BadgeProps["variant"]> = {
+  SUBMITTED: "info",
+  APPROVED: "success",
+  REJECTED: "danger",
+};
+
+const SCHOOL_TYPE_LABEL: Record<string, string> = {
+  PUBLIC: "Pública",
+  PRIVATE: "Privada",
 };
 
 export default async function SchoolSuggestionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,7 +39,7 @@ export default async function SchoolSuggestionDetailPage({ params }: { params: P
           <ChevronLeft className="size-4" aria-hidden="true" />
           Voltar para sugestões
         </Link>
-        <Badge>{STATUS_LABEL[suggestion.status] ?? suggestion.status}</Badge>
+        <Badge variant={STATUS_BADGE[suggestion.status]}>{STATUS_LABEL[suggestion.status] ?? suggestion.status}</Badge>
         <h1 className="mt-1 text-xl font-semibold text-neutral-900">{suggestion.name}</h1>
         <p className="text-sm text-neutral-500">
           {suggestion.municipality}/{suggestion.uf}
@@ -60,7 +71,9 @@ export default async function SchoolSuggestionDetailPage({ params }: { params: P
             </div>
             <div>
               <dt className="text-neutral-500">Tipo</dt>
-              <dd className="text-neutral-900">{suggestion.schoolType ?? "não informado"}</dd>
+              <dd className="text-neutral-900">
+                {suggestion.schoolType ? SCHOOL_TYPE_LABEL[suggestion.schoolType] ?? suggestion.schoolType : "não informado"}
+              </dd>
             </div>
             {suggestion.notes && (
               <div className="sm:col-span-2">

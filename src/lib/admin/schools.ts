@@ -90,6 +90,8 @@ export interface AdminSchoolDetail {
   schoolType: string;
   isActive: boolean;
   source: string;
+  hasActiveCampaign: boolean;
+  hasPublishedList: boolean;
   profile: {
     description: string | null;
     logoUrl: string | null;
@@ -103,20 +105,44 @@ export interface AdminSchoolDetail {
 /** Admin-only (route already gated; schools_admin_all RLS is the real
  * backstop). Used to prefill the edit form -- INEP-controlled fields are
  * shown read-only, never sent back through admin_update_school (see that
- * function's own comment for why). */
+ * function's own comment for why). hasActiveCampaign/hasPublishedList warn
+ * an admin before they uncheck "Escola ativa" and unknowingly pull the
+ * school out from under a paying sponsorship or a live list -- admins can
+ * query campaigns directly (campaigns_admin_all RLS), unlike the public
+ * pages which need the is_entity_sponsored() SECURITY DEFINER function. */
 export const getAdminSchoolDetail = cache(async (schoolId: string): Promise<AdminSchoolDetail | null> => {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("schools")
-    .select(
-      `id, inep_code, name, slug, municipality, uf, address, school_type, is_active, source,
-       school_profiles (description, logo_url, website, instagram, whatsapp, is_verified)`
-    )
-    .eq("id", schoolId)
-    .maybeSingle();
+  const nowIso = new Date().toISOString();
+  const [schoolResult, campaignResult, listResult] = await Promise.all([
+    supabase
+      .from("schools")
+      .select(
+        `id, inep_code, name, slug, municipality, uf, address, school_type, is_active, source,
+         school_profiles (description, logo_url, website, instagram, whatsapp, is_verified)`
+      )
+      .eq("id", schoolId)
+      .maybeSingle(),
+    supabase
+      .from("campaigns")
+      .select("id", { count: "exact", head: true })
+      .eq("entity_type", "SCHOOL")
+      .eq("entity_id", schoolId)
+      .eq("status", "ACTIVE")
+      .lte("starts_at", nowIso)
+      .gte("ends_at", nowIso),
+    supabase
+      .from("school_lists")
+      .select("id", { count: "exact", head: true })
+      .eq("school_id", schoolId)
+      .eq("status", "APPROVED"),
+  ]);
 
-  if (error) throw new Error(`getAdminSchoolDetail failed: ${error.message}`);
+  if (schoolResult.error) throw new Error(`getAdminSchoolDetail failed: ${schoolResult.error.message}`);
+  if (campaignResult.error) throw new Error(`getAdminSchoolDetail failed: ${campaignResult.error.message}`);
+  if (listResult.error) throw new Error(`getAdminSchoolDetail failed: ${listResult.error.message}`);
+
+  const data = schoolResult.data;
   if (!data) return null;
 
   return {
@@ -130,6 +156,8 @@ export const getAdminSchoolDetail = cache(async (schoolId: string): Promise<Admi
     schoolType: data.school_type,
     isActive: data.is_active,
     source: data.source,
+    hasActiveCampaign: (campaignResult.count ?? 0) > 0,
+    hasPublishedList: (listResult.count ?? 0) > 0,
     profile: {
       description: data.school_profiles?.description ?? null,
       logoUrl: data.school_profiles?.logo_url ?? null,

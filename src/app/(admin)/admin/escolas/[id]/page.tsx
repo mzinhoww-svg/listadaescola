@@ -22,9 +22,11 @@ export default async function AdminSchoolDetailPage({ params }: { params: Promis
           <ChevronLeft className="size-4" aria-hidden="true" />
           Voltar para escolas
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant={school.isActive ? "success" : "neutral"}>{school.isActive ? "Ativa" : "Inativa"}</Badge>
           {school.profile.isVerified && <Badge variant="info">Verificada</Badge>}
+          {school.hasActiveCampaign && <Badge variant="sponsored">Patrocínio ativo</Badge>}
+          {school.hasPublishedList && <Badge variant="secondary">Lista publicada</Badge>}
         </div>
         <h1 className="mt-1 text-xl font-semibold text-neutral-900">{school.name}</h1>
         <p className="text-sm text-neutral-500">

@@ -37,18 +37,26 @@ export function EcommerceProductFormDrawer({
         if (next) resetState();
       }}
     >
-      <DrawerTrigger asChild>
-        {ecommerceProduct ? (
+      {ecommerceProduct ? (
+        <DrawerTrigger asChild>
           <Button variant="ghost" size="icon" aria-label="Editar oferta">
             <Pencil className="size-4" aria-hidden="true" />
           </Button>
-        ) : (
-          <Button disabled={disabled} title={disabled ? "Cadastre um parceiro e um produto primeiro" : undefined}>
-            <Plus className="size-4" aria-hidden="true" />
-            Nova oferta
-          </Button>
-        )}
-      </DrawerTrigger>
+        </DrawerTrigger>
+      ) : (
+        <div className="flex flex-col items-end gap-1.5">
+          <DrawerTrigger asChild>
+            <Button disabled={disabled}>
+              <Plus className="size-4" aria-hidden="true" />
+              Nova oferta
+            </Button>
+          </DrawerTrigger>
+          {/* Visible text, not just a title= tooltip -- a tooltip never
+           * surfaces on touch, so a mobile admin saw a dead button with no
+           * explanation at all. */}
+          {disabled && <p className="text-xs text-neutral-500">Cadastre um parceiro e um produto primeiro.</p>}
+        </div>
+      )}
       <DrawerContent title={ecommerceProduct ? "Editar oferta" : "Nova oferta de parceiro"}>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {ecommerceProduct && <input type="hidden" name="ecommerce_product_id" value={ecommerceProduct.id} />}
