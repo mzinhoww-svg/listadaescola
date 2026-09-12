@@ -3,15 +3,26 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
+  // min-w-0 breaks the intrinsic-width chain: without it, a flex/grid
+  // ancestor's default min-width:auto lets the table's own min-w-max push
+  // the *whole page* wider than the viewport instead of scrolling inside
+  // this wrapper (confirmed live on every admin list screen at 390px --
+  // up to 991px of page-level overflow, dragging the mobile header off
+  // screen with it, not just table cells).
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-neutral-200">
+    <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-neutral-200">
       <table className={cn("w-full min-w-max text-left text-sm", className)} {...props} />
     </div>
   );
 }
 
 function TableHeader({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn("bg-neutral-50 text-neutral-600", className)} {...props} />;
+  return (
+    <thead
+      className={cn("sticky top-0 bg-neutral-50 text-neutral-600", className)}
+      {...props}
+    />
+  );
 }
 
 function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {

@@ -18,6 +18,9 @@ const buttonVariants = cva(
           "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50 active:bg-neutral-100",
         ghost: "text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200",
         danger: "bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-700",
+        // Reserved exclusively for the WhatsApp-orçamento CTA (papelaria
+        // flows) -- never a generic action color, per design-system.md.
+        whatsapp: "bg-whatsapp text-white hover:bg-whatsapp-dark active:bg-whatsapp-dark",
       },
       size: {
         sm: "h-9 px-3 text-sm",

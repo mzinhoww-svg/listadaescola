@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored third-party tooling (.claude/skills/README.md) -- bundled
+    // JS shipped as-is from an external release, never edited here, so it
+    // should never surface as lint noise on this project's own code.
+    ".claude/**",
   ]),
 ]);
 
