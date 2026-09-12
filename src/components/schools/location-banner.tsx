@@ -34,7 +34,7 @@ export function LocationBanner({ label, hasLocation }: LocationBannerProps) {
       <div className="rounded-xl border border-neutral-200 bg-white p-4">
         {!hasLocation && (
           <p className="mb-3 text-sm text-neutral-600">
-            Não encontramos uma localização para esta busca. Informe um CEP, cidade ou use sua localização atual.
+            Mostre resultados perto de você: informe um CEP, cidade ou use sua localização atual.
           </p>
         )}
         <LocationInput

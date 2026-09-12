@@ -2,6 +2,7 @@ import { ExternalLink } from "lucide-react";
 
 import { CommerceProvider } from "@/lib/commerce/provider";
 import type { ItemOffer } from "@/lib/commerce/offers";
+import { formatCurrency } from "@/lib/utils";
 
 export interface PartnerOfferButtonProps {
   offer: ItemOffer;
@@ -42,7 +43,12 @@ export function PartnerOfferButton({ offer, schoolListItemId, schoolId, listId }
         <span className="font-medium text-neutral-900">{offer.partnerName}</span>
         <span className="text-xs text-neutral-500">{cta.label}</span>
       </span>
-      <ExternalLink className="ml-auto size-3.5 shrink-0 text-neutral-400" aria-hidden="true" />
+      {offer.priceHint !== null && (
+        <span className="ml-auto shrink-0 text-sm font-medium text-neutral-700">
+          {formatCurrency(offer.priceHint)}
+        </span>
+      )}
+      <ExternalLink className="size-3.5 shrink-0 text-neutral-400" aria-hidden="true" />
     </a>
   );
 }
