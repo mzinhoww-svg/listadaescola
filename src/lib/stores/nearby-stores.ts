@@ -5,6 +5,8 @@ export interface NearbyStore {
   id: string;
   name: string;
   slug: string;
+  uf: string;
+  municipality: string;
   address: string | null;
   /** Already validated/normalized (RF-012) -- null when the stored number can't be trusted, so the UI never renders a dead WhatsApp CTA. */
   whatsappNormalized: string | null;
@@ -49,6 +51,8 @@ export async function getNearbyStores({
     id: row.id,
     name: row.name,
     slug: row.slug,
+    uf: row.uf,
+    municipality: row.municipality,
     address: row.address,
     whatsappNormalized: normalizeWhatsappNumber(row.whatsapp),
     openingHours: row.opening_hours,

@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { LogoutButton } from "@/components/auth/logout-button";
 
 const navItems = [
@@ -21,20 +23,34 @@ const navItems = [
 ];
 
 function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
   return (
     <nav aria-label="Administração">
       <ul className="flex flex-col gap-1">
-        {navItems.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              onClick={onNavigate}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
+        {navItems.map((item) => {
+          // Exact match for the dashboard root; prefix match for every
+          // other section so a detail route (e.g. /admin/escolas/[id])
+          // still highlights its parent "Escolas" entry.
+          const isActive =
+            item.href === "/admin" ? pathname === item.href : pathname.startsWith(item.href);
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                onClick={onNavigate}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "block rounded-lg px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500",
+                  isActive
+                    ? "bg-primary-800 text-white"
+                    : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                )}
+              >
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
@@ -51,7 +67,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           one here just makes a keyboard user tab through two identical
           links before reaching content. */}
 
-      <aside className="hidden w-60 shrink-0 flex-col gap-1 border-r border-neutral-800 bg-neutral-900 p-4 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-1 overflow-y-auto border-r border-neutral-800 bg-neutral-900 p-4 lg:flex">
         <Link href="/admin" className="mb-4 px-2 text-sm font-semibold text-white">
           Listada Escola · Admin
         </Link>
@@ -61,7 +77,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b border-neutral-200 bg-white px-4 lg:hidden">
           <span className="text-sm font-semibold text-neutral-900">Admin</span>
           <button
@@ -78,12 +94,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {mobileNavOpen && (
           <div id={mobileNavId} className="bg-neutral-900 p-4 lg:hidden">
             <AdminNav onNavigate={() => setMobileNavOpen(false)} />
-            <div className="mt-2">
+            <div className="mt-2 border-t border-neutral-800 pt-2">
               <LogoutButton className="w-full justify-start text-neutral-300 hover:bg-neutral-800 hover:text-white" />
             </div>
           </div>
         )}
-        <main id="conteudo-principal" className="flex-1 bg-neutral-50 p-4 sm:p-6">
+        <main id="conteudo-principal" className="min-w-0 flex-1 bg-neutral-50 p-4 sm:p-6">
           {children}
         </main>
       </div>

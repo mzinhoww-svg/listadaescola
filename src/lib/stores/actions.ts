@@ -10,7 +10,7 @@ import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
  * every page load, and skips the proximity query for visitors who never
  * open it.
  */
-export async function getNearbyStoresForSchoolAction(schoolId: string, listId: string): Promise<NearbyStore[]> {
+export async function getNearbyStoresForSchoolAction(schoolId: string, listId?: string): Promise<NearbyStore[]> {
   const supabase = createPublicClient();
   const { data: school } = await supabase
     .from("schools")

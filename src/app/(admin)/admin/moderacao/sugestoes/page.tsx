@@ -7,6 +7,8 @@ import {
   SUGGESTION_QUEUE_FILTERABLE_STATUSES,
   type SuggestionStatus,
 } from "@/lib/admin/school-suggestions";
+import { ChevronLeft } from "lucide-react";
+
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -28,7 +30,7 @@ const STATUS_BADGE: Record<SuggestionStatus, BadgeProps["variant"]> = {
   DRAFT: "neutral",
   SUBMITTED: "info",
   UNDER_REVIEW: "warning",
-  NEEDS_CORRECTION: "warning",
+  NEEDS_CORRECTION: "danger",
   APPROVED: "success",
   REJECTED: "danger",
   ARCHIVED: "neutral",
@@ -51,8 +53,12 @@ export default async function SchoolSuggestionQueuePage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link href="/admin/moderacao" className="text-sm text-neutral-500 hover:text-neutral-700">
-          ← Fila de listas
+        <Link
+          href="/admin/moderacao"
+          className="mb-2 flex w-fit items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700"
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
+          Fila de listas
         </Link>
         <h1 className="text-2xl font-semibold text-neutral-900">Sugestões de escola</h1>
         <p className="text-sm text-neutral-500">

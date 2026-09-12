@@ -94,20 +94,18 @@ export default async function AdminSchoolsPage({
               </span>
               <div className="flex gap-2">
                 {page > 1 && (
-                  <Link
-                    href={{ pathname: "/admin/escolas", query: { q, municipio, status, pagina: page - 1 } }}
-                    className="rounded-lg border border-neutral-300 px-3 py-1.5 hover:bg-neutral-50"
-                  >
-                    Anterior
-                  </Link>
+                  <Button asChild variant="outline">
+                    <Link href={{ pathname: "/admin/escolas", query: { q, municipio, status, pagina: page - 1 } }}>
+                      Anterior
+                    </Link>
+                  </Button>
                 )}
                 {page < totalPages && (
-                  <Link
-                    href={{ pathname: "/admin/escolas", query: { q, municipio, status, pagina: page + 1 } }}
-                    className="rounded-lg border border-neutral-300 px-3 py-1.5 hover:bg-neutral-50"
-                  >
-                    Próxima
-                  </Link>
+                  <Button asChild variant="outline">
+                    <Link href={{ pathname: "/admin/escolas", query: { q, municipio, status, pagina: page + 1 } }}>
+                      Próxima
+                    </Link>
+                  </Button>
                 )}
               </div>
             </div>

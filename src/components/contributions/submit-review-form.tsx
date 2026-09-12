@@ -20,6 +20,10 @@ export function SubmitReviewForm({ submissionId }: { submissionId: string }) {
           {state.error}
         </p>
       )}
+      <p className="text-sm text-neutral-500">
+        Depois de enviada, a lista fica em análise e não pode mais ser editada até que um moderador aprove ou peça
+        correção -- você será avisado quando isso acontecer.
+      </p>
       <div className="flex justify-between">
         <Button asChild variant="outline">
           <Link href={`/enviar-lista/${submissionId}/anexo`}>Voltar</Link>

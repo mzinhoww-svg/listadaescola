@@ -1818,6 +1818,13 @@ export type Database = {
         Returns: number
       }
       is_admin: { Args: never; Returns: boolean }
+      is_entity_sponsored: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: Database["public"]["Enums"]["campaign_entity_type"]
+        }
+        Returns: boolean
+      }
       is_school_manager: {
         Args: { target_school_id: string }
         Returns: boolean

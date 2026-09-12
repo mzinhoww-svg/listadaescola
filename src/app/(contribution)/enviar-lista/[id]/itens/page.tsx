@@ -7,6 +7,7 @@ import { EDITABLE_SUBMISSION_STATUSES } from "@/lib/contributions/constants";
 import { WizardSteps } from "@/components/contributions/wizard-steps";
 import { AddItemForm, ItemsList } from "@/components/contributions/item-form";
 import { Button } from "@/components/ui/button";
+import { toDisplayCase } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Itens da lista" };
 
@@ -24,11 +25,13 @@ export default async function SubmissionItemsPage({ params }: { params: Promise<
       <div>
         <h1 className="text-lg font-semibold text-neutral-900">Itens da lista</h1>
         <p className="text-sm text-neutral-500">
-          {submission.school.name} · {submission.educationLevel} · {submission.seriesName} · {submission.schoolYear}
+          {toDisplayCase(submission.school.name)} · {submission.educationLevel} · {submission.seriesName} ·{" "}
+          {submission.schoolYear}
         </p>
       </div>
 
       <AddItemForm submissionId={id} />
+      <h2 className="text-base font-semibold text-neutral-900">Itens ({submission.items.length})</h2>
       <ItemsList submissionId={id} items={submission.items} />
 
       <div className="flex justify-end">

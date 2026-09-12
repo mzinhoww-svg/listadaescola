@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
-import { nullableArg } from "@/lib/admin/rpc-utils";
+import { nullableArg, translateAdminDbError } from "@/lib/admin/rpc-utils";
 
 export interface FormState {
   error?: string;
@@ -48,7 +48,7 @@ export async function upsertStoreSaleReportAction(_prevState: FormState, formDat
     p_sale_value: nullableArg(optionalNumber(formData, "sale_value")),
     p_notes: nullableArg(optionalString(formData, "notes")),
   });
-  if (error) return { error: error.message };
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidatePath("/admin/vendas");
   return { success: id ? "Registro atualizado." : "Registro criado." };
@@ -76,7 +76,7 @@ export async function upsertPartnerSaleReportAction(_prevState: FormState, formD
     p_commission_value: optionalNumber(formData, "commission_value") ?? 0,
     p_notes: nullableArg(optionalString(formData, "notes")),
   });
-  if (error) return { error: error.message };
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidatePath("/admin/vendas");
   return { success: id ? "Registro atualizado." : "Registro criado." };

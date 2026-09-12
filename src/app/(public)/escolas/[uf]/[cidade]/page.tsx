@@ -9,6 +9,7 @@ import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import { jsonLdScript } from "@/lib/seo/json-ld";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
+import { slugify } from "@/lib/utils";
 
 // Same reasoning as every other Supabase-backed public page: never
 // statically prerendered.
@@ -26,7 +27,11 @@ interface CidadePageProps {
  */
 export async function generateMetadata({ params }: CidadePageProps): Promise<Metadata> {
   const { uf, cidade } = await params;
-  const municipality = await resolveMunicipalitySlug(uf.toUpperCase(), cidade);
+  // resolve_municipality_slug() does an exact match against slugify(name)
+  // -- normalize here so a link/bookmark using the city's natural
+  // capitalization (e.g. "Comodoro", how it's displayed everywhere in the
+  // UI, including this page's own breadcrumb) resolves instead of 404ing.
+  const municipality = await resolveMunicipalitySlug(uf.toUpperCase(), slugify(cidade));
   if (!municipality) return {};
 
   const title = `Escolas em ${municipality}`;
@@ -43,7 +48,7 @@ export async function generateMetadata({ params }: CidadePageProps): Promise<Met
 export default async function CidadePage({ params, searchParams }: CidadePageProps) {
   const { uf, cidade } = await params;
   const ufUpper = uf.toUpperCase();
-  const municipality = await resolveMunicipalitySlug(ufUpper, cidade);
+  const municipality = await resolveMunicipalitySlug(ufUpper, slugify(cidade));
   if (!municipality) notFound();
 
   const { page: pageParam } = await searchParams;

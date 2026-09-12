@@ -1,15 +1,22 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 
 import { discardDraftAction, type FormState } from "@/lib/contributions/actions";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { useToast } from "@/components/ui/use-toast";
 
 const initialState: FormState = {};
 
 export function DiscardDraftButton({ submissionId }: { submissionId: string }) {
-  const [, formAction] = useActionState(discardDraftAction, initialState);
+  const [state, formAction] = useActionState(discardDraftAction, initialState);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (state?.success) toast({ title: state.success, variant: "success" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   return (
     <form

@@ -33,7 +33,16 @@ interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
 function CardTitle({ className, as: Heading = "h3", ...props }: CardTitleProps) {
   return (
     <Heading
-      className={cn("text-base font-semibold text-neutral-900", className)}
+      className={cn(
+        "font-semibold text-neutral-900",
+        // A Card used as a page's only/main content block (as="h1") needs a
+        // heading weight that actually reads as the page title -- the h3
+        // default (16px) was designed for a card as a subsection, and left
+        // every as="h1" page (all 5 auth screens, sugerir-escola) with the
+        // least confident text on the page.
+        Heading === "h1" ? "text-xl sm:text-2xl" : "text-base",
+        className
+      )}
       {...props}
     />
   );

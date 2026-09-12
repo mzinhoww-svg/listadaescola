@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 
 import { submitSchoolSuggestionAction, type FormState } from "@/lib/contributions/school-suggestion-actions";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { Button } from "@/components/ui/button";
 
 const initialState: FormState = {};
 
@@ -18,6 +20,9 @@ export function SuggestSchoolForm() {
       <div className="flex flex-col items-center gap-3 py-10 text-center">
         <CheckCircle2 className="size-12 text-success-600" aria-hidden="true" />
         <p className="max-w-sm text-sm text-neutral-700">{state.success}</p>
+        <Button asChild className="mt-2">
+          <Link href="/">Voltar ao início</Link>
+        </Button>
       </div>
     );
   }

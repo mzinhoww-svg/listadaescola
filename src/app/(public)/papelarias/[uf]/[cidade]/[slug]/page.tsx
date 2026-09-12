@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Clock, MapPin, MessageCircle, ShoppingBag, Truck } from "lucide-react";
+import { AtSign, Clock, Globe, MapPin, MessageCircle, ShoppingBag, Truck } from "lucide-react";
 
 import { getStoreBySlug, storeHref } from "@/lib/stores/store-profile";
 import { normalizeWhatsappNumber } from "@/lib/stores/whatsapp";
+import { getNearbySchools } from "@/lib/schools/nearby-schools";
+import { schoolHref } from "@/components/schools/school-card";
+import { isEntitySponsored } from "@/lib/campaigns/public";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
+import { toDisplayCase } from "@/lib/utils";
 
 // Prompt 18 (performance audit) investigated switching this to ISR
 // (`export const revalidate = 3600`) since, unlike every other public
@@ -60,6 +64,17 @@ export default async function StorePage({ params }: StorePageProps) {
   const whatsappNormalized = normalizeWhatsappNumber(store.whatsapp);
   const whatsappHref = whatsappNormalized ? `/api/store/whatsapp?store=${store.id}` : null;
 
+  const [isSponsored, nearbySchools] = await Promise.all([
+    // Live campaign check -- same fix as the school profile page, same
+    // reason: store.isSponsored is a static column nothing ever writes to.
+    isEntitySponsored("STORE", store.id),
+    // Reverse of the school profile's "papelarias próximas": proximity
+    // only (RN-009, never a confirmed service relationship the data
+    // doesn't back), same nearby_schools() RPC the CEP fallback already
+    // uses elsewhere.
+    getNearbySchools({ uf: store.uf, lat: store.latitude, lon: store.longitude, municipality: store.municipality }),
+  ]);
+
   const siteUrl = getSiteBaseUrl();
   const jsonLd = {
     "@context": "https://schema.org",
@@ -104,7 +119,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {store.isSponsored && (
+          {isSponsored && (
             <Badge variant="sponsored" className="w-fit">
               PATROCINADA
             </Badge>
@@ -147,7 +162,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
         <div>
           {whatsappHref ? (
-            <Button asChild>
+            <Button asChild variant="whatsapp">
               <a href={whatsappHref} target="_blank" rel="nofollow noopener noreferrer">
                 <MessageCircle className="size-4" aria-hidden="true" />
                 Pedir orçamento no WhatsApp
@@ -187,9 +202,58 @@ export default async function StorePage({ params }: StorePageProps) {
         <section className="mt-8">
           <h2 className="mb-3 text-lg font-semibold text-neutral-900">Contato</h2>
           <ul className="flex flex-col gap-2 text-sm text-neutral-700">
-            {store.contacts.map((contact, index) => (
-              <li key={index} className="flex items-center gap-2">
-                <span className="text-neutral-600">{contact.contactType}:</span> {contact.value}
+            {store.contacts.map((contact, index) => {
+              if (contact.contactType === "website") {
+                return (
+                  <li key={index} className="flex items-center gap-2">
+                    <Globe className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
+                    <a
+                      href={contact.value}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-700 hover:underline"
+                    >
+                      {contact.value}
+                    </a>
+                  </li>
+                );
+              }
+              if (contact.contactType === "instagram") {
+                return (
+                  <li key={index} className="flex items-center gap-2">
+                    <AtSign className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
+                    {contact.value}
+                  </li>
+                );
+              }
+              return (
+                <li key={index} className="flex items-center gap-2">
+                  <span className="text-neutral-600">{contact.contactType}:</span> {contact.value}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {nearbySchools.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-lg font-semibold text-neutral-900">Escolas próximas</h2>
+          <p className="mb-3 text-sm text-neutral-500">
+            Escolas na região -- não é uma lista de escolas atendidas oficialmente.
+          </p>
+          <ul className="flex flex-col gap-2">
+            {nearbySchools.map((school) => (
+              <li key={school.id}>
+                <Link
+                  href={schoolHref(school)}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm hover:border-primary-300 hover:bg-primary-50"
+                >
+                  <span className="font-medium text-neutral-900">{toDisplayCase(school.name)}</span>
+                  {school.distanceKm !== null && (
+                    <span className="shrink-0 text-neutral-500">{school.distanceKm} km</span>
+                  )}
+                </Link>
               </li>
             ))}
           </ul>

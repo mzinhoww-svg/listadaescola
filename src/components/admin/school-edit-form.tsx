@@ -44,16 +44,24 @@ export function SchoolEditForm({ school }: { school: AdminSchoolDetail }) {
             type="checkbox"
             name="is_active"
             defaultChecked={school.isActive}
-            className="size-4 rounded border-neutral-300 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+            className="size-4 rounded border-neutral-300 accent-primary-600 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
           />
           Escola ativa (visível publicamente)
         </label>
+        {school.isActive && (school.hasActiveCampaign || school.hasPublishedList) && (
+          <p className="text-sm text-warning-700">
+            Atenção: esta escola tem {school.hasActiveCampaign && "um patrocínio ativo"}
+            {school.hasActiveCampaign && school.hasPublishedList && " e "}
+            {school.hasPublishedList && "uma lista publicada"}. Desmarcar &ldquo;Escola ativa&rdquo; a esconde
+            imediatamente das páginas públicas.
+          </p>
+        )}
         <label className="flex items-center gap-2 text-sm text-neutral-700">
           <input
             type="checkbox"
             name="is_verified"
             defaultChecked={school.profile.isVerified}
-            className="size-4 rounded border-neutral-300 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+            className="size-4 rounded border-neutral-300 accent-primary-600 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
           />
           Escola verificada
         </label>

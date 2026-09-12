@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
+import { translateAdminDbError } from "@/lib/admin/rpc-utils";
 
 export interface FormState {
   error?: string;
@@ -32,7 +33,7 @@ export async function updateRankingWeightsAction(_prevState: FormState, formData
   }
 
   const { error } = await supabase.rpc("admin_update_ranking_weights", weights);
-  if (error) return { error: error.message };
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidatePath("/admin/patrocinios");
   return { success: "Pesos do ranking atualizados." };

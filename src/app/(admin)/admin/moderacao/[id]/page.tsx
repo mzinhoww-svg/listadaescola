@@ -6,8 +6,9 @@ import { FileText, Image as ImageIcon, ChevronLeft } from "lucide-react";
 import { getSubmissionModerationDetail } from "@/lib/moderation/detail";
 import { ReviewActions } from "@/components/moderation/review-actions";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { toDisplayCase } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Detalhe da submissão" };
 
@@ -17,6 +18,19 @@ const STATUS_LABEL: Record<string, string> = {
   NEEDS_CORRECTION: "Precisa de correção",
   APPROVED: "Aprovada",
   REJECTED: "Rejeitada",
+};
+
+// Same map as the queue page (moderacao/page.tsx) -- kept in sync
+// manually since the two files don't share one, but must not drift back
+// out of sync: this page previously rendered <Badge> with no variant at
+// all, silently defaulting to neutral and losing exactly the color signal
+// an admin uses to triage the queue at a glance.
+const STATUS_BADGE: Record<string, BadgeProps["variant"]> = {
+  SUBMITTED: "info",
+  UNDER_REVIEW: "warning",
+  NEEDS_CORRECTION: "danger",
+  APPROVED: "success",
+  REJECTED: "danger",
 };
 
 export default async function ModerationDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,9 +46,9 @@ export default async function ModerationDetailPage({ params }: { params: Promise
           Voltar para a fila
         </Link>
         <div className="flex items-center gap-2">
-          <Badge>{STATUS_LABEL[submission.status] ?? submission.status}</Badge>
+          <Badge variant={STATUS_BADGE[submission.status]}>{STATUS_LABEL[submission.status] ?? submission.status}</Badge>
         </div>
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">{submission.school.name}</h1>
+        <h1 className="mt-1 text-xl font-semibold text-neutral-900">{toDisplayCase(submission.school.name)}</h1>
         <p className="text-sm text-neutral-500">
           {submission.educationLevel} · {submission.seriesName} · {submission.schoolYear} ·{" "}
           {submission.school.municipality}/{submission.school.uf}

@@ -14,7 +14,11 @@ export default async function RedefinirSenhaPage() {
     <Card>
       <CardHeader>
         <CardTitle as="h1">Redefinir senha</CardTitle>
-        <CardDescription>Escolha uma nova senha para sua conta.</CardDescription>
+        <CardDescription>
+          {user
+            ? "Escolha uma nova senha para sua conta."
+            : "Não foi possível verificar seu link de redefinição."}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {user ? (

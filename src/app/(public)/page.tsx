@@ -7,6 +7,7 @@ import { HomeNameSearch } from "@/components/home/home-name-search";
 import { SchoolCard } from "@/components/schools/school-card";
 import { Button } from "@/components/ui/button";
 import { getFeaturedSchools, getRecentLists } from "@/lib/schools/home-queries";
+import { toDisplayCase } from "@/lib/utils";
 
 const DESCRIPTION =
   "Encontre escolas de Mato Grosso por cidade, CEP ou nome, veja a lista de material escolar e resolva a compra online ou em papelarias próximas.";
@@ -51,7 +52,11 @@ export default async function HomePage() {
       {featuredSchools.length > 0 && (
         <section className="mt-16">
           <h2 className="mb-4 text-xl font-semibold text-neutral-900">Escolas em destaque</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* auto-fit (not a fixed column count) so a sparse result -- the
+              common case today, with 0 real submissions yet -- renders as a
+              tight row instead of 1 narrow card next to 3 columns of dead
+              canvas. */}
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,320px))] gap-4">
             {featuredSchools.map((school) => (
               <SchoolCard key={school.id} school={school} />
             ))}
@@ -62,7 +67,7 @@ export default async function HomePage() {
       {recentLists.length > 0 && (
         <section className="mt-16">
           <h2 className="mb-4 text-xl font-semibold text-neutral-900">Listas recentes</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,320px))] gap-4">
             {recentLists.map((list) => (
               <Link
                 key={list.id}
@@ -73,7 +78,7 @@ export default async function HomePage() {
                   {list.seriesName} · {list.schoolYear}
                 </p>
                 <p className="mt-1 text-sm text-neutral-500">
-                  {list.school.name} — {list.school.municipality}, {list.school.uf}
+                  {toDisplayCase(list.school.name)} — {list.school.municipality}, {list.school.uf}
                 </p>
               </Link>
             ))}

@@ -24,7 +24,11 @@ interface CidadePageProps {
  */
 async function getStoresForCity(uf: string, citySlug: string) {
   const stores = await getActiveStores(uf);
-  return stores.filter((store) => slugify(store.municipality) === citySlug);
+  // Normalize both sides: a link/bookmark using the city's natural
+  // capitalization (e.g. "Comodoro") must resolve exactly like the
+  // schools-side page (same class of bug, fixed there too).
+  const normalizedSlug = slugify(citySlug);
+  return stores.filter((store) => slugify(store.municipality) === normalizedSlug);
 }
 
 export async function generateMetadata({ params }: CidadePageProps): Promise<Metadata> {

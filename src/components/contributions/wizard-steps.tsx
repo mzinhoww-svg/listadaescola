@@ -32,8 +32,12 @@ export function WizardSteps({ current }: { current: WizardStepKey }) {
                 <span
                   className={cn(
                     "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                    isComplete && "bg-primary-600 text-white",
-                    isCurrent && "border-2 border-primary-600 bg-white text-primary-700",
+                    // Progress/checklist indicators are the periwinkle
+                    // secondary accent's named use case (globals.css) --
+                    // this was the one place in the app most in need of it
+                    // and, until now, still running on primary/slate.
+                    isComplete && "bg-secondary-600 text-white",
+                    isCurrent && "border-2 border-secondary-600 bg-white text-secondary-700",
                     !isComplete && !isCurrent && "bg-neutral-100 text-neutral-400"
                   )}
                   aria-hidden="true"
@@ -43,14 +47,14 @@ export function WizardSteps({ current }: { current: WizardStepKey }) {
                 <span
                   className={cn(
                     "hidden text-center text-xs font-medium sm:block",
-                    isCurrent ? "text-primary-700" : "text-neutral-500"
+                    isCurrent ? "text-secondary-700" : "text-neutral-500"
                   )}
                 >
                   {step.label}
                 </span>
               </div>
               {index < STEPS.length - 1 && (
-                <div className={cn("h-0.5 flex-1", isComplete ? "bg-primary-600" : "bg-neutral-200")} aria-hidden="true" />
+                <div className={cn("h-0.5 flex-1", isComplete ? "bg-secondary-600" : "bg-neutral-200")} aria-hidden="true" />
               )}
             </li>
           );

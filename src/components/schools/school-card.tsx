@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapPin, Star, ListChecks, BadgeCheck } from "lucide-react";
 
-import { cn, slugify } from "@/lib/utils";
+import { cn, slugify, toDisplayCase } from "@/lib/utils";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { SchoolResult } from "@/lib/schools/search-schools";
@@ -29,7 +29,7 @@ export function SchoolCard({ school, className }: SchoolCardProps) {
             PATROCINADA
           </Badge>
         )}
-        <CardTitle className="line-clamp-2">{school.name}</CardTitle>
+        <CardTitle className="line-clamp-2">{toDisplayCase(school.name)}</CardTitle>
         <div className="flex items-center gap-1 text-sm text-neutral-500">
           <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">

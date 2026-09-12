@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,14 @@ export default function ConfiguracoesPage() {
   return (
     <>
       <h1 className="text-2xl font-semibold text-neutral-900">Configurações</h1>
-      <div className="mt-6 max-w-sm">
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Alterar senha</h2>
-        <ResetPasswordForm />
-      </div>
+      <Card className="mt-6 max-w-sm">
+        <CardHeader>
+          <CardTitle as="h2">Alterar senha</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResetPasswordForm />
+        </CardContent>
+      </Card>
     </>
   );
 }

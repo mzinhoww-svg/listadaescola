@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AtSign, BadgeCheck, Globe, MapPin, MessageCircle, Phone, Star } from "lucide-react";
+import { AtSign, BadgeCheck, ChevronDown, Globe, MapPin, MessageCircle, Phone, Star } from "lucide-react";
 
 import { getSchoolBySlug, getSchoolLists, groupEtapasSeriesListas } from "@/lib/schools/school-profile";
 import { schoolHref } from "@/components/schools/school-card";
@@ -10,14 +10,16 @@ import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isFavorited } from "@/lib/favorites/queries";
 import { getApprovedReviews, getOwnReview } from "@/lib/reviews/queries";
+import { isEntitySponsored } from "@/lib/campaigns/public";
 import { SaveButton } from "@/components/favorites/save-button";
+import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
-import { cn, slugify } from "@/lib/utils";
+import { cn, slugify, toDisplayCase } from "@/lib/utils";
 
 // Same reasoning as Home (src/app/(public)/page.tsx): this page's data
 // depends on Supabase at request time, so it must never be statically
@@ -39,7 +41,7 @@ export async function generateMetadata({ params }: SchoolPageProps): Promise<Met
   const logoUrl = school.school_profiles?.logo_url ? getPublicAssetUrl(school.school_profiles.logo_url) : undefined;
 
   return {
-    title: `${school.name} — ${school.municipality}/${school.uf}`,
+    title: `${toDisplayCase(school.name)} — ${school.municipality}/${school.uf}`,
     description,
     alternates: { canonical: schoolHref(school) },
     openGraph: {
@@ -62,10 +64,15 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
   }
 
   const [lists, user] = await Promise.all([getSchoolLists(school.id), getCurrentUser()]);
-  const [favorited, reviews, ownReview] = await Promise.all([
+  const [favorited, reviews, ownReview, isSponsored] = await Promise.all([
     user ? isFavorited("SCHOOL", school.id) : Promise.resolve(false),
     getApprovedReviews(school.id),
     user ? getOwnReview(school.id) : Promise.resolve(null),
+    // Live campaign check, same predicate search_schools() uses for
+    // listings -- school_profiles.is_sponsored is a static column nothing
+    // ever writes to (confirmed by grep), which used to make this exact
+    // page the one place a sponsored school didn't show its own badge.
+    isEntitySponsored("SCHOOL", school.id),
   ]);
   const etapaGroups = groupEtapasSeriesListas(school.school_series, lists);
   const profile = school.school_profiles;
@@ -139,7 +146,7 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
 
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {profile?.is_sponsored && (
+          {isSponsored && (
             <Badge variant="sponsored" className="w-fit">
               PATROCINADA
             </Badge>
@@ -155,12 +162,14 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
           )}
         </div>
 
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">{school.name}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">
+          {toDisplayCase(school.name)}
+        </h1>
 
         <p className="flex items-start gap-1.5 text-neutral-600">
           <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
-            {school.address ? `${school.address} — ` : ""}
+            {school.address ? `${toDisplayCase(school.address)} — ` : ""}
             {school.municipality}, {school.uf}
           </span>
         </p>
@@ -266,9 +275,13 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
         ) : (
           <div className="flex flex-col gap-4">
             {etapaGroups.map((group) => (
-              <details key={group.etapa} className="rounded-xl border border-neutral-200 p-4" open>
-                <summary className="cursor-pointer list-none text-base font-medium text-neutral-900">
+              <details key={group.etapa} className="group rounded-xl border border-neutral-200 p-4" open>
+                <summary className="flex cursor-pointer list-none items-center justify-between text-base font-medium text-neutral-900">
                   {group.etapa}
+                  <ChevronDown
+                    className="size-4 shrink-0 text-neutral-400 transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  />
                 </summary>
                 <div className="mt-3 flex flex-col gap-3">
                   {group.series.map((serie) => (
@@ -296,6 +309,14 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-1 text-lg font-semibold text-neutral-900">Papelarias próximas</h2>
+        <p className="mb-3 text-sm text-neutral-500">
+          Peça um orçamento de material escolar direto no WhatsApp de uma papelaria da região.
+        </p>
+        <NearbyStoresSheet schoolId={school.id} />
       </section>
 
       {school.school_images.length > 0 && (

@@ -88,8 +88,13 @@ export default async function EstadoPage({ params, searchParams }: EstadoPagePro
       {municipalities.length > 0 && (
         <section className="mb-8">
           <h2 className="mb-3 text-lg font-semibold text-neutral-900">Cidades</h2>
+          {/* Capped: an unprioritized wall of ~140 chips (real count for MT)
+              pushed the section's actual content (escolas em destaque) far
+              down the page on mobile, with no grouping by relevance. Top 20
+              by school count covers the cities most visitors want; "Buscar
+              com filtros" below already reaches every other one. */}
           <div className="flex flex-wrap gap-2">
-            {municipalities.map((municipality) => (
+            {municipalities.slice(0, 20).map((municipality) => (
               <Link
                 key={municipality.slug}
                 href={`/escolas/${uf.toLowerCase()}/${municipality.slug}`}
@@ -99,6 +104,15 @@ export default async function EstadoPage({ params, searchParams }: EstadoPagePro
               </Link>
             ))}
           </div>
+          {municipalities.length > 20 && (
+            <p className="mt-2 text-sm text-neutral-500">
+              +{municipalities.length - 20} cidades — use{" "}
+              <Link href={`/escolas?uf=${ufUpper}`} className="font-medium text-primary-700 hover:underline">
+                buscar com filtros
+              </Link>{" "}
+              para encontrá-las.
+            </p>
+          )}
         </section>
       )}
 

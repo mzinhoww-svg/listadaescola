@@ -16,7 +16,9 @@ import { StoreCard } from "@/components/stores/store-card";
 
 export interface NearbyStoresSheetProps {
   schoolId: string;
-  listId: string;
+  /** Omitted on the school profile's general cross-link (no specific list
+   * in context yet) -- see StoreCard's own note on the fallback. */
+  listId?: string;
 }
 
 type LoadState = "idle" | "loading" | "loaded";

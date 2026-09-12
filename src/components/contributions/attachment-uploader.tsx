@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Trash2, FileText, Image as ImageIcon } from "lucide-react";
+import { Upload, Trash2, FileText, Image as ImageIcon, Camera } from "lucide-react";
 
 import { deleteAttachmentAction, type FormState } from "@/lib/contributions/actions";
 import { ALLOWED_ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_SIZE_BYTES } from "@/lib/contributions/constants";
@@ -11,6 +11,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/use-toast";
 
 type SubmissionAttachment = Database["public"]["Tables"]["submission_attachments"]["Row"];
 
@@ -21,6 +22,7 @@ export function AttachmentUploader({ submissionId }: { submissionId: string }) {
   const [error, setError] = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -50,6 +52,7 @@ export function AttachmentUploader({ submissionId }: { submissionId: string }) {
         setError(result.error ?? "Não foi possível enviar o arquivo.");
       } else {
         router.refresh();
+        toast({ title: "Anexo enviado.", variant: "success" });
       }
     } catch {
       setError("Não foi possível enviar o arquivo. Verifique sua conexão.");
@@ -83,7 +86,14 @@ export function AttachmentUploader({ submissionId }: { submissionId: string }) {
 }
 
 function DeleteAttachmentButton({ submissionId, attachmentId }: { submissionId: string; attachmentId: string }) {
-  const [, formAction] = useActionState(deleteAttachmentAction, initialState);
+  const [state, formAction] = useActionState(deleteAttachmentAction, initialState);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    if (state?.success) toast({ title: state.success, variant: "success" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   return (
     <form action={formAction}>
       <input type="hidden" name="submission_id" value={submissionId} />
@@ -105,6 +115,7 @@ export function AttachmentsList({
   if (attachments.length === 0) {
     return (
       <EmptyState
+        icon={Camera}
         title="Nenhum anexo ainda"
         description="Anexar uma foto ou PDF da lista original é opcional, mas ajuda na moderação."
       />
