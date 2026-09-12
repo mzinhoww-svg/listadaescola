@@ -169,40 +169,64 @@ export default async function ListPage({ params }: ListPageProps) {
         </ul>
       </section>
 
-      {itemsWithOffers.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold text-neutral-900">Comprar online</h2>
-          <p className="mb-4 text-sm text-neutral-500">
-            Você será redirecionado para o site do parceiro para continuar a compra — o Listada não processa
-            pagamentos.
+      {/*
+        "Onde comprar" é uma etapa da jornada (escola → lista → materiais →
+        onde comprar), não um rodapé. Os dois canais ficam sempre visíveis:
+        antes, "Comprar online" sumia inteiro quando nenhum item tinha oferta
+        mapeada -- que é justamente o estado inicial de um marketplace sem
+        parceiros cadastrados ainda, quando o usuário mais precisa entender
+        que o canal existe. Nenhum dos dois processa pagamento: e-commerce
+        termina em link externo + tracking, papelaria termina em WhatsApp.
+      */}
+      <section className="mt-10">
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold text-neutral-900">Onde comprar</h2>
+          <p className="mt-1 text-sm text-neutral-600">
+            Escolha como resolver esta lista. O Listada não processa pagamentos: você compra direto no
+            site do parceiro ou combina com a papelaria pelo WhatsApp.
           </p>
-          <div className="flex flex-col gap-4">
-            {itemsWithOffers.map((item) => (
-              <div key={item.id}>
-                <p className="mb-2 text-sm font-medium text-neutral-700">{item.name}</p>
-                <div className="flex flex-wrap gap-2">
-                  {offersByItem.get(item.id)!.map((offer) => (
-                    <PartnerOfferButton
-                      key={offer.ecommerceProductId}
-                      offer={offer}
-                      schoolListItemId={item.id}
-                      schoolId={list.school.id}
-                      listId={list.id}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        </div>
 
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-neutral-900">Comprar local</h2>
-        <p className="mb-4 text-sm text-neutral-500">
-          Peça orçamento em papelarias próximas da escola direto pelo WhatsApp.
-        </p>
-        <NearbyStoresSheet schoolId={list.school.id} listId={list.id} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-neutral-200 bg-white p-4">
+            <h3 className="font-semibold text-neutral-900">Comprar online</h3>
+            <p className="mb-4 mt-1 text-sm text-neutral-600">
+              Lojas parceiras com oferta para os itens desta lista.
+            </p>
+            {itemsWithOffers.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                {itemsWithOffers.map((item) => (
+                  <div key={item.id}>
+                    <p className="mb-2 text-sm font-medium text-neutral-700">{item.name}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {offersByItem.get(item.id)!.map((offer) => (
+                        <PartnerOfferButton
+                          key={offer.ecommerceProductId}
+                          offer={offer}
+                          schoolListItemId={item.id}
+                          schoolId={list.school.id}
+                          listId={list.id}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-neutral-600">
+                Nenhuma loja parceira tem oferta para os itens desta lista ainda.
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-neutral-200 bg-white p-4">
+            <h3 className="font-semibold text-neutral-900">Comprar local</h3>
+            <p className="mb-4 mt-1 text-sm text-neutral-600">
+              Peça orçamento em papelarias próximas da escola, direto pelo WhatsApp.
+            </p>
+            <NearbyStoresSheet schoolId={list.school.id} listId={list.id} />
+          </div>
+        </div>
       </section>
     </div>
   );

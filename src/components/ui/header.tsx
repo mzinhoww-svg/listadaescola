@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/logo";
 
 export interface NavItem {
   label: string;
@@ -70,9 +71,10 @@ function Header({
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link
           href={homeHref}
-          className="text-base font-semibold text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+          aria-label={logoLabel}
+          className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
         >
-          {logoLabel}
+          <Logo />
         </Link>
 
         {navItems.length > 0 && (

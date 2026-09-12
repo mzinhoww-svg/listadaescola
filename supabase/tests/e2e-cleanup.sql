@@ -87,7 +87,21 @@ delete from public.school_list_versions where school_list_id in (
     select id from auth.users where email like 'e2e-p17-%@example.com'
   )
 );
-delete from public.school_lists where slug like 'e2e-p17-lista-%'
+-- ATENÇÃO à ordem: as school_list_versions já foram apagadas acima, então a
+-- subquery por submission_id abaixo não encontra mais nada -- era exatamente
+-- por isso que as school_lists criadas pelas aprovações reais dos testes
+-- sobreviviam a toda rodada de cleanup e ficavam órfãs em produção (linhas
+-- APPROVED, 0 versões, visíveis como séries-lixo numa escola real). Duas
+-- rodadas precisaram de limpeza manual antes disso ser diagnosticado.
+--
+-- Por isso o match é por marcador de teste no slug em QUALQUER posição: o
+-- seed gera prefixo (`e2e-p17-lista-...`), mas as listas criadas pelos
+-- próprios testes derivam o slug do nome da série e ficam com o marcador no
+-- sufixo (`...-7-ano-e2e-prompt17-moderacao`, `...-xss-e2e-teste-item`).
+delete from public.school_lists
+where slug like 'e2e-p17-lista-%'
+   or slug like '%e2e%'
+   or slug like '%xss%'
    or id in (
      select v2.school_list_id from public.school_list_versions v2
      join public.list_submissions ls on ls.id = v2.submission_id
