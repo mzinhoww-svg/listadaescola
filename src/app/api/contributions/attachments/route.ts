@@ -34,6 +34,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sua sessão expirou. Recarregue a página." }, { status: 401 });
   }
 
+  // SEC-008 (hardening pós-MVP): o único endpoint do produto com custo
+  // externo direto (armazenamento/banda do Supabase Storage) -- checado
+  // antes de ler o corpo da requisição, para não gastar banda mesmo em
+  // upload que será recusado.
+  const { data: allowed } = await supabase.rpc("check_rate_limit", {
+    p_action: "attachment_upload",
+    p_max_hits: 20,
+    p_window_minutes: 60,
+  });
+  if (allowed === false) {
+    return NextResponse.json({ error: "Muitos envios de arquivo em pouco tempo. Aguarde e tente novamente." }, { status: 429 });
+  }
+
   const formData = await request.formData();
   const submissionId = String(formData.get("submission_id") ?? "");
   const file = formData.get("file");
@@ -82,5 +95,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não foi possível salvar o anexo." }, { status: 500 });
   }
 
+  await supabase.rpc("record_rate_limit_hit", { p_action: "attachment_upload" });
   return NextResponse.json({ ok: true });
 }

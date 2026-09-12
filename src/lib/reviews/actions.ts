@@ -39,6 +39,19 @@ export async function createReviewAction(_prevState: ReviewFormState, formData: 
   } = await supabase.auth.getUser();
   if (!user) return { error: "Entre na sua conta para avaliar." };
 
+  // SEC-008 (hardening pós-MVP): mesmo risco de spam entrando na fila de
+  // moderação que a submissão de lista -- unique(school_id, profile_id)
+  // já impede repetir a mesma escola, mas não impede avaliar muitas
+  // escolas diferentes rapidamente.
+  const { data: allowed } = await supabase.rpc("check_rate_limit", {
+    p_action: "review_create",
+    p_max_hits: 10,
+    p_window_minutes: 60,
+  });
+  if (allowed === false) {
+    return { error: "Muitas avaliações em pouco tempo. Aguarde um pouco e tente novamente." };
+  }
+
   const { data: existing, error: lookupError } = await supabase
     .from("reviews")
     .select("id, status")
@@ -66,6 +79,7 @@ export async function createReviewAction(_prevState: ReviewFormState, formData: 
 
   if (!existing) {
     void recordAnalyticsEvent({ eventType: "review_created", schoolId });
+    await supabase.rpc("record_rate_limit_hit", { p_action: "review_create" });
   }
 
   revalidatePath(path);
