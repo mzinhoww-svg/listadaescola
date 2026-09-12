@@ -87,7 +87,12 @@
   --color-neutral-200: #e7e9ef;
   --color-neutral-300: #c5c6ce;
   --color-neutral-400: #9f9f9f;
-  --color-neutral-500: #75777e;
+  /* Escurecido de #75777e para passar WCAG AA. O valor original dava
+     4.47:1 no branco dos cards e 4.26:1 no papel (#fbf9f8) -- ambos abaixo
+     de 4.5:1. Este token é o mais usado do projeto depois do 900 (87
+     ocorrências), então a correção é aqui, não nas chamadas. Agora: 4.95:1
+     no branco, 4.72:1 no papel. Matiz preservado. */
+  --color-neutral-500: #6e7076;
   --color-neutral-600: #5f6168;
   --color-neutral-700: #44474d;
   --color-neutral-800: #3a3a3a;
@@ -204,4 +209,51 @@ h6 {
 :focus-visible {
   outline: 2px solid var(--color-primary-600);
   outline-offset: 2px;
+}
+
+/* Superfícies do navegador.
+ *
+ * Seleção de texto, cursor de digitação e barra de rolagem vêm com o default
+ * do navegador -- um azul de sistema que não pertence a nenhum design system
+ * e que denuncia a página como montada, não construída. Puxá-las para a
+ * paleta Caderno Vivo custa poucas linhas e aparece em toda interação real:
+ * todo mundo seleciona texto, todo mundo vê o caret ao digitar.
+ *
+ * `--color-secondary-300` (periwinkle) é o mesmo acento do ponto da marca;
+ * sobre ele o texto fica em neutral-900 para manter contraste de leitura
+ * durante a seleção. */
+::selection {
+  background-color: var(--color-secondary-300);
+  color: var(--color-neutral-900);
+}
+
+input,
+textarea {
+  caret-color: var(--color-primary-600);
+}
+
+/* Rolagem: fina e na cor do papel, para não competir com o conteúdo.
+   `scrollbar-color` cobre Firefox; o bloco WebKit cobre Chrome/Safari. */
+* {
+  scrollbar-color: var(--color-neutral-300) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-300);
+  border: 3px solid var(--color-neutral-50);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-neutral-400);
 }
