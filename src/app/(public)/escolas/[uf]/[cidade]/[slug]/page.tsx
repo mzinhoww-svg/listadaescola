@@ -12,6 +12,7 @@ import { isFavorited } from "@/lib/favorites/queries";
 import { getApprovedReviews, getOwnReview } from "@/lib/reviews/queries";
 import { isEntitySponsored } from "@/lib/campaigns/public";
 import { SaveButton } from "@/components/favorites/save-button";
+import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -308,6 +309,14 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-1 text-lg font-semibold text-neutral-900">Papelarias próximas</h2>
+        <p className="mb-3 text-sm text-neutral-500">
+          Peça um orçamento de material escolar direto no WhatsApp de uma papelaria da região.
+        </p>
+        <NearbyStoresSheet schoolId={school.id} />
       </section>
 
       {school.school_images.length > 0 && (

@@ -1,13 +1,19 @@
+import Link from "next/link";
 import { Clock, MapPin, MessageCircle, ShoppingBag, Truck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { NearbyStore } from "@/lib/stores/nearby-stores";
+import { storeHref } from "@/lib/stores/store-profile";
 
 export interface StoreCardProps {
   store: NearbyStore;
   schoolId: string;
-  listId: string;
+  /** Omitted from a context with no specific list (e.g. the school
+   * profile's general "papelarias próximas" cross-link) -- the WhatsApp
+   * message then falls back to a generic orçamento request instead of an
+   * itemized one (see /api/store/whatsapp, `hasListContext`). */
+  listId?: string;
 }
 
 /**
@@ -18,14 +24,16 @@ export interface StoreCardProps {
  * location).
  */
 export function StoreCard({ store, schoolId, listId }: StoreCardProps) {
-  const whatsappHref = store.whatsappNormalized
-    ? `/api/store/whatsapp?store=${store.id}&school=${schoolId}&list=${listId}`
-    : null;
+  const whatsappParams = new URLSearchParams({ store: store.id, school: schoolId });
+  if (listId) whatsappParams.set("list", listId);
+  const whatsappHref = store.whatsappNormalized ? `/api/store/whatsapp?${whatsappParams}` : null;
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium text-neutral-900">{store.name}</p>
+        <Link href={storeHref(store)} className="font-medium text-neutral-900 hover:text-primary-700 hover:underline">
+          {store.name}
+        </Link>
         {store.distanceKm !== null && (
           <Badge variant="neutral" className="shrink-0">
             {store.distanceKm} km da escola
@@ -66,7 +74,7 @@ export function StoreCard({ store, schoolId, listId }: StoreCardProps) {
 
       <div className="mt-3">
         {whatsappHref ? (
-          <Button asChild className="w-full sm:w-auto">
+          <Button asChild variant="whatsapp" className="w-full sm:w-auto">
             <a href={whatsappHref} target="_blank" rel="nofollow noopener noreferrer">
               <MessageCircle className="size-4" aria-hidden="true" />
               Pedir orçamento no WhatsApp
