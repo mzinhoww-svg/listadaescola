@@ -99,7 +99,31 @@ export function MapView({ center, zoom = 13, markers = [], onMarkerClick, classN
       markersRef.current = markers.map((markerData) => {
         const marker = new maplibregl.Marker().setLngLat([markerData.lon, markerData.lat]).addTo(map);
         if (markerData.label) {
-          marker.setPopup(new maplibregl.Popup({ offset: 24 }).setText(markerData.label));
+          /*
+           * Onda 2 P8 (docs/implementation/impeccable-critique.md §6.2).
+           *
+           * Isto era `marker.setPopup(new maplibregl.Popup({ offset: 24 }))`.
+           * O popup é um filho posicionado do contêiner do mapa, e o
+           * contêiner tem `overflow-hidden` -- que vem do NOSSO wrapper
+           * (results-map.tsx), para recortar os cantos arredondados, não da
+           * biblioteca. Num mapa de 320px de altura, o popup de um marcador
+           * no terço superior era cortado.
+           *
+           * Das três saídas possíveis, esta é a que não troca um defeito por
+           * outro: tirar o `overflow-hidden` faria os pinos de borda vazarem
+           * para fora do quadro, e mexer no offset só empurra o problema.
+           * O popup não carregava informação que a tela já não tivesse -- em
+           * /escolas o clique navega antes de ele abrir (era código morto), e
+           * no perfil da escola ele repetia o <h1> logo acima.
+           *
+           * O rótulo passa a viver no próprio elemento do marcador, o que de
+           * quebra resolve um problema de acessibilidade que ninguém tinha
+           * notado: os marcadores eram <div>s sem nome acessível nenhum.
+           */
+          const el = marker.getElement();
+          el.setAttribute("title", markerData.label);
+          el.setAttribute("aria-label", markerData.label);
+          el.setAttribute("role", "img");
         }
         if (onMarkerClick) {
           const el = marker.getElement();

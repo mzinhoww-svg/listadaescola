@@ -36,7 +36,7 @@ function Footer({ columns = [], className }: FooterProps) {
             ))}
           </div>
         )}
-        <p className="mt-8 text-xs text-neutral-500">
+        <p className="mt-8 max-w-[65ch] text-xs text-neutral-500">
           © {year} Listada Escola. Escolas com base em dados públicos do INEP.
         </p>
       </div>
