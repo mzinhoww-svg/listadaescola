@@ -7,7 +7,7 @@ export interface FormState {
   success?: string;
 }
 
-/** Igual ao CHECK do banco (20260913010000_list_notification_requests.sql).
+/** Igual ao CHECK do banco (20260913020000_list_notification_requests.sql).
  * Conservador de propósito: não tenta implementar a RFC 5322, que na
  * prática rejeita endereços válidos e frustra gente real. */
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
