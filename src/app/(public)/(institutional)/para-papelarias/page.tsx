@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 
+import { buildTeamWhatsappLink } from "@/lib/contact";
+
 export const metadata: Metadata = {
   title: "Para papelarias",
   description: "Como sua papelaria aparece para famílias procurando material escolar perto delas.",
   alternates: { canonical: "/para-papelarias" },
 };
+
+const CONTACT_HREF = buildTeamWhatsappLink(
+  "Olá! Tenho uma papelaria e gostaria de saber como cadastrá-la no Listada Escola."
+);
 
 export default function ParaPapelariasPage() {
   return (
@@ -31,8 +37,11 @@ export default function ParaPapelariasPage() {
 
       <h2>Quer cadastrar sua papelaria?</h2>
       <p>
-        O cadastro de papelarias parceiras é feito pela nossa equipe. Entre em contato para saber mais
-        sobre como incluir sua papelaria no Listada Escola.
+        O cadastro de papelarias parceiras é feito pela nossa equipe.{" "}
+        <a href={CONTACT_HREF} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-700 hover:underline">
+          Fale com a gente pelo WhatsApp
+        </a>{" "}
+        para saber mais sobre como incluir sua papelaria no Listada Escola.
       </p>
     </>
   );

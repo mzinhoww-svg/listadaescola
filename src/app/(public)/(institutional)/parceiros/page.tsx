@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 
+import { buildTeamWhatsappLink } from "@/lib/contact";
+
 export const metadata: Metadata = {
   title: "Parceiros",
   description: "Parceiros de e-commerce e papelarias locais do Listada Escola.",
   alternates: { canonical: "/parceiros" },
 };
+
+const CONTACT_HREF = buildTeamWhatsappLink(
+  "Olá! Represento um e-commerce/rede de papelarias e gostaria de saber como virar parceiro do Listada Escola."
+);
 
 export default function ParceirosPage() {
   return (
@@ -30,8 +36,11 @@ export default function ParceirosPage() {
 
       <h2>Quer ser um parceiro?</h2>
       <p>
-        Se você representa um e-commerce ou uma rede de papelarias e quer aparecer no Listada Escola,
-        entre em contato com nossa equipe para saber mais.
+        Se você representa um e-commerce ou uma rede de papelarias e quer aparecer no Listada Escola,{" "}
+        <a href={CONTACT_HREF} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-700 hover:underline">
+          fale com a gente pelo WhatsApp
+        </a>{" "}
+        para saber mais.
       </p>
     </>
   );
