@@ -15,6 +15,28 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Onda 10 -- um segmento de rota do Next.js virando slug com segurança.
+ *
+ * O Next 16 entrega `params` com os caracteres não-ASCII AINDA
+ * percent-encoded (verificado nesta versão: `/escolas/mt/Cuiabá` chega como
+ * `"cuiab%C3%A1"`). Passar isso direto para `slugify` produz
+ * `"cuiab-c3-a1"`, que não casa com nada e devolve 404 -- era o que
+ * acontecia com qualquer URL de cidade escrita com acento, colada de uma
+ * conversa ou digitada à mão.
+ *
+ * `decodeURIComponent` levanta `URIError` em entrada malformada (`%zz`), e
+ * um 404 é a resposta certa nesse caso -- então cai para o valor cru, que
+ * `slugify` transforma em algo que não resolve.
+ */
+export function slugifyRouteSegment(segment: string): string {
+  try {
+    return slugify(decodeURIComponent(segment));
+  } catch {
+    return slugify(segment);
+  }
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
