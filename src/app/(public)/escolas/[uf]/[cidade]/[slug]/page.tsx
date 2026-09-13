@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AtSign, BadgeCheck, ChevronDown, Globe, MapPin, MessageCircle, Phone, Star } from "lucide-react";
@@ -22,6 +23,7 @@ import { contactTypeLabel, formatSchoolAddress } from "@/lib/schools/format";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
+import { buildEntityTitle, OG_DEFAULTS } from "@/lib/seo/metadata";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 import { cn, slugify, toDisplayCase } from "@/lib/utils";
 
@@ -45,10 +47,11 @@ export async function generateMetadata({ params }: SchoolPageProps): Promise<Met
   const logoUrl = school.school_profiles?.logo_url ? getPublicAssetUrl(school.school_profiles.logo_url) : undefined;
 
   return {
-    title: `${toDisplayCase(school.name)} — ${school.municipality}/${school.uf}`,
+    title: buildEntityTitle(toDisplayCase(school.name), school.municipality, school.uf),
     description,
     alternates: { canonical: schoolHref(school) },
     openGraph: {
+      ...OG_DEFAULTS,
       title: school.name,
       description,
       type: "website",
@@ -110,6 +113,11 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
     ...(school.latitude !== null && school.longitude !== null
       ? { geo: { "@type": "GeoCoordinates", latitude: school.latitude, longitude: school.longitude } }
       : {}),
+    // Same field the page already trusts enough to render as a `tel:` link
+    // just below (RN-009 discipline: never declare what the app itself
+    // wouldn't use) -- no separate validation needed since none gates the
+    // visible link either.
+    ...(school.phone ? { telephone: school.phone } : {}),
     ...(logoUrl ? { logo: logoUrl } : {}),
     ...(imageUrls.length > 0 ? { image: imageUrls } : {}),
   };
@@ -370,13 +378,15 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
           <h2 className="mb-3 text-lg font-semibold text-neutral-900">Fotos</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {school.school_images.map((image) => (
-              // eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase Storage host, no next/image remotePatterns configured yet.
-              <img
-                key={image.id}
-                src={getPublicAssetUrl(image.storage_path)}
-                alt={image.caption ?? school.name}
-                className="aspect-square w-full rounded-lg object-cover"
-              />
+              <div key={image.id} className="relative aspect-square w-full overflow-hidden rounded-lg">
+                <Image
+                  src={getPublicAssetUrl(image.storage_path)}
+                  alt={image.caption ?? school.name}
+                  fill
+                  sizes="(min-width: 640px) 33vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
             ))}
           </div>
         </section>

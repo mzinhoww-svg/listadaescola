@@ -18,6 +18,7 @@ import { ListChecklist } from "@/components/lists/list-checklist";
 import { Badge } from "@/components/ui/badge";
 import { isQaFixtureSlug } from "@/lib/qa/fixtures";
 import { jsonLdScript } from "@/lib/seo/json-ld";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 
 // Same reasoning as Home/perfil da escola: data depends on Supabase at
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: ListPageProps): Promise<Metad
     title,
     description,
     alternates: { canonical: `/listas/${list.slug}` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { ...OG_DEFAULTS, title, description, type: "website" },
     // Fixture de QA: conteúdo fictício ancorado numa escola INEP real,
     // nunca indexável. Ver src/lib/qa/fixtures.ts.
     ...(isQaFixtureSlug(list.slug) ? { robots: { index: false, follow: false } } : {}),
