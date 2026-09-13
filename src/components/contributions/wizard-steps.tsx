@@ -38,7 +38,13 @@ export function WizardSteps({ current }: { current: WizardStepKey }) {
                     // and, until now, still running on primary/slate.
                     isComplete && "bg-secondary-600 text-white",
                     isCurrent && "border-2 border-secondary-600 bg-white text-secondary-700",
-                    !isComplete && !isCurrent && "bg-neutral-100 text-neutral-400"
+                    // neutral-400 sobre neutral-100 dava 2.40:1, reprovado na
+                    // AA. Esta tela nunca tinha sido auditada -- /enviar-lista
+                    // redireciona para login e nenhuma rodada anterior tinha
+                    // sessão. neutral-600 dá 5.60:1. (neutral-500 não serve
+                    // aqui: 4.48:1, porque neutral-100 é um pouco mais escuro
+                    // que o papel onde esse token foi calibrado.)
+                    !isComplete && !isCurrent && "bg-neutral-100 text-neutral-600"
                   )}
                   aria-hidden="true"
                 >

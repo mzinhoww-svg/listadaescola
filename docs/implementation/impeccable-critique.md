@@ -489,3 +489,131 @@ Estas não têm resposta técnica — mudam o que a próxima onda deve construir
 | Tiles do mapa | não carregam neste ambiente (`tile.openstreetmap.org` derrubado pelo proxy). Geometria foi medida no DOM real e é válida; **julgamento visual do mapa não é** |
 | `clipped-overflow-container` | aparece em batch mobile completo, some em URL isolada — provável timing de montagem dos marcadores. **Se sumir numa rodada isolada, não conclua que foi corrigido** |
 | Precisão de linha do detector | `line: 0` em todos os achados de URL. As localizações de código deste relatório vieram de sondas Playwright próprias e de leitura de código, não da saída do detector |
+
+---
+
+# Adendo (2026-09-13) — cobertura das telas que faltavam
+
+O §1.1 e o §1.2 acima registraram que `/listas/[slug]` e `/enviar-lista`
+não tinham cobertura: a base estava zerada e a rota de contribuição
+redireciona para login. O responsável autorizou semear fixtures mínimas.
+Feito — e a cobertura nova achou **duas falhas reais de contraste que
+nenhuma rodada anterior podia ter visto**.
+
+## O que foi semeado
+
+Procedimento, proteções e remoção: [`qa-fixtures.md`](../operations/qa-fixtures.md).
+
+| Objeto | Identificador |
+|---|---|
+| Lista (11 itens: 8 obrigatórios, 3 opcionais) | `qa-teste-lista-educacao-infantil-2026` |
+| Papelaria (~200 m da escola) | `qa-teste-papelaria-cuiaba` |
+| Conta de auditoria, papel `USER` | `qa-teste-auditoria@listadaescola.com.br` |
+
+O guard de indexação foi mergeado e **deployado antes** da semeadura
+(PR #34), e as linhas nasceram `ARCHIVED`/`is_active=false` — só foram
+liberadas depois que o guard estava confirmado em produção. Verificação na
+produção real, depois de liberar:
+
+```
+/listas/qa-teste-...            200   <meta name="robots" content="noindex, nofollow"/>
+/papelarias/mt/cuiaba/qa-teste- 200   <meta name="robots" content="noindex, nofollow"/>
+sitemap.xml                     2867 URLs, 0 ocorrências de "qa-teste"
+```
+
+## Achado 1 — botão de WhatsApp reprovava em 1.98:1 (corrigido)
+
+`low-contrast: 2.0:1 (need 4.5:1) — text #ffffff on #25d366`, nos dois
+viewports, na página de detalhe da papelaria.
+
+Origem: `src/components/ui/button.tsx:23` — a variante `whatsapp` era
+`bg-whatsapp text-white`, e `--color-whatsapp` é o verde de marca `#25d366`.
+Branco sobre ele dá **1.98:1** contra os 4.5:1 exigidos.
+
+**Por que nunca apareceu antes:** `stores` estava vazia. O botão é o CTA
+primário da papelaria e simplesmente nunca tinha sido renderizado em
+nenhuma auditoria — nem na Onda 1.2, que varreu as seis telas então
+alcançáveis e achou exatamente uma falha de contraste.
+
+**Correção** (`globals.css` + `button.tsx`): preservar o verde, que é o
+sinal de marca, e escurecer o texto.
+
+| | antes | depois |
+|---|---|---|
+| base | branco em `#25d366` — **1.98:1** | `neutral-900` em `#25d366` — **8.61:1** |
+| hover | branco em `#128c7e` — 4.14:1 | `neutral-900` em `#1eb356` — **6.21:1** |
+
+O hover precisou sair do teal: com texto escuro ele daria 4.13:1, ainda
+reprovado. Trocar o verde por um teal escuro com texto branco (`#075e54`,
+7.67:1) também passaria, mas perde o verde reconhecível — que é justamente
+o que o botão está comunicando.
+
+## Achado 2 — indicador de etapa do wizard em 2.40:1 (corrigido)
+
+`src/components/contributions/wizard-steps.tsx:41` — etapas ainda não
+alcançadas usavam `bg-neutral-100 text-neutral-400`: `#9f9f9f` sobre
+`#f6f3f2` = **2.40:1**.
+
+**Por que nunca apareceu antes:** `/enviar-lista` responde 307 para
+`/auth/entrar`. O "zero achados" que o detector reportou para essa rota era,
+como o §1.2 já dizia, uma segunda medição da tela de login.
+
+**Correção:** `text-neutral-600` — **5.60:1**.
+
+Detalhe que vale registrar: `neutral-500` **não** serve aqui. Ele dá 4.48:1
+sobre `neutral-100`, um fio abaixo do limiar, porque foi calibrado na Onda
+1.2 contra o papel (`#fbf9f8`) e contra o branco dos cards — `neutral-100`
+é um degrau mais escuro que os dois. O mesmo token passa numa superfície e
+reprova na outra.
+
+O `<span>` é `aria-hidden` e existe um `aria-live` com "Etapa X de Y", então
+leitor de tela sempre esteve coberto. A falha era para o usuário de baixa
+visão que enxerga o número — `aria-hidden` não isenta do critério 1.4.3.
+
+## Verificação final
+
+Varredura de todo nó de texto, compondo alpha da cadeia de ancestrais, com
+o limiar correto por tamanho/peso, **com sessão autenticada real** (login
+pela UI, não cookie forjado):
+
+| rota | antes | depois |
+|---|---|---|
+| `/listas/qa-teste-...` | 0 | 0 |
+| `/papelarias/mt/cuiaba/qa-teste-...` | **1** (2.0:1) | 0 |
+| `/enviar-lista` | **1** (2.4:1) | 0 |
+| `/minha-conta` | 0 | 0 |
+| `/minha-conta/listas` | 0 | 0 |
+
+Detector nas três telas públicas novas, nos dois viewports: de 6 achados
+para **5**, sendo os 5 restantes os dois falsos positivos já registrados
+(`overused-font` ×3, `cramped-padding` ×2 nos botões de altura fixa).
+
+## Uma medição que joguei fora
+
+Uma rodada intermediária reportou 15 achados, incluindo 13
+`body-text-viewport-edge` e um `line-length ~158 chars/line`, e o
+`overused-font` sumiu. Nada disso era real: o processo antigo do servidor
+tinha sobrevivido ao `kill` (`EADDRINUSE` no log) e continuou respondendo
+enquanto o `.next` era substituído pelo build novo, então o CSS pedido pelo
+HTML retornava **HTTP 500** e o detector mediu a página **sem estilo**
+nenhum — daí o texto encostando na margem de 8px do browser, as linhas de
+158 caracteres e o desaparecimento da webfont.
+
+Fica como aviso operacional para a próxima rodada: **se `overused-font`
+sumir e aparecer uma enxurrada de `body-text-viewport-edge`, o CSS não
+carregou.** Confirme com
+`curl -s -o /dev/null -w '%{http_code}' <url-do-css>` antes de acreditar em
+qualquer número. E mate o servidor pelo PID do processo (`ps -eo pid,cmd |
+grep next-server`), não pela porta: neste ambiente `ss` não enxergou o
+listener.
+
+## O que continua sem cobertura
+
+- **Área `/admin`** — exige papel `ADMIN`, e a política aqui é não manter
+  conta administrativa de QA em produção (`qa-fixtures.md`). Auditar essa
+  área exige uma sessão com a conta real do responsável.
+- **Passos internos do wizard** (`/enviar-lista/[id]/itens`, `/anexo`,
+  `/revisao`) — exigem uma submissão em andamento, não só sessão.
+- **Aparência do mapa** — os tiles do OSM continuam bloqueados pelo proxy
+  deste ambiente. A geometria é medida no DOM real e é válida; a aparência
+  não.
