@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { getActiveStores, storeHref } from "@/lib/stores/store-profile";
 import { jsonLdScript } from "@/lib/seo/json-ld";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 import { slugify } from "@/lib/utils";
 
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: CidadePageProps): Promise<Met
     title,
     description,
     alternates: { canonical: `/papelarias/${uf.toLowerCase()}/${cidade}` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { ...OG_DEFAULTS, title, description, type: "website" },
   };
 }
 

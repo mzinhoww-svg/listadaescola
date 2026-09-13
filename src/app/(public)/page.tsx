@@ -7,6 +7,7 @@ import { HomeSearch } from "@/components/home/home-search";
 import { Button } from "@/components/ui/button";
 import { getCoverageSummary } from "@/lib/schools/coverage";
 import { getRecentLists } from "@/lib/schools/home-queries";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { toDisplayCase } from "@/lib/utils";
 
 const DESCRIPTION =
@@ -15,7 +16,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   description: DESCRIPTION,
   alternates: { canonical: "/" },
-  openGraph: { title: "Listada Escola", description: DESCRIPTION, type: "website" },
+  openGraph: { ...OG_DEFAULTS, title: "Listada Escola", description: DESCRIPTION, type: "website" },
 };
 
 // Rendered per-request (like every other data-driven page in this
