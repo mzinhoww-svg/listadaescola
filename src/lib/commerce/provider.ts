@@ -10,7 +10,12 @@ export interface CommerceCta {
 const CTA_BY_INTEGRATION: Record<IntegrationType, CommerceCta> = {
   DEEP_LINK: { label: "Ver produto", description: "Abre o produto direto na loja do parceiro" },
   PAGE: { label: "Ver na loja", description: "Abre a página da loja do parceiro" },
-  CART: { label: "Adicionar ao carrinho", description: "Abre o carrinho da loja do parceiro com este item" },
+  // "da loja" não é enfeite. No botão este rótulo aparece sozinho, em
+  // text-xs, embaixo do nome do parceiro -- e "Adicionar ao carrinho",
+  // lido rápido nessa posição, sugere um carrinho do Listada. O Listada
+  // não tem carrinho e não pode ter (CLAUDE.md). O destino é o carrinho
+  // do parceiro, no domínio dele, depois do redirect.
+  CART: { label: "Adicionar ao carrinho da loja", description: "Abre o carrinho da loja do parceiro com este item" },
 };
 
 export interface TrackedOfferLinkParams {
