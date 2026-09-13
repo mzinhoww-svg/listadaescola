@@ -11,15 +11,18 @@ na lista de KPIs da PRD já está implementado versus ainda não.
 
 Um 16º evento, `home_list_request_click`, foi adicionado em 2026-09-13
 (Tier 2 do roadmap ICPs, sub-projeto papelaria #1 — CTA da home +
-rascunho anônimo) e está documentado em §4.16. É o único evento do
-catálogo sem lastro direto na lista de "eventos mínimos" da PRD §15 —
-adicionado deliberadamente acima do piso, não substituindo nenhum dos 15.
+rascunho anônimo) e está documentado em §4.16. Um 17º evento, `page_view`,
+foi adicionado no mesmo dia (Tier 4 - D4 do roadmap ICPs — dashboard sem
+nenhum sinal de visita nas páginas que não têm evento dedicado) e está
+documentado em §4.17. Ambos são os únicos eventos do catálogo sem lastro
+direto na lista de "eventos mínimos" da PRD §15 — adicionados
+deliberadamente acima do piso, não substituindo nenhum dos 15.
 
 ## Sumário
 
 1. [Formato de um evento (`analytics_events`)](#1-formato-de-um-evento-analytics_events)
 2. [Caminho de escrita](#2-caminho-de-escrita)
-3. [Visão geral dos 15 eventos](#3-visão-geral-dos-15-eventos)
+3. [Visão geral dos 17 eventos](#3-visão-geral-dos-17-eventos)
 4. [Detalhamento por evento](#4-detalhamento-por-evento)
 5. [Eventos → KPIs da PRD §15](#5-eventos--kpis-da-prd-15)
 6. [Lacunas e observações conhecidas](#6-lacunas-e-observações-conhecidas)
@@ -84,18 +87,21 @@ record_analytics_event(
 ```
 
 Guarda de validação — `raise exception 'invalid event_type: %'`
-se `p_event_type` não for exatamente um dos 16 (os 15 originais definidos em
+se `p_event_type` não for exatamente um dos 17 (os 15 originais definidos em
 `20260911020000_search_schools.sql:211-218`, mais `home_list_request_click`
 acrescentado por
 [`20260913040000_home_list_request.sql`](../../supabase/migrations/20260913040000_home_list_request.sql)
-via `create or replace function` — mesma assinatura, só a lista de valores
-aceitos muda):
+e `page_view` acrescentado por
+[`20260913051500_page_view_event.sql`](../../supabase/migrations/20260913051500_page_view_event.sql)
+— ambos via `create or replace function` sobre a mesma assinatura, só a
+lista de valores aceitos muda):
 
 ```
 location_search, location_detected, school_search, school_impression,
 school_view, list_view, list_share, commerce_click, whatsapp_click,
 store_view, favorite_added, review_created, submission_started,
-submission_submitted, submission_approved, home_list_request_click
+submission_submitted, submission_approved, home_list_request_click,
+page_view
 ```
 
 `profile_id` do insert vem de `auth.uid()` resolvido **dentro da função**
@@ -160,7 +166,7 @@ desse gap.
 
 ---
 
-## 3. Visão geral dos 16 eventos
+## 3. Visão geral dos 17 eventos
 
 | Evento | Camada | Dispara quando (resumo) | Campos populados | KPI PRD §15 |
 |---|---|---|---|---|
@@ -180,6 +186,7 @@ desse gap.
 | [`submission_submitted`](#414-submission_submitted) | Server Action ← Client Component (2 call sites) | Envio de lista completo **ou** envio de sugestão de escola | Lista: `schoolId` + `{submissionId}`. Sugestão: sem `schoolId` + `{kind: "school_suggestion"}` | listas submetidas; denominador de taxa de aprovação |
 | [`submission_approved`](#415-submission_approved) | Server Action ← Client Component (2 call sites) | Aprovação de lista **ou** de sugestão, pós-RPC de aprovação | Lista: `schoolId` + `{submissionId}`. Sugestão: sem `schoolId` + `{kind, suggestionId}` | numerador de taxa de aprovação |
 | [`home_list_request_click`](#416-home_list_request_click) | Client Component (evento de UI puro) | Clique no CTA "Não achou a lista da sua escola? Peça aqui", na home | sem `schoolId` (ainda não escolheu escola) — sem metadata | nenhum literal na PRD (evento novo, acima do piso de 15) |
+| [`page_view`](#417-page_view) | Server Component (render) | Renderização de uma das 7 páginas públicas dinâmicas sem evento dedicado (home + 6 páginas de listagem/perfil de papelaria) | sem `schoolId`/`storeId`/`listId`/`partnerId` — `metadata: {path}` | nenhum literal na PRD (evento novo, acima do piso de 15) |
 
 ---
 
@@ -419,6 +426,17 @@ função `approveSchoolSuggestionAction`, chamada por
 - **Best-effort, fogo-e-esquece:** `void recordAnalyticsEvent(...)` — mesma disciplina de "nunca bloqueia a tela" documentada em `record-event.ts` (§2.2), aqui ainda mais literal: o clique já navega/revela a UI no mesmo tick, independente do resultado da chamada.
 - **KPI:** nenhum literal na PRD §15 (evento adicionado depois, acima do piso de 15 — ver nota da introdução). Junto com `submission_started` (metadata `source: "home_anonymous"`, adicionado na mesma mudança — ver §4.13), forma o funil novo "clicou no CTA → começou o rascunho anônimo → materializou → enviou", sem KPI dedicado ainda em `/admin/analytics`.
 
+### 4.17 `page_view`
+
+- **Arquivo:** [`src/lib/analytics/record-event.ts:78-80`](../../src/lib/analytics/record-event.ts#L78-L80), função `recordPageView(path)` — chamada direto de 7 Server Components (nenhum Client Component envolvido): [`src/app/(public)/page.tsx`](<../../src/app/(public)/page.tsx>) (`/`), [`escolas/[uf]/page.tsx`](<../../src/app/(public)/escolas/[uf]/page.tsx>), [`escolas/[uf]/[cidade]/page.tsx`](<../../src/app/(public)/escolas/[uf]/[cidade]/page.tsx>), [`listas/page.tsx`](<../../src/app/(public)/listas/page.tsx>) (`/listas`), [`papelarias/page.tsx`](<../../src/app/(public)/papelarias/page.tsx>) (`/papelarias`), [`papelarias/[uf]/[cidade]/page.tsx`](<../../src/app/(public)/papelarias/[uf]/[cidade]/page.tsx>) e [`papelarias/[uf]/[cidade]/[slug]/page.tsx`](<../../src/app/(public)/papelarias/[uf]/[cidade]/[slug]/page.tsx>).
+- **Camada:** Server Component (render), mesmo padrão de `school_search`/`school_view`/`list_view` — dispara na resposta ao request, sem handler de clique.
+- **Dispara quando:** toda renderização bem-sucedida de uma dessas 7 páginas — nas páginas com `notFound()`/`redirect()` (município sem escola/papelaria, papelaria inexistente, URL não-canônica), o evento fica **depois** desses `return`/`throw` no código, então uma 404 ou um redirect não geram `page_view`.
+- **Não dispara em:** as outras ~10 páginas públicas — 3 já têm evento dedicado mais específico (`school_search`+`school_impression` em `/escolas`, `school_view` no perfil da escola, `list_view` na lista) e não ganharam `page_view` também (seria duplicar a mesma renderização com dois eventos); as 7 páginas institucionais estáticas (`como-funciona`, `para-escolas`, `para-papelarias`, `parceiros`, `privacidade`, `cookies`, `termos`) ficaram de fora deliberadamente — nenhuma delas tem `dynamic = "force-dynamic"` hoje, e forçá-las a renderizar por request só para contar visita é um custo de performance/infra real sem justificativa clara (decisão registrada no roadmap ICPs, Tier 4 - D4).
+- **Campos:** sem `schoolId`/`storeId`/`listId`/`partnerId`. `metadata: { path }`, com `path` já resolvido pelo próprio Server Component (ex.: `` `/escolas/${uf.toLowerCase()}` ``, `` `/papelarias/${uf.toLowerCase()}/${cidade}/${slug}` ``) — nunca a URL bruta do request (sem query string, sem host).
+- **Distinção de `store_view` (§4.10):** os dois podem parecer sobrepostos na página de perfil de papelaria, mas medem coisas diferentes — `store_view` é uma impressão da papelaria dentro do sheet "Comprar local" **de uma página de escola**; `page_view` aqui é a visita direta à própria página da papelaria. Uma papelaria pode acumular `store_view` sem nunca ter um `page_view` (só apareceu em sheets, ninguém clicou), e vice-versa (tráfego direto/orgânico para a página, sem passar pela escola).
+- **Best-effort, fogo-e-esquece:** `void recordPageView(path)` — mesma disciplina de `recordAnalyticsEvent` (§2.2), nunca bloqueia nem falha o render da página.
+- **KPI:** nenhum literal na PRD §15 (evento novo, acima do piso de 15 — ver nota da introdução). Rótulo em `/admin/analytics` é deliberadamente "Visitas a páginas sem evento próprio" (não "Total de visitas") — somar `page_view` aos outros eventos de render para chegar a um número de "visitas do site" exigiria somar tipos com semânticas diferentes (uma `school_view` já é uma visita; contá-la de novo como `page_view` também seria dobrar a contagem), o que este evento deliberadamente não faz.
+
 ---
 
 ## 5. Eventos → KPIs da PRD §15
@@ -453,8 +471,9 @@ KPIs, citados literalmente de
 Eventos que não alimentam nenhuma das 9 linhas acima, hoje: `list_share`,
 `store_view`, `favorite_added`, `review_created`, `submission_started`
 (este último é só a ponta larga do funil, sem KPI de "taxa de conclusão do
-wizard" dedicado), e `home_list_request_click` (§4.16, evento novo acima do
-piso de 15 -- sem KPI na PRD por definição, já que a PRD é anterior a ele).
+wizard" dedicado), `home_list_request_click` (§4.16) e `page_view` (§4.17)
+-- os dois últimos são eventos novos acima do piso de 15, sem KPI na PRD
+por definição, já que a PRD é anterior a eles.
 
 ---
 

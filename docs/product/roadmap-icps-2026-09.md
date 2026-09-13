@@ -29,12 +29,39 @@ processo completo: perguntas → abordagens → design → spec própria).
 
 **Decidido em 2026-09-13: SIM, habilitar.** Autorização explícita do
 dono do produto — esta linha é o registro dessa decisão, atualizando a
-condição da PRD §4.3. Isso vira um sub-projeto Arquitetural no Tier 4
-(login/claim de uma escola real, o que um gestor pode editar vs. o que
-continua INEP-only, como provar que a pessoa realmente representa a
-escola) — decisão de escopo tomada, mas o desenho de segurança/UX ainda
-precisa de cuidado antes do código, dado o que RLS já expõe (§1 da
-pesquisa desta sessão).
+condição da PRD §4.3.
+
+**Atualização, mesmo dia:** ao desenhar este sub-projeto no Tier 4,
+encontrei a sessão paralela da Onda 2 já com um backend completo pra
+isso aplicado direto no Postgres compartilhado ("Onda 7 -- Escola:
+perfil reivindicado", migration `school_claim_and_publish`, ainda sem
+arquivo em nenhum branch git no momento em que verifiquei): tabela
+`school_claims` (reivindicação "esta escola é minha", com
+nome/papel/contato institucional/justificativa, revisada por admin),
+`approve_school_claim()`/`reject_school_claim()` (aprovação promove a
+`SCHOOL_MANAGER` só se ainda for `USER`, nunca rebaixa papel mais
+forte, grava auditoria), `school_manager_publish_list()` (gestor
+publica a lista da própria escola direto, sem fila de moderação -- não
+estava no escopo que eu tinha desenhado), e gatilhos
+`*_protect_admin_columns` que travam `is_verified`/`is_sponsored`/
+`approved_by` no nível de coluna (RLS só trava linha) contra qualquer
+UPDATE de não-admin -- mais robusto que a disciplina só-na-Server-Action
+que eu tinha planejado.
+
+Decisão: não construí o portal de autoatendimento do gestor
+(`/minha-escola`) -- reconstruir por cima de um backend mais completo e
+já testado seria retrabalho, e um segundo desenho divergente (o meu
+partia de atribuição só-pelo-admin, sem reivindicação self-service)
+arriscava duas UX incompatíveis pro mesmo papel. Mantive só o que é
+complementar e não conflita: em `/admin/escolas/[id]`, uma seção
+"Gestores da escola" pra atribuição direta pelo admin (sem passar pela
+fila de reivindicação -- útil quando o admin já sabe quem deveria
+gerenciar) -- grava na mesma tabela `school_managers` que
+`approve_school_claim()` usa, então não há conflito de dado, só duas
+portas pro mesmo cômodo. Uma policy que eu ia criar
+(`school_contacts_manager_select`) já veio nessa mesma migration deles
+-- descartei a minha antes de aplicar (erro `already exists` no
+`apply_migration` foi o que revelou a sobreposição).
 
 ## 1. Bugs reais — corrigir antes de qualquer melhoria nova
 
@@ -75,9 +102,9 @@ resolver como um grupo, não um de cada vez isolado.
 | # | Item | ICP | Observação |
 |---|---|---|---|
 | D1 | ~~Lista como instrumento de compra~~ (checkbox por item, imprimir, copiar, obrigatório/opcional mais claro) | Papelaria (sub-projeto 2) **= Pais P5** | **Feito** — mesma PR #36 da Onda 2 (P5 "a lista virou instrumento"): checkbox por item com `useSyncExternalStore`+`localStorage`, medidor de progresso em periwinkle, Imprimir, Copiar lista, badge só na exceção. `src/components/lists/list-checklist.tsx`. Confirma a hipótese deste roadmap de que era o mesmo item por duas lentes. |
-| D2 | Identidade visual da papelaria (tokens `stationery-*` hoje nunca renderizados) | Papelaria (sub-projeto 3) | Mais leve que D3 — pode entrar como Bounded se o escopo ficar restrito a estilo de componentes existentes, sem tela nova |
+| D2 | ~~Identidade visual da papelaria~~ (tokens `stationery-*` hoje nunca renderizados) | Papelaria (sub-projeto 3) | **Feito, com escopo honesto.** `stationery-mint` agora colore os badges de Entrega/Retirada (`StoreCard` + perfil da papelaria) -- era o único dos três com sinal real (`stores.offers_delivery/offers_pickup`). `amber` ("item verificado") e `rose` ("economia") continuam sem uso deliberadamente: não existe `stores.is_verified` nem comparação de preço entre ofertas hoje -- um badge ali seria fabricar uma alegação que o produto não sustenta (RN-009), não um detalhe visual esquecido. |
 | D3 | ~~Avisar quando uma lista aguardada é publicada~~ · Avisar quando uma avaliação/sugestão é decidida | Pais | **Metade feita, metade ainda aberta.** A sessão da Onda 2 publicou Onda 3/4/5 (PR #39, `feat/onda-4-admin-listas`) enquanto o Tier 2 deste roadmap estava em implementação -- trazido por merge. `list_notification_requests` (migration `20260913020000`) + `ListNotificationForm`/`requestListNotificationAction` cobrem exatamente a primeira metade: e-mail sem conta, capturado quando a busca por nome não encontra lista. Só a captura -- **nenhum envio real ainda** (SMTP não configurado, mesmo bloqueador de `docs/operations/smtp-setup.md`; a tabela existe pra quando houver o que disparar). A segunda metade (avisar sobre decisão de avaliação/sugestão) **continua sem nenhuma infraestrutura** -- não teria pra quem enviar sem conta, então é um problema diferente do primeiro (exige e-mail transacional de verdade, não só captura). |
-| D4 | Dashboard mostrar "visitas" | Administrador | Não é falta de card — é ausência arquitetural: não existe tipo de evento de pageview no catálogo de 15. Instrumentar isso tocaria toda página pública, não só o admin. |
+| D4 | ~~Dashboard mostrar "visitas"~~ (não era falta de card — era ausência arquitetural: não existia tipo de evento de pageview no catálogo de 15) | Administrador | **Feito, com escopo honesto.** 17º evento, `page_view` (migration `20260913051500_page_view_event.sql`, `recordPageView()` em `record-event.ts`), instrumentado nas 7 páginas públicas dinâmicas que não tinham nenhum evento próprio: home, `escolas/[uf]`, `escolas/[uf]/[cidade]`, `listas`, `papelarias`, `papelarias/[uf]/[cidade]`, `papelarias/[uf]/[cidade]/[slug]`. As 7 páginas institucionais estáticas (como-funciona, para-escolas, para-papelarias, parceiros, privacidade, cookies, termos) ficaram deliberadamente de fora -- nenhuma tem `dynamic = "force-dynamic"` hoje, e forçar isso só pra contar visita é custo de performance real sem retorno claro (nenhuma delas tem CTA/decisão de produto que dependa de saber quantas visitas recebe). `EVENT_LABEL` em `/admin/analytics` ganhou os rótulos de `page_view` e do `home_list_request_click` do Tier 2 (faltavam os dois). Sem card dedicado de "visitas" na dashboard -- a tabela genérica "Eventos por tipo" já mostra a contagem automaticamente, e um card "Total de visitas" exigiria somar `page_view` com os eventos de view dedicados (`school_view`/`list_view`) sem dobrar contagem, o que é uma métrica derivada nova, não uma exposição do que já existe (documentado em `docs/architecture/analytics-events.md` §4.17). |
 
 ## Ordem recomendada
 

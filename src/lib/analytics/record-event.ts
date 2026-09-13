@@ -19,7 +19,8 @@ export type AnalyticsEventType =
   | "submission_started"
   | "submission_submitted"
   | "submission_approved"
-  | "home_list_request_click";
+  | "home_list_request_click"
+  | "page_view";
 
 export interface RecordAnalyticsEventInput {
   eventType: AnalyticsEventType;
@@ -66,4 +67,14 @@ export async function recordSchoolImpressions(schoolIds: string[], metadata?: Re
   await Promise.all(
     schoolIds.map((schoolId) => recordAnalyticsEvent({ eventType: "school_impression", schoolId, metadata }))
   );
+}
+
+/**
+ * Roadmap Tier 4 - D4: generic pageview for the 14 public pages that had
+ * zero tracking (home, UF/city listings, every institutional page) --
+ * school_search/school_view/list_view already cover their own screens, so
+ * this is only ever called from pages with no dedicated event.
+ */
+export async function recordPageView(path: string): Promise<void> {
+  await recordAnalyticsEvent({ eventType: "page_view", metadata: { path } });
 }

@@ -58,13 +58,13 @@ export function StoreCard({ store, schoolId, listId }: StoreCardProps) {
       {(store.offersDelivery || store.offersPickup) && (
         <div className="mt-2 flex flex-wrap gap-2">
           {store.offersDelivery && (
-            <Badge variant="info">
+            <Badge variant="stationery-mint">
               <Truck className="size-3" aria-hidden="true" />
               Entrega
             </Badge>
           )}
           {store.offersPickup && (
-            <Badge variant="info">
+            <Badge variant="stationery-mint">
               <ShoppingBag className="size-3" aria-hidden="true" />
               Retirada
             </Badge>

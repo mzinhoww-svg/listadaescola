@@ -6,6 +6,7 @@ import { CoverageSection } from "@/components/home/coverage-section";
 import { HomeSearch } from "@/components/home/home-search";
 import { HomeListRequestCta } from "@/components/home/home-list-request-cta";
 import { Button } from "@/components/ui/button";
+import { recordPageView } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getCoverageSummary } from "@/lib/schools/coverage";
 import { getRecentLists } from "@/lib/schools/home-queries";
@@ -59,6 +60,9 @@ export default async function HomePage() {
     getRecentLists(),
     getCurrentUser(),
   ]);
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordPageView("/");
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">

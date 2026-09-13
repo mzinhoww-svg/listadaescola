@@ -4,7 +4,10 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
 import { getAdminSchoolDetail } from "@/lib/admin/schools";
+import { getSchoolManagers } from "@/lib/admin/school-managers";
+import { getAdminUsers } from "@/lib/admin/users";
 import { SchoolEditForm } from "@/components/admin/school-edit-form";
+import { SchoolManagersSection } from "@/components/admin/school-managers-section";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,6 +17,10 @@ export default async function AdminSchoolDetailPage({ params }: { params: Promis
   const { id } = await params;
   const school = await getAdminSchoolDetail(id);
   if (!school) notFound();
+
+  const [managers, allUsers] = await Promise.all([getSchoolManagers(id), getAdminUsers()]);
+  const managedProfileIds = new Set(managers.map((manager) => manager.profileId));
+  const candidates = allUsers.filter((user) => !managedProfileIds.has(user.id));
 
   return (
     <div className="flex flex-col gap-6">
@@ -50,6 +57,19 @@ export default async function AdminSchoolDetailPage({ params }: { params: Promis
         </CardHeader>
         <CardContent>
           <SchoolEditForm school={school} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle as="h2">Gestores da escola</CardTitle>
+          <CardDescription>
+            Quem pode editar perfil, contatos e séries desta escola pelo portal em /minha-escola -- atribuído só pelo
+            admin (RN-005: sem autoatendimento de identidade).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SchoolManagersSection schoolId={id} managers={managers} candidates={candidates} />
         </CardContent>
       </Card>
     </div>
