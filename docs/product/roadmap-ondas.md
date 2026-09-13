@@ -208,3 +208,77 @@ Depois disso a ordem passa a ser escolha de estratégia, não de dependência:
    contributor.
 5. **A fixture de QA sai agora ou fica?** Se a home passar a listar escolas
    com lista, ela aparece lá — o guard cobre sitemap e `noindex`, não a home.
+
+---
+
+## 5. Estado de execução
+
+Atualizado em 2026-09-13, depois do Lote 1. Esta seção é registro do que
+aconteceu, não plano — o plano está acima e não foi reescrito.
+
+### Concluído e em produção
+
+| Onda | PR | O que mudou de verdade |
+|---|---|---|
+| 3 — Home | #39 | Busca unificada, cobertura honesta (2.722 escolas / 141 cidades / **0 cidades com lista**), captura de intenção por e-mail em `list_notification_requests` |
+| 4 — Publicação pelo admin | #39 | `admin_publish_list()` + `/admin/listas/nova` com parser de colagem. **O gargalo do produto caiu**: o responsável publica lista sozinho |
+| 5 — Contas recuperáveis | #39 | `/auth/verificar-email` diz o estado real e oferece reenvio com cooldown; runbook de SMTP ampliado |
+
+### Decisões que estavam listadas como "do responsável" e foram tomadas
+
+O responsável delegou a priorização e pediu execução autônoma. As decisões
+abaixo foram tomadas por mim, com o raciocínio registrado, e são todas
+reversíveis:
+
+1. **A home é captura de intenção.** Implementado na Onda 3.
+2. **Como uma escola prova que é ela: reivindicação com revisão humana pelo
+   admin.** E-mail em domínio da escola não serve para a maioria das escolas
+   públicas de MT, que não têm domínio. Não existe sinal automático
+   confiável, e inventar um seria fabricar verificação — a mesma classe de
+   erro que "nunca fabricar distância". O admin decide vendo a solicitação ao
+   lado dos dados INEP. Detalhe na doc da Onda 7.
+3. **Papelaria e escola ao mesmo tempo**, não uma antes da outra: as duas
+   dependiam só da Onda 5 e têm escopos de arquivo disjuntos, então foram
+   paralelizadas em vez de sequenciadas.
+4. **Confirmação por e-mail continua**, sem magic link: trocar o mecanismo
+   não resolve o problema real, que é não haver SMTP. A Onda 5 tratou o
+   sintoma (usuário preso) sem esconder a causa.
+5. **A fixture de QA fica**, e o vazamento dela foi fechado — ver abaixo.
+
+### Rastro da fixture de QA
+
+A Onda 3 achou uma contradição na própria tela: a home renderizava o card
+"QA — LISTA DE TESTE (conteúdo fictício, não usar)" logo acima de uma linha
+dizendo "0 listas". `getRecentLists()` não voltava vazio, voltava a fixture.
+
+Fechado em quatro lugares (`getRecentLists`, `getCoverageSummary`, e antes
+disso sitemap e `robots: noindex`) e, por último, na RPC de busca:
+`search_schools.list_count` contava a fixture, então o catálogo dizia "1
+lista" para a escola-âncora. Como existe exatamente 1 `school_lists`
+APPROVED no banco e ela é a fixture, **100% do `list_count` exibido era
+ficção** — e `list_count` entra no `organic_score` com peso próprio, ou
+seja, a fixture também mexia na ordenação de uma escola real.
+
+**Incidente**: a primeira versão dessa correção escreveu `slug` sem
+qualificar a tabela. `slug` também é OUT parameter de `search_schools`,
+então o PL/pgSQL levantou `42702` em toda chamada e o catálogo caiu em
+produção por cerca de 2 minutos até a reaplicação com alias. A armadilha já
+estava documentada em `20260911170100_ranking_patrocinio_fix_ambiguous_id.sql`
+— foi lida e repetida mesmo assim. Registro completo no cabeçalho de
+`supabase/migrations/20260913060000_search_schools_exclude_qa_fixture.sql`.
+
+### Em andamento
+
+Ondas 6, 7 e 8 em paralelo na branch `feat/onda-6-7-8`, com escopos de
+arquivo disjuntos e timestamps de migration reservados por onda.
+
+### Sequenciamento pendente e por quê
+
+- **Onda 9 (confiança)** espera a PR #38, de **outra sessão rodando em
+  paralelo no mesmo repositório**, que mexe exatamente em rejeição e reenvio
+  de avaliação (`reviews.rejection_reason`, `admin_reject_review`). Executar
+  as duas ao mesmo tempo seria conflito garantido no mesmo arquivo.
+- **Onda 10 (alcance)** por último, como o próprio roadmap previa: SEO com 0
+  listas otimiza uma página que não tem o que oferecer. As 2.722 escolas e
+  141 municípios já são conteúdo indexável e já estão no sitemap desde o
+  Prompt 15 — o que falta é motivo para alguém chegar nelas.
