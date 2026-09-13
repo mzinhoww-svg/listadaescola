@@ -391,6 +391,38 @@ export type Database = {
         }
         Relationships: []
       }
+      list_notification_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notified_at: string | null
+          school_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notified_at?: string | null
+          school_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notified_at?: string | null
+          school_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_notification_requests_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       list_product_mappings: {
         Row: {
           created_at: string
@@ -1682,6 +1714,16 @@ export type Database = {
           p_entity_type: string
           p_priority: number
           p_starts_at: string
+        }
+        Returns: string
+      }
+      admin_publish_list: {
+        Args: {
+          p_education_level: string
+          p_items: Json
+          p_school_id: string
+          p_school_year: number
+          p_series_name: string
         }
         Returns: string
       }
