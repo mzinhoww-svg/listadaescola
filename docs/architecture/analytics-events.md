@@ -6,10 +6,14 @@ Autoridade: PRD [`docs/product/PRD.md`](../product/PRD.md) §15 ("Analytics de
 produto", RF-015) define os 15 tipos de evento como "eventos mínimos" (piso,
 não teto) e a lista de KPIs que devem alimentar. Este documento não propõe
 nada novo — cataloga, com evidência de código (`arquivo:linha`), o que os 15
-eventos fazem **hoje**, quem os dispara, com quais campos, e o que na lista
-de KPIs da PRD já está implementado versus ainda não. Um 16º evento
-(`home_list_request_click`) está em desenho em conversa separada e
-deliberadamente **não** entra aqui.
+eventos originais fazem **hoje**, quem os dispara, com quais campos, e o que
+na lista de KPIs da PRD já está implementado versus ainda não.
+
+Um 16º evento, `home_list_request_click`, foi adicionado em 2026-09-13
+(Tier 2 do roadmap ICPs, sub-projeto papelaria #1 — CTA da home +
+rascunho anônimo) e está documentado em §4.16. É o único evento do
+catálogo sem lastro direto na lista de "eventos mínimos" da PRD §15 —
+adicionado deliberadamente acima do piso, não substituindo nenhum dos 15.
 
 ## Sumário
 
@@ -79,14 +83,19 @@ record_analytics_event(
 ) returns void
 ```
 
-Guarda de validação (linhas 211-218) — `raise exception 'invalid event_type: %'`
-se `p_event_type` não for exatamente um dos 15:
+Guarda de validação — `raise exception 'invalid event_type: %'`
+se `p_event_type` não for exatamente um dos 16 (os 15 originais definidos em
+`20260911020000_search_schools.sql:211-218`, mais `home_list_request_click`
+acrescentado por
+[`20260913040000_home_list_request.sql`](../../supabase/migrations/20260913040000_home_list_request.sql)
+via `create or replace function` — mesma assinatura, só a lista de valores
+aceitos muda):
 
 ```
 location_search, location_detected, school_search, school_impression,
 school_view, list_view, list_share, commerce_click, whatsapp_click,
 store_view, favorite_added, review_created, submission_started,
-submission_submitted, submission_approved
+submission_submitted, submission_approved, home_list_request_click
 ```
 
 `profile_id` do insert vem de `auth.uid()` resolvido **dentro da função**
@@ -151,7 +160,7 @@ desse gap.
 
 ---
 
-## 3. Visão geral dos 15 eventos
+## 3. Visão geral dos 16 eventos
 
 | Evento | Camada | Dispara quando (resumo) | Campos populados | KPI PRD §15 |
 |---|---|---|---|---|
@@ -170,6 +179,7 @@ desse gap.
 | [`submission_started`](#413-submission_started) | Server Action ← Client Component | Só ao criar um DRAFT novo (não ao retomar um rascunho existente) | `schoolId` + metadata `{submissionId}` | entrada do funil de "listas submetidas"/"taxa de aprovação" |
 | [`submission_submitted`](#414-submission_submitted) | Server Action ← Client Component (2 call sites) | Envio de lista completo **ou** envio de sugestão de escola | Lista: `schoolId` + `{submissionId}`. Sugestão: sem `schoolId` + `{kind: "school_suggestion"}` | listas submetidas; denominador de taxa de aprovação |
 | [`submission_approved`](#415-submission_approved) | Server Action ← Client Component (2 call sites) | Aprovação de lista **ou** de sugestão, pós-RPC de aprovação | Lista: `schoolId` + `{submissionId}`. Sugestão: sem `schoolId` + `{kind, suggestionId}` | numerador de taxa de aprovação |
+| [`home_list_request_click`](#416-home_list_request_click) | Client Component (evento de UI puro) | Clique no CTA "Não achou a lista da sua escola? Peça aqui", na home | sem `schoolId` (ainda não escolheu escola) — sem metadata | nenhum literal na PRD (evento novo, acima do piso de 15) |
 
 ---
 
@@ -296,12 +306,37 @@ as duas concordam exatamente.
 
 ### 4.13 `submission_started`
 
-- **Arquivo:** [`src/lib/contributions/actions.ts:159`](../../src/lib/contributions/actions.ts#L159), função `startSubmissionAction` (passo 1 do wizard `enviar-lista`).
+Dois call sites desde 2026-09-13 (Tier 2 do roadmap ICPs) — mesmo padrão de
+`metadata` diferenciando a origem que `submission_submitted`/
+`submission_approved` já usam para `kind` (§4.14/§4.15), aqui com `source`.
+
+**Site A — wizard logado (`/enviar-lista`)** ·
+[`src/lib/contributions/actions.ts:159`](../../src/lib/contributions/actions.ts#L159),
+função `startSubmissionAction` (passo 1 do wizard).
 - **Camada:** Server Action, chamada por `src/components/contributions/new-submission-wizard.tsx` (`"use client"`, via `useActionState`).
-- **Dispara quando:** só no branch que **cria** uma linha `list_submissions` nova em `DRAFT` (linhas 138-162).
-- **Não dispara quando:** existe um rascunho editável para a mesma combinação exata de escola/etapa/série/ano — esse branch (linhas 123-136) dá `redirect()` direto para o rascunho existente e nunca chega ao evento; comentário do próprio código (linhas 154-158) é explícito: "Only the freshly-created-draft path counts as 'started' ... resuming a draft isn't a new start". Também não dispara se `check_rate_limit("submission_start", 10/60min)` bloquear (linhas 98-105) ou se usuário não autenticado.
-- **Campos:** `schoolId` (escola escolhida no passo 1). `metadata: { submissionId: created.id }`. Sem `storeId`/`listId`/`partnerId`.
-- **KPI:** não é uma linha própria da PRD §15, mas é a ponta larga do funil que alimenta "listas submetidas"/"taxa de aprovação" (iniciado → enviado → aprovado) — nenhum KPI dedicado a "taxa de conclusão do wizard" existe hoje.
+- **Dispara quando:** só no branch que **cria** uma linha `list_submissions` nova em `DRAFT`.
+- **Não dispara quando:** existe um rascunho editável para a mesma combinação exata de escola/etapa/série/ano — esse branch dá `redirect()` direto para o rascunho existente e nunca chega ao evento; comentário do próprio código é explícito: "Only the freshly-created-draft path counts as 'started' ... resuming a draft isn't a new start". Também não dispara se `check_rate_limit("submission_start", 10/60min)` bloquear ou se usuário não autenticado.
+- **Campos:** `schoolId` (escola escolhida no passo 1). `metadata: { submissionId: created.id }` — **sem** `source`. Sem `storeId`/`listId`/`partnerId`.
+
+**Site B — rascunho anônimo materializado (CTA da home)** ·
+[`src/lib/contributions/actions.ts`](../../src/lib/contributions/actions.ts),
+função `materializeLocalDraftAction`, chamada diretamente (sem
+`useActionState`/`<form>`) por `continueLocalDraft()`
+([`src/lib/contributions/continue-local-draft.ts`](../../src/lib/contributions/continue-local-draft.ts)),
+por sua vez chamada por `AnonymousItemsStep` (clique em "Continuar" já
+autenticado) e por `HomeListRequestCta` (auto-retomada ao voltar do
+login/cadastro com um rascunho local pendente).
+- **Dispara quando:** só quando `materialize_local_draft` (RPC) **cria**
+  uma `list_submissions` nova — mesmo critério do Site A, "colidir" com um
+  DRAFT/NEEDS_CORRECTION remoto existente para a mesma tupla
+  escola/etapa/série/ano não conta como início (`data.collided === true`
+  pula o evento e o `record_rate_limit_hit`, mesma disciplina do Site A).
+- **Não dispara quando:** validação client-side falha antes de chamar a
+  RPC, a RPC lança exceção (ex.: usuário não autenticado — nunca deveria
+  ser alcançável, mas a Server Action nunca confia só no cliente), ou
+  `check_rate_limit` bloqueia.
+- **Campos:** `schoolId`. `metadata: { submissionId: data.submission_id, source: "home_anonymous" }` — o campo `source` é o que distingue este site do Site A num consumidor lendo `analytics_events` cru (mesma técnica de `metadata->>'kind'` do §4.14, mas aqui só um dos dois sites populares um campo extra em vez de os dois usarem valores diferentes da mesma chave).
+- **KPI:** não é uma linha própria da PRD §15 em nenhum dos dois sites, mas é a ponta larga do funil que alimenta "listas submetidas"/"taxa de aprovação" (iniciado → enviado → aprovado) — nenhum KPI dedicado a "taxa de conclusão do wizard" existe hoje, nem um que meça conversão anônimo → lista real especificamente (ver §4.16).
 
 ### 4.14 `submission_submitted`
 
@@ -374,6 +409,16 @@ função `approveSchoolSuggestionAction`, chamada por
   do denominador (§4.14), já que `computeApprovalRate` (§5) usa a contagem
   crua do `event_type` inteiro dos dois lados.
 
+### 4.16 `home_list_request_click`
+
+- **Arquivo:** [`src/components/home/home-list-request-cta.tsx`](../../src/components/home/home-list-request-cta.tsx), dentro do `onClick` do botão de texto "Não achou a lista da sua escola? Peça aqui".
+- **Camada:** Client Component puro — chama `recordAnalyticsEvent` diretamente do handler de clique (Server Action importada e invocada como função, sem `useActionState`/`<form>`; mesma técnica usada por `materializeLocalDraftAction`/`continueLocalDraft`, §4.13 tem o padrão equivalente via `useActionState` para comparação). Não é uma renderização de servidor como a maioria dos outros 15 — é o único evento deste catálogo disparado só por interação de UI sem nenhuma escrita/leitura de dados associada.
+- **Dispara quando:** todo clique no CTA, incondicionalmente — o clique também revela o wizard (`allowAnonymous`) na mesma função, mas o evento não depende do resultado dessa revelação.
+- **Não dispara quando:** nunca condicionalmente — não há branch de erro/validação antes do disparo (é o primeiro passo do funil, não há o que validar ainda).
+- **Campos:** sem `schoolId`/`storeId`/`listId`/`partnerId` (o visitante ainda não escolheu escola). Sem `metadata` — nada além do clique em si para registrar neste ponto.
+- **Best-effort, fogo-e-esquece:** `void recordAnalyticsEvent(...)` — mesma disciplina de "nunca bloqueia a tela" documentada em `record-event.ts` (§2.2), aqui ainda mais literal: o clique já navega/revela a UI no mesmo tick, independente do resultado da chamada.
+- **KPI:** nenhum literal na PRD §15 (evento adicionado depois, acima do piso de 15 — ver nota da introdução). Junto com `submission_started` (metadata `source: "home_anonymous"`, adicionado na mesma mudança — ver §4.13), forma o funil novo "clicou no CTA → começou o rascunho anônimo → materializou → enviou", sem KPI dedicado ainda em `/admin/analytics`.
+
 ---
 
 ## 5. Eventos → KPIs da PRD §15
@@ -408,7 +453,8 @@ KPIs, citados literalmente de
 Eventos que não alimentam nenhuma das 9 linhas acima, hoje: `list_share`,
 `store_view`, `favorite_added`, `review_created`, `submission_started`
 (este último é só a ponta larga do funil, sem KPI de "taxa de conclusão do
-wizard" dedicado).
+wizard" dedicado), e `home_list_request_click` (§4.16, evento novo acima do
+piso de 15 -- sem KPI na PRD por definição, já que a PRD é anterior a ele).
 
 ---
 

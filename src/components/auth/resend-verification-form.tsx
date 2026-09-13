@@ -8,7 +8,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 
 const initialState: FormState = {};
 
-export function ResendVerificationForm({ defaultEmail }: { defaultEmail?: string }) {
+export function ResendVerificationForm({ defaultEmail, next }: { defaultEmail?: string; next?: string }) {
   const [state, formAction] = useActionState(resendVerificationAction, initialState);
 
   if (state?.success) {
@@ -21,6 +21,7 @@ export function ResendVerificationForm({ defaultEmail }: { defaultEmail?: string
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
+      <input type="hidden" name="next" value={next ?? ""} />
       <Input
         label="E-mail"
         name="email"

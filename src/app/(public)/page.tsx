@@ -4,8 +4,10 @@ import { ClipboardList } from "lucide-react";
 
 import { HomeLocationSearch } from "@/components/home/home-location-search";
 import { HomeNameSearch } from "@/components/home/home-name-search";
+import { HomeListRequestCta } from "@/components/home/home-list-request-cta";
 import { SchoolCard } from "@/components/schools/school-card";
 import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getFeaturedSchools, getRecentLists } from "@/lib/schools/home-queries";
 import { toDisplayCase } from "@/lib/utils";
 
@@ -29,7 +31,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featuredSchools, recentLists] = await Promise.all([getFeaturedSchools(), getRecentLists()]);
+  const [featuredSchools, recentLists, user] = await Promise.all([
+    getFeaturedSchools(),
+    getRecentLists(),
+    getCurrentUser(),
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
@@ -45,6 +51,9 @@ export default async function HomePage() {
           <HomeLocationSearch />
           <div className="border-t border-neutral-100 pt-4">
             <HomeNameSearch />
+          </div>
+          <div className="border-t border-neutral-100 pt-4">
+            <HomeListRequestCta isAuthenticated={Boolean(user)} />
           </div>
         </div>
       </section>

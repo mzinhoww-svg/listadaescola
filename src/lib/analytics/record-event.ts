@@ -18,7 +18,8 @@ export type AnalyticsEventType =
   | "review_created"
   | "submission_started"
   | "submission_submitted"
-  | "submission_approved";
+  | "submission_approved"
+  | "home_list_request_click";
 
 export interface RecordAnalyticsEventInput {
   eventType: AnalyticsEventType;

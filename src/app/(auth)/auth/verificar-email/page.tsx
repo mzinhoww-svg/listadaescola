@@ -9,9 +9,9 @@ export const metadata: Metadata = { title: "Verifique seu e-mail" };
 export default async function VerificarEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; next?: string }>;
 }) {
-  const { email } = await searchParams;
+  const { email, next } = await searchParams;
 
   return (
     <Card>
@@ -30,7 +30,7 @@ export default async function VerificarEmailPage({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ResendVerificationForm defaultEmail={email} />
+        <ResendVerificationForm defaultEmail={email} next={next} />
       </CardContent>
     </Card>
   );

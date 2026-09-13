@@ -390,6 +390,38 @@ export type Database = {
         }
         Relationships: []
       }
+      list_notification_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notified_at: string | null
+          school_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notified_at?: string | null
+          school_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notified_at?: string | null
+          school_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_notification_requests_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       list_product_mappings: {
         Row: {
           created_at: string
@@ -1687,6 +1719,16 @@ export type Database = {
         }
         Returns: string
       }
+      admin_publish_list: {
+        Args: {
+          p_education_level: string
+          p_items: Json
+          p_school_id: string
+          p_school_year: number
+          p_series_name: string
+        }
+        Returns: string
+      }
       admin_reject_review: {
         Args: { p_reason: string; p_review_id: string }
         Returns: undefined
@@ -1846,6 +1888,19 @@ export type Database = {
       mark_submission_under_review: {
         Args: { p_submission_id: string }
         Returns: undefined
+      }
+      materialize_local_draft: {
+        Args: {
+          p_education_level: string
+          p_items: Json
+          p_school_id: string
+          p_school_year: number
+          p_series_name: string
+        }
+        Returns: {
+          collided: boolean
+          submission_id: string
+        }[]
       }
       merge_inep_staging: {
         Args: {
