@@ -6,9 +6,9 @@ import { Plus, Trash2 } from "lucide-react";
 import {
   addManagedSchoolContactAction,
   removeManagedSchoolContactAction,
-  MANAGER_CONTACT_TYPES,
   type FormState,
 } from "@/lib/schools/manager-actions";
+import { MANAGER_CONTACT_TYPES } from "@/lib/schools/manager-constants";
 import type { ManagedSchoolContact } from "@/lib/schools/manager";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";

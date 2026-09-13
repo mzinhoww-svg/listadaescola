@@ -36,6 +36,17 @@ const QUOTE_SESSION_COOKIE = "le_orcamento_sid";
  * from Prompt 09 -- the itemized message still requires a real, published
  * list with at least one item.
  *
+ * Onda 6: `school` sem `list` também é válido, e passou a existir de
+ * verdade -- a página de perfil da escola renderiza
+ * `<NearbyStoresSheet schoolId={...} />` sem lista
+ * (src/app/(public)/escolas/[uf]/[cidade]/[slug]/page.tsx), e
+ * buildStoreQuoteHref (src/lib/stores/quote-link.ts) monta o link com
+ * `store` + `school` só. O guard antigo tratava "qualquer um dos dois
+ * presente" como "os dois obrigatórios" e mandava essa pessoa para a
+ * home. Agora só `list` exige `school` (a mensagem itemizada precisa do
+ * nome da escola); `school` sozinho rende a mensagem genérica e ainda
+ * assim registra o pedido com a escola de origem.
+ *
  * `whatsapp_click` is awaited, same reasoning as `/api/commerce/click`:
  * this Route Handler ends the instant it returns its redirect response,
  * so a detached insert risks never flushing.
@@ -45,13 +56,17 @@ export async function GET(request: NextRequest) {
   const storeId = searchParams.get("store");
   const schoolIdParam = searchParams.get("school");
   const listIdParam = searchParams.get("list");
-  const hasListContext = schoolIdParam !== null || listIdParam !== null;
 
-  if (!isUuid(storeId) || (hasListContext && (!isUuid(schoolIdParam) || !isUuid(listIdParam)))) {
+  const schoolOk = schoolIdParam === null || isUuid(schoolIdParam);
+  // `list` sem `school` fica de fora: a mensagem itemizada precisa do nome
+  // da escola, então esse par é entrada malformada, não um caso de uso.
+  const listOk = listIdParam === null || (isUuid(listIdParam) && isUuid(schoolIdParam));
+
+  if (!isUuid(storeId) || !schoolOk || !listOk) {
     return NextResponse.redirect(new URL("/", origin));
   }
-  const schoolId = hasListContext ? (schoolIdParam as string) : null;
-  const listId = hasListContext ? (listIdParam as string) : null;
+  const schoolId = schoolIdParam;
+  const listId = listIdParam;
 
   const supabase = createPublicClient();
 
@@ -63,7 +78,10 @@ export async function GET(request: NextRequest) {
       : Promise.resolve({ data: null }),
   ]);
 
-  if (!store || (hasListContext && (!school || !list))) {
+  // Cada chave pedida tem que resolver: id de escola ou de lista que não
+  // existe (ou lista não publicada) é link quebrado, não motivo para
+  // inventar uma mensagem genérica em cima de um contexto errado.
+  if (!store || (schoolId && !school) || (listId && !list)) {
     return NextResponse.redirect(new URL("/", origin));
   }
 

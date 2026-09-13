@@ -478,3 +478,60 @@ UI do GitHub/Vercel/Supabase), reportar exatamente: comando/ferramenta
 tentada, erro retornado, o que falta, e se a mudança necessária é dentro ou
 fora do repositório. Nunca alegar que uma etapa foi concluída quando não
 foi.
+
+## Armadilhas de Postgres/Supabase descobertas na Onda 7 (2026-09-13)
+
+Três armadilhas confirmadas ao vivo contra o projeto real enquanto se
+escrevia `supabase/migrations/20260913040000_school_claim_and_publish.sql`.
+Estão aqui porque nenhuma delas aparece antes de você tentar.
+
+- **Subconsulta na PRÓPRIA tabela dentro de uma policy estoura.** O padrão
+  "o WITH CHECK relê o valor gravado para impedir que a coluna mude"
+  (`profiles_update_own` faz isso com `role`) **não** funciona quando a
+  subconsulta lê a mesma tabela da policy diretamente:
+
+  ```
+  ERROR: 42P17: infinite recursion detected in policy for relation "school_profiles"
+  ```
+
+  `profiles_update_own` só escapa porque o que ela chama é `is_admin()`,
+  que é SECURITY DEFINER (RLS não se aplica ao dono da tabela). Para travar
+  coluna sem recursão: trigger `BEFORE` que restaura o valor, ou uma função
+  SECURITY DEFINER que faça a leitura. Ver
+  `school_profiles_protect_admin_columns()` e
+  `stores_protect_admin_columns()` (Onda 6) para o padrão adotado.
+
+- **`check_rate_limit()` é fail-closed com `auth.uid()` nulo** — ela
+  retorna `false`, não `true`
+  (`20260912000000_hardening_rn004_sec008_expand.sql`). Correto no desenho
+  dela (sem uid não há balde para contar), mas se você chamá-la de um
+  trigger de INSERT, toda escrita **sem sessão** (seed, service role, psql,
+  migration de dados, fixture de teste) passa a falhar com um "rate limit
+  exceeded" enganoso. Sempre abra o escape hatch
+  `if (select auth.uid()) is null then return new; end if;` antes — essas
+  conexões já ignoram RLS de qualquer forma. Corrigido em
+  `20260913040100_school_claims_rate_limit_null_uid.sql`.
+
+- **Função de trigger nasce com EXECUTE para PUBLIC como qualquer outra**,
+  e SECURITY DEFINER nelas é contabilizado pelo advisor
+  `anon_security_definer_function_executable` igual a uma RPC. Revogar é
+  seguro: o privilégio de EXECUTE de uma função de trigger é checado no
+  `CREATE TRIGGER`, **não** a cada disparo (verificado numa transação com
+  ROLLBACK: depois do `revoke ... from public`, o trigger continua
+  disparando e restaurando a coluna). Ver
+  `20260913040200_school_trigger_functions_revoke_public.sql`.
+
+- **Seed de `auth.users` para login real: `created_at`/`updated_at` também
+  não podem ficar NULL.** A lista de colunas-string vazias documentada
+  acima ("Autenticação") é necessária mas não suficiente — com os dois
+  timestamps nulos o GoTrue devolve
+  `HTTP 500 {"error_code":"unexpected_failure","msg":"Database error querying schema"}`
+  no `grant_type=password`. Preencher `created_at = now(), updated_at = now()`
+  resolve.
+
+- **`supabase-js` remove TODO whitespace da string de `select()`** antes de
+  mandar para o PostgREST. Ao reproduzir uma consulta do app via `curl`,
+  passe a string já sem espaços/quebras — mandar o template literal
+  multi-linha cru devolve
+  `PGRST100 failed to parse select parameter`, que **não** é um bug da
+  consulta do app.

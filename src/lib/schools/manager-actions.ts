@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseListItems } from "@/lib/admin/parse-list-items";
 import { EDUCATION_LEVELS } from "@/lib/schools/search-schools";
+import { MANAGER_CONTACT_TYPES } from "@/lib/schools/manager-constants";
 import type { Json } from "@/lib/supabase/database.types";
 
 export interface FormState {
@@ -16,12 +17,6 @@ const MAX_DESCRIPTION = 1000;
 const MAX_URL = 300;
 const MAX_SHORT = 200;
 const MAX_ITEMS = 200;
-
-/** Mesmos rótulos que `contactTypeLabel` já sabe renderizar
- * (src/lib/schools/format.ts). A coluna é `text` livre no schema, então
- * esta lista é do formulário, não do banco -- e por isso é revalidada aqui
- * no servidor, não só no `<select>`. */
-export const MANAGER_CONTACT_TYPES = ["PHONE", "MOBILE", "WHATSAPP", "EMAIL", "SITE", "INSTAGRAM", "OTHER"] as const;
 
 /**
  * Guard de aplicação da área do gestor.

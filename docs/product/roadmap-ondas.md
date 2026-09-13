@@ -201,7 +201,12 @@ Depois disso a ordem passa a ser escolha de estratégia, não de dependência:
 1. **A home é buscador ou pedido de lista?** Minha recomendação é
    *nenhum dos dois* — é captura de intenção (Onda 3). Muda se a estratégia
    for crescer por contribuição da comunidade em vez de curadoria própria.
-2. **Como uma escola prova que é ela?** Bloqueia a Onda 7 inteira.
+2. ~~**Como uma escola prova que é ela?** Bloqueia a Onda 7 inteira.~~
+   **Decidido na Onda 7 (2026-09-13):** reivindicação com revisão humana
+   pelo admin — não existe sinal automático confiável em MT, e inventar um
+   seria fabricar verificação. Raciocínio completo, alternativas descartadas
+   e o que torna a decisão reversível em `docs/product/school-claim.md`.
+   Reversível: o responsável pode trocar o critério sem tocar em RLS.
 3. **Papelaria ou escola primeiro?** Receita mais próxima vs. oferta de
    melhor qualidade.
 4. **Confirmação por e-mail ou magic link?** Muda o custo de entrada do

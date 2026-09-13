@@ -55,14 +55,14 @@ export default function ParaEscolasPage() {
         Nome, código INEP e endereço continuam vindo da fonte oficial — nem a escola nem um usuário
         comum editam esses campos.
       </p>
-      <p className="not-prose flex flex-wrap gap-3">
+      <div className="mt-2 flex flex-wrap gap-3">
         <Button asChild>
           <Link href="/reivindicar-escola">Reivindicar minha escola</Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/minha-escola">Já pedi — acompanhar solicitação</Link>
         </Button>
-      </p>
+      </div>
 
       <h2>Quer corrigir uma informação oficial?</h2>
       <p>
