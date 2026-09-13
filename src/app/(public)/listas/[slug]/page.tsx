@@ -14,6 +14,7 @@ import { ShareButton } from "@/components/lists/share-button";
 import { PartnerOfferButton } from "@/components/commerce/partner-offer-button";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { Badge } from "@/components/ui/badge";
+import { isQaFixtureSlug } from "@/lib/qa/fixtures";
 import { jsonLdScript } from "@/lib/seo/json-ld";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 
@@ -38,6 +39,9 @@ export async function generateMetadata({ params }: ListPageProps): Promise<Metad
     description,
     alternates: { canonical: `/listas/${list.slug}` },
     openGraph: { title, description, type: "website" },
+    // Fixture de QA: conteúdo fictício ancorado numa escola INEP real,
+    // nunca indexável. Ver src/lib/qa/fixtures.ts.
+    ...(isQaFixtureSlug(list.slug) ? { robots: { index: false, follow: false } } : {}),
   };
 }
 

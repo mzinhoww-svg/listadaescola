@@ -4,6 +4,7 @@ import { listMunicipalities } from "@/lib/schools/municipalities";
 import { schoolHref } from "@/components/schools/school-card";
 import { storeHref } from "@/lib/stores/store-profile";
 import { getAllActiveSchoolEntries, getAllActiveStoreEntries, getAllPublicListEntries } from "@/lib/seo/sitemap-data";
+import { isQaFixtureSlug } from "@/lib/qa/fixtures";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 
 // Escopo inicial do PRD é só MT -- ver CLAUDE.md.
@@ -58,19 +59,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  const storeEntries: MetadataRoute.Sitemap = stores.map((store) => ({
-    url: url(storeHref(store)),
-    lastModified: store.updatedAt,
-    changeFrequency: "weekly",
-    priority: 0.5,
-  }));
+  // Fixtures de QA nunca entram no sitemap -- ver src/lib/qa/fixtures.ts.
+  const storeEntries: MetadataRoute.Sitemap = stores
+    .filter((store) => !isQaFixtureSlug(store.slug))
+    .map((store) => ({
+      url: url(storeHref(store)),
+      lastModified: store.updatedAt,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    }));
 
-  const listEntries: MetadataRoute.Sitemap = lists.map((list) => ({
-    url: url(`/listas/${list.slug}`),
-    lastModified: list.updatedAt,
-    changeFrequency: "weekly",
-    priority: 0.6,
-  }));
+  const listEntries: MetadataRoute.Sitemap = lists
+    .filter((list) => !isQaFixtureSlug(list.slug))
+    .map((list) => ({
+      url: url(`/listas/${list.slug}`),
+      lastModified: list.updatedAt,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    }));
 
   return [...staticEntries, ...municipalityEntries, ...schoolEntries, ...storeEntries, ...listEntries];
 }
