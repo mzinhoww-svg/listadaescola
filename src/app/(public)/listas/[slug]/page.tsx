@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CalendarDays, GraduationCap } from "lucide-react";
 
 import { getListBySlug } from "@/lib/lists/list-detail";
+import { getListProvenance } from "@/lib/lists/provenance";
 import { schoolHref } from "@/components/schools/school-card";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -15,6 +16,7 @@ import { ShareButton } from "@/components/lists/share-button";
 import { OnlineOffersPanel } from "@/components/commerce/online-offers-panel";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { ListChecklist } from "@/components/lists/list-checklist";
+import { ListProvenanceNote } from "@/components/lists/list-provenance-note";
 import { Badge } from "@/components/ui/badge";
 import { isQaFixtureSlug } from "@/lib/qa/fixtures";
 import { jsonLdScript } from "@/lib/seo/json-ld";
@@ -52,9 +54,13 @@ export default async function ListPage({ params }: ListPageProps) {
   const list = await getListBySlug(slug);
   if (!list) notFound();
 
-  const [user, offersByItem] = await Promise.all([
+  const [user, offersByItem, provenance] = await Promise.all([
     getCurrentUser(),
     getOffersByListItemId(list.items.map((item) => item.id)),
+    // Onda 9. Fica aqui, e não dentro de getListBySlug(), porque aquela
+    // função é `cache()`ada e também roda em generateMetadata() -- que não
+    // usa procedência e não deve pagar por ela.
+    getListProvenance(list.versionId),
   ]);
   const favorited = user ? await isFavorited("LIST", list.id) : false;
   const path = `/listas/${list.slug}`;
@@ -158,6 +164,12 @@ export default async function ListPage({ params }: ListPageProps) {
           />
         </div>
       </header>
+
+      <ListProvenanceNote
+        provenance={provenance}
+        publishedAt={list.publishedAt}
+        versionNumber={list.versionNumber}
+      />
 
       <ListChecklist
         slug={list.slug}
