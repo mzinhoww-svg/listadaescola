@@ -617,3 +617,89 @@ listener.
 - **Aparência do mapa** — os tiles do OSM continuam bloqueados pelo proxy
   deste ambiente. A geometria é medida no DOM real e é válida; a aparência
   não.
+
+---
+
+# Onda 2 — estado do backlog (2026-09-13)
+
+Os 13 itens do §9 foram executados em duas PRs. Nada ficou pendente de
+decisão: onde o §9 dizia "escolha de produto" (P8, P12, P13), a decisão foi
+tomada e está registrada abaixo com o motivo.
+
+| # | Item | Estado | Onde |
+|---|---|---|---|
+| P1 | `action` nos 4 empty states + `/enviar-lista` no header e rodapé | ✅ | PR "jornada" |
+| P2 | Não despejar 2.722 resultados sem escopo | ✅ | `catalog-landing.tsx` (novo) |
+| P3 | Filtro "Com lista publicada" + estado explícito no card | ✅ | migration `search_schools_has_list` |
+| P4 | Card inteiro clicável, sem `CardFooter` | ✅ | `school-card.tsx` |
+| P5 | Lista como instrumento | ✅ | `list-checklist.tsx` (novo) |
+| P6 | Separar busca por nome de proximidade | ✅ | `location-banner.tsx` |
+| P7 | `tel:`, `wa.me`, rótulo de `contact_type`, endereço deduplicado | ✅ | `lib/schools/format.ts` (novo) |
+| P8 | Clipping do mapa | ✅ **decidido** | ver abaixo |
+| P9 | `max-w` nos 3 parágrafos longos | ✅ | perfil da escola + `footer.tsx` |
+| P10 | Badges `py-0.5` → `py-1` | ✅ | `badge.tsx` |
+| P11 | `global-error.tsx` com literais alinhados aos tokens | ✅ | `global-error.tsx` |
+| P12 | Empilhar os links no mobile | ✅ **decidido** | ver abaixo |
+| P13 | `info` sai do sky do Tailwind | ✅ **decidido** | ver abaixo |
+
+## As três decisões
+
+**P8 — o popup sai, o rótulo fica.** Das três saídas listadas no §6.2, as
+duas primeiras trocavam um defeito por outro: remover o `overflow-hidden`
+faz os pinos de borda vazarem para fora do quadro, e mexer no `offset` só
+empurra o corte para outro marcador. A terceira era a certa, e por um motivo
+que só ficou claro relendo o código: **o popup não carregava informação que a
+tela já não tivesse.** Em `/escolas` o `onMarkerClick` navega antes de ele
+abrir — era código morto — e no perfil da escola ele repetia o `<h1>` logo
+acima. O rótulo passou para `title`/`aria-label` no próprio elemento do
+marcador, o que de quebra resolveu um problema de acessibilidade que ninguém
+tinha notado: os marcadores eram `<div>`s sem nome acessível nenhum.
+
+**P12 — o `DESIGN.md` venceu.** São 4 links curtos e o documento é explícito
+("esconder custaria mais do que mostrar"). Eles viraram uma segunda linha do
+header que envolve sozinha se não couber. Efeito colateral bom: sem o estado
+do menu, o `Header` deixou de ser client component e parou de mandar
+JavaScript para o browser.
+
+**P13 — periwinkle, não sky.** O `info` marcava "Pública" e "Opcional" — dois
+dos chips mais visíveis — com o sky do Tailwind, cor de fora da paleta. Passava
+na AA (5,49:1), então nunca foi defeito de acessibilidade; era incoerência de
+marca. Agora usa o acento do próprio sistema, a 8,27:1.
+
+## Verificação
+
+Tudo medido no app rodando contra o Supabase real, não só no build.
+
+| Checagem | Resultado |
+|---|---|
+| `?lista=com` / `?lista=sem` | 1 / 2721 (= 2.722, o total real) |
+| `?municipality=Cuiabá` | 384, igual à contagem direta no banco |
+| `/escolas` sem escopo | sem grade, com seletor de cidade |
+| `?q=Pompermayer` | "Mostrando resultados **para**" |
+| Perfil sem lista | CTA "Enviar a lista desta escola" |
+| Checklist | 0% → 27% ao marcar 3 de 11, **persiste no reload** |
+| Barra de progresso | `rgb(150,170,255)` = `#96aaff`, o periwinkle do `DESIGN.md` |
+| Alvo de toque do item | 104px (mínimo exigido: 44px) |
+| Badge "Obrigatório" | 0 ocorrências; "Opcional", 3 (= os 3 itens opcionais) |
+| Hambúrguer | 0 ocorrências |
+| Endereço INEP | `"…78070-078 Cuiabá - MT."` → `"…78070-078 — Cuiabá, MT"` |
+| Contraste (lista, resultados, catálogo, 390px) | **0 falhas** |
+
+O formatador de endereço foi testado contra 7 casos, incluindo endereços
+reais de Cuiabá, Poxoréu, Nossa Senhora do Livramento e o caso do §3.5. O
+sétimo caso pegou um bug de verdade: o mapa de acentos só tinha as letras
+base como chave, então município acentuado (`Cuiabá`) contra endereço sem
+acento (`CUIABA`) — justamente o caso que a função existe para tratar — não
+casava.
+
+## O que a Onda 2 não resolveu
+
+- **A home ainda não mostra nenhuma escola** (§3.9). É consequência de
+  `getFeaturedSchools` só considerar patrocínio ou verificação admin, uma
+  decisão de engenharia correta e documentada no código. Continua sendo uma
+  pergunta de produto (§10.1), não um bug para corrigir.
+- **`/admin` e os passos internos do wizard** seguem sem cobertura de
+  auditoria (adendo anterior).
+- **A especificidade visual** (§7) não muda com esta onda. Os itens de craft
+  corrigem defeitos; nenhum deles faz o produto parecer mais "Caderno Vivo".
+  Isso é trabalho de direção de arte, não de backlog.

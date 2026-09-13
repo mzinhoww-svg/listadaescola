@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 
 import { getActiveStores, storeHref } from "@/lib/stores/store-profile";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 
 // Same reasoning as every other Supabase-backed public page: never
@@ -37,10 +38,17 @@ export default async function PapelariasPage() {
       </p>
 
       {stores.length === 0 ? (
+        /* Onda 2 P1: a papelaria que chega aqui para se cadastrar não
+           recebia convite nenhum -- "Para papelarias" só existia no rodapé. */
         <EmptyState
           icon={MapPin}
           title="Nenhuma papelaria cadastrada ainda"
-          description="Assim que uma papelaria for cadastrada, ela aparece aqui."
+          description="Tem uma papelaria em Mato Grosso? Cadastre-se para receber pedidos de orçamento de material escolar pelo WhatsApp."
+          action={
+            <Button asChild variant="outline">
+              <Link href="/para-papelarias">Cadastrar minha papelaria</Link>
+            </Button>
+          }
         />
       ) : (
         <div className="flex flex-col gap-8">

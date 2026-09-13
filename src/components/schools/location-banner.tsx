@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Pencil } from "lucide-react";
+import { MapPin, Pencil, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { LocationInput } from "@/components/location/location-input";
@@ -12,6 +12,14 @@ import type { ResolvedLocation } from "@/lib/geocoding/types";
 export interface LocationBannerProps {
   label: string | null;
   hasLocation: boolean;
+  /**
+   * Onda 2 P6: "query" quando o escopo veio de uma busca por NOME, não de
+   * uma localização. Antes a página passava `hasLocation={hasLocation ||
+   * hasQuery}` e o banner anunciava «Mostrando resultados perto de
+   * "Pompermayer"» -- Pompermayer não é um lugar. Fabricar proximidade no
+   * rótulo contradiz a mesma RN-009 que o resto do código respeita.
+   */
+  mode?: "location" | "query";
 }
 
 /**
@@ -20,7 +28,7 @@ export interface LocationBannerProps {
  * the results page. Error state (no location at all) also lives here --
  * it's the same affordance, just opened by default.
  */
-export function LocationBanner({ label, hasLocation }: LocationBannerProps) {
+export function LocationBanner({ label, hasLocation, mode = "location" }: LocationBannerProps) {
   const router = useRouter();
   const [changing, setChanging] = React.useState(!hasLocation);
 
@@ -50,15 +58,22 @@ export function LocationBanner({ label, hasLocation }: LocationBannerProps) {
     );
   }
 
+  const isQuery = mode === "query";
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3">
       <p className="flex items-center gap-2 text-sm text-neutral-700">
-        <MapPin className="size-4 text-primary-600" aria-hidden="true" />
-        Mostrando resultados perto de <strong className="font-medium">{label}</strong>
+        {isQuery ? (
+          <Search className="size-4 shrink-0 text-primary-600" aria-hidden="true" />
+        ) : (
+          <MapPin className="size-4 shrink-0 text-primary-600" aria-hidden="true" />
+        )}
+        {isQuery ? "Mostrando resultados para" : "Mostrando resultados perto de"}{" "}
+        <strong className="font-medium">{label}</strong>
       </p>
       <Button variant="ghost" onClick={() => setChanging(true)}>
         <Pencil className="size-3.5" aria-hidden="true" />
-        Trocar localização
+        {isQuery ? "Definir localização" : "Trocar localização"}
       </Button>
     </div>
   );

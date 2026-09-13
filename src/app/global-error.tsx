@@ -16,6 +16,14 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     console.error(error);
   }, [error]);
 
+  /*
+   * Onda 2 P11: os valores aqui são literais de propósito -- global-error
+   * substitui o <html> inteiro quando o root layout falha, então não pode
+   * depender do CSS do app. A correção não é parar de usar literais, é usar
+   * literais que COINCIDAM com os tokens: 1.125rem é um degrau real da rampa
+   * do DESIGN.md (1.25rem não é), #5f6168 é neutral-600 e #c5c6ce é
+   * neutral-300.
+   */
   return (
     <html lang="pt-BR">
       <body
@@ -29,8 +37,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         }}
       >
         <div style={{ textAlign: "center", maxWidth: "24rem" }}>
-          <h1 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.5rem" }}>Algo deu errado</h1>
-          <p style={{ color: "#525252", marginBottom: "1.5rem" }}>
+          <h1 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Algo deu errado</h1>
+          <p style={{ color: "#5f6168", marginBottom: "1.5rem" }}>
             Não foi possível carregar o Listada Escola agora. Tente novamente em alguns instantes.
           </p>
           <button
@@ -39,7 +47,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               height: "2.75rem",
               padding: "0 1rem",
               borderRadius: "0.5rem",
-              border: "1px solid #d4d4d4",
+              border: "1px solid #c5c6ce",
               background: "white",
               cursor: "pointer",
               fontSize: "0.875rem",

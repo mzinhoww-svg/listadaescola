@@ -13,6 +13,7 @@ import { SaveButton } from "@/components/favorites/save-button";
 import { ShareButton } from "@/components/lists/share-button";
 import { PartnerOfferButton } from "@/components/commerce/partner-offer-button";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
+import { ListChecklist } from "@/components/lists/list-checklist";
 import { Badge } from "@/components/ui/badge";
 import { isQaFixtureSlug } from "@/lib/qa/fixtures";
 import { jsonLdScript } from "@/lib/seo/json-ld";
@@ -60,9 +61,6 @@ export default async function ListPage({ params }: ListPageProps) {
 
   // Best-effort (RF-015): never blocks or fails the page render.
   void recordAnalyticsEvent({ eventType: "list_view", schoolId: list.school.id, listId: list.id });
-
-  const requiredCount = list.items.filter((item) => item.is_required).length;
-  const optionalCount = list.items.length - requiredCount;
 
   const siteUrl = getSiteBaseUrl();
   const jsonLd = {
@@ -141,37 +139,11 @@ export default async function ListPage({ params }: ListPageProps) {
         </div>
       </header>
 
-      <section className="mt-8">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-neutral-900">Itens da lista</h2>
-          <p className="text-sm text-neutral-500">
-            {list.items.length} {list.items.length === 1 ? "item" : "itens"}
-            {optionalCount > 0 && ` · ${requiredCount} obrigatórios, ${optionalCount} opcionais`}
-          </p>
-        </div>
-
-        <ul className="flex flex-col divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
-          {list.items.map((item) => (
-            <li key={item.id} className="flex flex-col gap-1 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <p className="font-medium text-neutral-900">
-                  {item.quantity > 1 && <span className="text-neutral-500">{item.quantity}× </span>}
-                  {item.name}
-                </p>
-                <Badge variant={item.is_required ? "neutral" : "info"}>
-                  {item.is_required ? "Obrigatório" : "Opcional"}
-                </Badge>
-              </div>
-              {(item.unit || item.brand) && (
-                <p className="text-sm text-neutral-600">
-                  {[item.unit, item.brand].filter(Boolean).join(" · ")}
-                </p>
-              )}
-              {item.notes && <p className="text-sm text-neutral-500">{item.notes}</p>}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <ListChecklist
+        slug={list.slug}
+        items={list.items}
+        copyHeading={`${list.seriesName} · ${list.schoolYear} — ${list.school.name}`}
+      />
 
       {/*
         "Onde comprar" é uma etapa da jornada (escola → lista → materiais →

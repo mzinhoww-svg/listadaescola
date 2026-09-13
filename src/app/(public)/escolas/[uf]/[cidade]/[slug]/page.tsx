@@ -15,6 +15,9 @@ import { SaveButton } from "@/components/favorites/save-button";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { normalizeWhatsappNumber } from "@/lib/stores/whatsapp";
+import { contactTypeLabel, formatSchoolAddress } from "@/lib/schools/format";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
@@ -59,6 +62,7 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
   if (!school) notFound();
 
   const canonicalPath = schoolHref(school);
+
   if (canonicalPath !== `/escolas/${uf}/${cidade}/${slug}`) {
     redirect(canonicalPath);
   }
@@ -76,6 +80,10 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
   ]);
   const etapaGroups = groupEtapasSeriesListas(school.school_series, lists);
   const profile = school.school_profiles;
+  // Onda 2 P7: normaliza no servidor (RF-012). Número que não for um
+  // brasileiro válido não vira link -- mesma disciplina de não fabricar.
+  const whatsappDigits = profile?.whatsapp ? normalizeWhatsappNumber(profile.whatsapp) : null;
+  const whatsappHref = whatsappDigits ? `https://wa.me/${whatsappDigits}` : null;
 
   // Best-effort (RF-015): never blocks or fails the page render.
   void recordAnalyticsEvent({ eventType: "school_view", schoolId: school.id });
@@ -168,10 +176,7 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
 
         <p className="flex items-start gap-1.5 text-neutral-600">
           <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>
-            {school.address ? `${toDisplayCase(school.address)} — ` : ""}
-            {school.municipality}, {school.uf}
-          </span>
+          <span>{formatSchoolAddress(school.address, school.municipality, school.uf)}</span>
         </p>
 
         <div>
@@ -210,7 +215,11 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
             {school.phone && (
               <li className="flex items-center gap-2">
                 <Phone className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
-                {school.phone}
+                {/* Onda 2 P7: era texto puro. Num produto mobile-first, a mãe
+                    via o número e tinha que decorar ou copiar à mão. */}
+                <a href={`tel:${school.phone.replace(/[^\d+]/g, "")}`} className="text-primary-700 hover:underline">
+                  {school.phone}
+                </a>
               </li>
             )}
             {profile?.website && (
@@ -235,12 +244,27 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
             {profile?.whatsapp && (
               <li className="flex items-center gap-2">
                 <MessageCircle className="size-4 shrink-0 text-neutral-400" aria-hidden="true" />
-                {profile.whatsapp}
+                {/* Onda 2 P7: idem, e o canal local do produto *é* o WhatsApp.
+                    Normalizado no servidor (RF-012); se o número não for um
+                    brasileiro válido, cai para texto em vez de gerar um link
+                    quebrado -- mesma disciplina de não fabricar. */}
+                {whatsappHref ? (
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-700 hover:underline"
+                  >
+                    {profile.whatsapp}
+                  </a>
+                ) : (
+                  profile.whatsapp
+                )}
               </li>
             )}
             {school.school_contacts.map((contact) => (
               <li key={contact.id} className="flex items-center gap-2">
-                <span className="text-neutral-600">{contact.contact_type}:</span> {contact.value}
+                <span className="text-neutral-600">{contactTypeLabel(contact.contact_type)}:</span> {contact.value}
               </li>
             ))}
           </ul>
@@ -266,11 +290,24 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
 
       <section className="mt-8">
         <h2 className="mb-1 text-lg font-semibold text-neutral-900">Séries e listas escolares</h2>
-        <p className="mb-4 text-sm text-neutral-500">Escolha a série e o ano letivo para ver a lista de material.</p>
+        <p className="mb-4 max-w-[65ch] text-sm text-neutral-500">Escolha a série e o ano letivo para ver a lista de material.</p>
         {etapaGroups.length === 0 ? (
+          /*
+             Onda 2 P1: este é o momento de maior intenção do produto inteiro
+             -- a mãe está com a lista de papel na mão e acabou de confirmar
+             que a escola é a certa. A resposta era "volte depois", sem saída,
+             enquanto /enviar-lista só era alcançável de dois lugares do site
+             público que ela não tem motivo para visitar. O EmptyState já
+             suportava `action`; ninguém tinha usado.
+          */
           <EmptyState
             title="Nenhuma lista publicada ainda"
-            description="Assim que uma lista desta escola for aprovada, ela aparece aqui."
+            description="Se você tem a lista desta escola em mãos, pode enviá-la — depois de aprovada, ela fica disponível para todas as famílias."
+            action={
+              <Button asChild>
+                <Link href={`/enviar-lista?escola=${school.id}`}>Enviar a lista desta escola</Link>
+              </Button>
+            }
           />
         ) : (
           <div className="flex flex-col gap-4">
@@ -300,7 +337,15 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
                           ))}
                         </div>
                       ) : (
-                        <p className="mt-1 text-sm text-neutral-500">Ainda sem lista publicada para esta série.</p>
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-neutral-500">
+                          Ainda sem lista publicada para esta série.
+                          <Link
+                            href={`/enviar-lista?escola=${school.id}`}
+                            className="font-medium text-primary-700 hover:underline"
+                          >
+                            Enviar esta lista
+                          </Link>
+                        </p>
                       )}
                     </div>
                   ))}
@@ -313,7 +358,7 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
 
       <section className="mt-8">
         <h2 className="mb-1 text-lg font-semibold text-neutral-900">Papelarias próximas</h2>
-        <p className="mb-3 text-sm text-neutral-500">
+        <p className="mb-3 max-w-[65ch] text-sm text-neutral-500">
           Peça um orçamento de material escolar direto no WhatsApp de uma papelaria da região.
         </p>
         <NearbyStoresSheet schoolId={school.id} />
