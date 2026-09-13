@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toDisplayCase } from "@/lib/utils";
 import type { HomeSearchResult, HomeSearchSchool } from "@/lib/schools/home-search";
-import { ListNotificationForm } from "./list-notification-form";
+import { ListNotificationForm } from "@/components/notifications/list-notification-form";
 
 /**
  * Onda 3 -- o resultado da busca por nome aparece na própria home.
@@ -68,7 +68,7 @@ function SchoolRow({ school }: { school: HomeSearchSchool }) {
         </Button>
       ) : (
         <div className="flex flex-col gap-2">
-          <ListNotificationForm schoolId={school.id} schoolName={toDisplayCase(school.name)} />
+          <ListNotificationForm schools={[{ id: school.id, name: toDisplayCase(school.name) }]} />
           {/* A outra intenção possível de quem chegou aqui: a lista está na
               mão dela, em papel. /enviar-lista já aceita a escola por id. */}
           <Link

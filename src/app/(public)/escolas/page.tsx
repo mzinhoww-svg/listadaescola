@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Star } from "lucide-react";
 
 import { searchSchools, type SortMode } from "@/lib/schools/search-schools";
+import { getPublishedReviewCount } from "@/lib/reviews/stats";
 import { recordAnalyticsEvent, recordSchoolImpressions } from "@/lib/analytics/record-event";
 import { SchoolCard } from "@/components/schools/school-card";
 import { ResultsFilters } from "@/components/schools/results-filters";
@@ -11,6 +13,7 @@ import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { CatalogLanding } from "@/components/schools/catalog-landing";
+import { buildResultsUrl } from "@/lib/schools/results-url";
 import type { Database } from "@/lib/supabase/database.types";
 import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { slugify } from "@/lib/utils";
@@ -83,22 +86,40 @@ export default async function EscolasPage({ searchParams }: EscolasPageProps) {
   const hasAnyFilter = Boolean(params.type || params.level || params.rating || params.lista);
   const hasScope = hasLocation || hasQuery || hasAnyFilter;
 
-  const result = hasScope
-    ? await searchSchools({
-        uf,
-        lat,
-        lon,
-        municipality: params.municipality,
-        cep: params.cep,
-        q: params.q,
-        schoolType: params.type as Database["public"]["Enums"]["school_type"] | undefined,
-        educationLevel: params.level,
-        minRating: params.rating ? Number(params.rating) : undefined,
-        hasList,
-        sort,
-        page: params.page ? Number(params.page) : 1,
-      })
-    : null;
+  /*
+    Onda 9. O filtro "Avaliação mínima" e a ordenação "Avaliação" operam
+    sobre `avg_rating`, que search_schools devolve como
+    `coalesce(r.avg_rating, 0)`. Com 0 avaliações publicadas -- o estado
+    real hoje --, "4+ estrelas" leva 2.722 escolas reais a zero resultados,
+    e a tela respondia "Nenhuma escola encontrada / tente ajustar os
+    filtros, a localização ou o termo de busca", que atribui às escolas um
+    problema que é do catálogo. Saber o total permite desabilitar os
+    controles dizendo o motivo e, para quem chegar por link antigo,
+    explicar a causa verdadeira.
+
+    Em paralelo com a busca, não antes: esta é a página pública mais quente
+    do produto e a contagem não é entrada de nenhum parâmetro da busca.
+  */
+  const [publishedReviewCount, result] = await Promise.all([
+    getPublishedReviewCount(),
+    hasScope
+      ? searchSchools({
+          uf,
+          lat,
+          lon,
+          municipality: params.municipality,
+          cep: params.cep,
+          q: params.q,
+          schoolType: params.type as Database["public"]["Enums"]["school_type"] | undefined,
+          educationLevel: params.level,
+          minRating: params.rating ? Number(params.rating) : undefined,
+          hasList,
+          sort,
+          page: params.page ? Number(params.page) : 1,
+        })
+      : Promise.resolve(null),
+  ]);
+  const ratingFilterIsTheCause = Boolean(params.rating) && publishedReviewCount === 0;
 
   // Analytics is best-effort (RF-015) -- never awaited, never allowed to
   // fail or slow down the page render.
@@ -131,7 +152,7 @@ export default async function EscolasPage({ searchParams }: EscolasPageProps) {
       />
 
       <div className="mt-4">
-        <ResultsFilters />
+        <ResultsFilters publishedReviewCount={publishedReviewCount} />
       </div>
 
       {!result ? (
@@ -140,15 +161,37 @@ export default async function EscolasPage({ searchParams }: EscolasPageProps) {
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
           <div>
             {result.schools.length === 0 ? (
-              <EmptyState
-                title="Nenhuma escola encontrada"
-                description="Tente ajustar os filtros, a localização ou o termo de busca. Se a escola que você procura não está no cadastro do INEP, você pode sugeri-la."
-                action={
-                  <Button asChild variant="outline">
-                    <Link href="/sugerir-escola">Sugerir uma escola</Link>
-                  </Button>
-                }
-              />
+              ratingFilterIsTheCause ? (
+                <EmptyState
+                  icon={Star}
+                  title="Ainda não há avaliações no Listada"
+                  description="Nenhuma escola foi avaliada até agora, então filtrar por nota mínima não devolve nenhuma. Isso não diz nada sobre as escolas de MT — diz que ninguém avaliou ainda. Tire o filtro de avaliação para ver o catálogo completo."
+                  action={
+                    <Button asChild variant="outline">
+                      {/* Tira também `sort=rating`, que sem avaliação nenhuma
+                          ordena 2.722 zeros empatados. */}
+                      <Link
+                        href={buildResultsUrl(linkParams, {
+                          rating: null,
+                          ...(params.sort === "rating" ? { sort: null } : {}),
+                        })}
+                      >
+                        Ver sem o filtro de avaliação
+                      </Link>
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="Nenhuma escola encontrada"
+                  description="Tente ajustar os filtros, a localização ou o termo de busca. Se a escola que você procura não está no cadastro do INEP, você pode sugeri-la."
+                  action={
+                    <Button asChild variant="outline">
+                      <Link href="/sugerir-escola">Sugerir uma escola</Link>
+                    </Button>
+                  }
+                />
+              )
             ) : (
               <>
                 <h2 className="mb-3 text-sm text-neutral-500">{result.totalCount} escolas encontradas</h2>

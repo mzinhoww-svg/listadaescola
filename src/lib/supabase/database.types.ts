@@ -2094,6 +2094,10 @@ export type Database = {
           school_count: number
         }[]
       }
+      list_version_provenance: {
+        Args: { p_version_id: string }
+        Returns: string
+      }
       mark_submission_under_review: {
         Args: { p_submission_id: string }
         Returns: undefined

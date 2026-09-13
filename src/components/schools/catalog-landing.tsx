@@ -55,6 +55,20 @@ export function CatalogLanding({ uf }: { uf: string }) {
             </li>
           ))}
         </ul>
+        {/*
+          Onda 10 -- ligação interna. /escolas/[uf] é o índice das 141
+          cidades e não tinha UM link vindo de dentro do site: só se chegava
+          nele pelo breadcrumb de uma cidade ou de uma escola, ou seja, por
+          baixo dos próprios filhos. Para o rastreador isso invertia a
+          hierarquia; para quem chega aqui e não mora numa das 8 maiores, o
+          único caminho era um formulário de filtro, que nem rastreador
+          preenche nem visitante adivinha.
+        */}
+        <p className="mt-3 text-sm">
+          <Link href={`/escolas/${ufSlug}`} className="font-medium text-primary-700 hover:underline">
+            Ver todas as cidades de {uf}
+          </Link>
+        </p>
       </section>
 
       <section className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-neutral-300 p-6 sm:flex-row sm:items-center sm:justify-between">
