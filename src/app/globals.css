@@ -142,9 +142,22 @@
   --color-sponsored-600: var(--color-amber-600);
   --color-sponsored-700: var(--color-amber-700);
 
-  /* WhatsApp — uso exclusivo no CTA de orçamento com papelaria */
+  /*
+   * WhatsApp — uso exclusivo no CTA de orçamento com papelaria.
+   *
+   * O verde de marca #25d366 é claro demais para texto branco: dá 1.98:1,
+   * contra os 4.5:1 que a AA exige. A falha só apareceu quando a primeira
+   * papelaria foi semeada (a tabela `stores` estava vazia, então o botão
+   * nunca tinha sido renderizado em nenhuma auditoria) -- ver
+   * docs/implementation/impeccable-critique.md, adendo.
+   *
+   * A correção preserva o verde, que é justamente o sinal de marca, e troca
+   * o texto para neutral-900: 8.61:1. O hover sai do teal #128c7e (que com
+   * texto escuro daria 4.13:1, ainda reprovado) e passa a ser um verde um
+   * passo mais escuro: 6.21:1. Os dois estados passam com folga.
+   */
   --color-whatsapp: #25d366;
-  --color-whatsapp-dark: #128c7e;
+  --color-whatsapp-dark: #1eb356;
 
   /*
    * Raio — mapeia a convenção de classes já usada pelo app sobre os
