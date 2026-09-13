@@ -1,24 +1,17 @@
 import { createPublicClient } from "@/lib/supabase/public";
-import type { SchoolResult } from "@/lib/schools/search-schools";
+import { QA_FIXTURE_SLUG_PREFIX } from "@/lib/qa/fixtures";
 
-/**
- * Home "destaques": schools that actually earned a highlight (sponsored
- * campaign or admin-verified) -- never an arbitrary sample dressed up as
- * curated. Returns [] today because no campaign/verification exists yet
- * in this fresh MT dataset (0 rows in school_profiles); that's the
- * correct, honest result for a pre-launch MVP, not a bug -- the caller
- * hides the section entirely rather than show a fabricated highlight.
+/*
+ * Onda 3: `getFeaturedSchools()` saiu daqui junto com a seção "Escolas em
+ * destaque" da home. A régua dela (só escola patrocinada ou verificada por
+ * admin -- nunca uma amostra arbitrária vestida de curadoria) continua
+ * correta e NÃO foi afrouxada; o problema é que não existe nenhuma das
+ * duas coisas ainda, então a seção nunca renderizava e a função varria 50
+ * linhas do `search_schools` a cada visita para filtrar tudo. A home
+ * mostra cobertura real no lugar (`src/lib/schools/coverage.ts` e
+ * `src/components/home/coverage-section.tsx`). Quando existir patrocínio
+ * ou verificação, a seção de destaque volta -- com a mesma régua.
  */
-export async function getFeaturedSchools(uf = "MT", limit = 4): Promise<SchoolResult[]> {
-  const supabase = createPublicClient();
-  const { data, error } = await supabase.rpc("search_schools", {
-    p_uf: uf,
-    p_sort: "popularity",
-    p_limit: 50,
-  });
-  if (error) throw new Error(`getFeaturedSchools failed: ${error.message}`);
-  return (data ?? []).filter((school) => school.is_sponsored || school.is_verified).slice(0, limit);
-}
 
 export interface RecentList {
   id: string;
@@ -33,8 +26,19 @@ export interface RecentList {
 /**
  * Home "listas recentes": only lists with a PUBLISHED version (the same
  * bar school_list_versions_select_published RLS enforces for anyone).
- * Returns [] today -- school_lists has 0 rows in this fresh dataset, no
- * contribution has been approved yet (Prompt 10/11 build that flow).
+ * A seção continua condicional: quando existir lista real ela volta a
+ * renderizar sozinha.
+ *
+ * Onda 3: passa a descartar fixtures de QA. A única linha aprovada em
+ * produção hoje é `qa-teste-lista-educacao-infantil-2026` -- conteúdo
+ * declaradamente fictício (o próprio `series_name` diz "não usar") que o
+ * projeto já exclui do sitemap e serve com noindex (src/lib/qa/
+ * fixtures.ts). Ela estava sendo anunciada como "lista recente" na home,
+ * a página mais visível do produto, e uma família podia clicar. Além
+ * disso contradizia, na mesma tela, a seção de cobertura logo acima, que
+ * conta listas pelo mesmo critério e (corretamente) diz zero. O descarte
+ * acontece no próprio filtro do PostgREST, não depois em memória, para que
+ * `limit` continue devolvendo `limit` listas de verdade.
  */
 export async function getRecentLists(uf = "MT", limit = 4): Promise<RecentList[]> {
   const supabase = createPublicClient();
@@ -49,6 +53,7 @@ export async function getRecentLists(uf = "MT", limit = 4): Promise<RecentList[]
     .eq("school_lists.status", "APPROVED")
     .eq("school_lists.schools.uf", uf)
     .eq("school_lists.schools.is_active", true)
+    .not("school_lists.slug", "like", `${QA_FIXTURE_SLUG_PREFIX}%`)
     .order("published_at", { ascending: false })
     .limit(limit);
 
