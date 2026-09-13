@@ -51,3 +51,49 @@ origem e o hash do conteúdo instalado.
 
 Para remover: apagar a entrada `seo-audit` de `skills-lock.json` e rodar
 `git rm -r .agents/skills/seo-audit .claude/skills/seo-audit`.
+
+## `moneyprinterturbo-video/`
+
+Código de terceiros **vendorizado**, não escrito neste projeto.
+
+- Origem: https://github.com/harry0703/MoneyPrinterTurbo (pasta `docs/skill`)
+- Autor: harry0703 · Licença: MIT (ver LICENSE do repositório de origem)
+- Instalado em 2026-09-13 a pedido do responsável pelo projeto, via
+  `npx skills add https://github.com/harry0703/MoneyPrinterTurbo --skill moneyprinterturbo-video`.
+
+Está versionado aqui pelo mesmo motivo dos demais: o ambiente de execução
+dos agentes é efêmero, então sem o commit a skill se perderia a cada sessão.
+
+Gera vídeos curtos (roteiro + TTS + footage de estoque + legendas + música)
+via o projeto MoneyPrinterTurbo. Dois arquivos: `SKILL.md` (instruções) e
+`mpt_agent.py` (instalador/orquestrador Python, ~28KB). Revisado
+integralmente, linha a linha, antes da instalação — resumo:
+
+- Nenhum código malicioso, ofuscado ou backdoor encontrado. Sem
+  exfiltração: a única chamada de rede que carrega uma credencial é a
+  validação da chave Pexels contra a própria API oficial da Pexels.
+  Proteção ativa contra zip-slip na extração do projeto baixado. Sem
+  `shell=True`/injeção de comando (argumentos passados como lista ao
+  `subprocess`).
+- **Ponto de atenção real:** o `SKILL.md` instrui o agente a **não pedir
+  confirmação antes de instalar software de terceiros ou rodar comandos
+  longos** — só pausa para credenciais ausentes ou confirmação explícita de
+  cobrança (Seedance/OFox/Metaso MiniMax, pagos por clipe). É proposital
+  (reduzir fricção), mas significa que, quando esta skill for de fato
+  invocada, o agente vai instalar o `uv` (via `curl | sh`) e baixar/rodar o
+  projeto MoneyPrinterTurbo completo (branch `main` do upstream, não fixado
+  em commit) sem outra pausa de confirmação. Provável motivo do selo "High
+  Risk" (avaliação "Gen") reportado pelo instalador `npx skills add` — ao
+  lado de 2 alertas do Socket, consistentes com as capacidades esperadas de
+  um instalador (acesso a rede e a subprocess), não com achado de código
+  malicioso.
+- Requer chaves de API reais para funcionar (LLM + Pexels no mínimo);
+  provedores pagos por clipe exigem flag de confirmação explícita antes de
+  cobrar — nunca adicionada silenciosamente pelo script.
+- Escopo: só gera vídeo quando explicitamente invocada numa conversa futura
+  (ex.: vídeo promocional da Listada Escola); não roda nada automaticamente
+  e não interage com o restante deste repositório/produto.
+
+Para remover: apagar a entrada `moneyprinterturbo-video` de
+`skills-lock.json` e rodar `git rm -r .agents/skills/moneyprinterturbo-video
+.claude/skills/moneyprinterturbo-video`.
