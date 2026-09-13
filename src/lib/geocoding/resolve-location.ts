@@ -1,33 +1,15 @@
 "use server";
 
-import { unstable_cache } from "next/cache";
-
 import { createPublicClient } from "@/lib/supabase/public";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { resolveCep } from "./cep";
+import { getKnownMunicipalities } from "./known-municipalities";
+import { looksLikeCep } from "./looks-like-cep";
 import { matchMunicipality } from "./municipality";
 import { searchPlace } from "./nominatim";
 import { type ResolvedLocation, unresolvedLocation } from "./types";
 
 const DEFAULT_UF = "MT";
-
-function looksLikeCep(input: string): boolean {
-  return input.replace(/\D/g, "").length === 8;
-}
-
-// Known municípios barely change (only on a fresh INEP import) -- caching
-// this avoids re-fetching ~2.7k rows on every free-text location search.
-// Uses the cookie-less public client: unstable_cache forbids cookies().
-const getKnownMunicipalities = unstable_cache(
-  async (uf: string): Promise<string[]> => {
-    const supabase = createPublicClient();
-    const { data } = await supabase.from("schools").select("municipality").eq("uf", uf).eq("is_active", true);
-    const unique = new Set((data ?? []).map((row) => row.municipality).filter((m): m is string => Boolean(m)));
-    return Array.from(unique).sort();
-  },
-  ["known-municipalities"],
-  { revalidate: 3600, tags: ["schools-municipalities"] }
-);
 
 /**
  * Resolves free text (CEP or cidade/bairro) to a location. CEP-shaped

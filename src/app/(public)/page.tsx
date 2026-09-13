@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 
-import { HomeLocationSearch } from "@/components/home/home-location-search";
-import { HomeNameSearch } from "@/components/home/home-name-search";
+import { CoverageSection } from "@/components/home/coverage-section";
+import { HomeSearch } from "@/components/home/home-search";
 import { HomeListRequestCta } from "@/components/home/home-list-request-cta";
-import { SchoolCard } from "@/components/schools/school-card";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getFeaturedSchools, getRecentLists } from "@/lib/schools/home-queries";
+import { getCoverageSummary } from "@/lib/schools/coverage";
+import { getRecentLists } from "@/lib/schools/home-queries";
 import { toDisplayCase } from "@/lib/utils";
 
 const DESCRIPTION =
@@ -22,17 +22,39 @@ export const metadata: Metadata = {
 
 // Rendered per-request (like every other data-driven page in this
 // project) rather than statically generated: a static/ISR Home would run
-// getFeaturedSchools()/getRecentLists() during `next build` itself,
-// making a successful Vercel deployment depend on Supabase being
-// reachable *at build time* -- a real, first-time failure mode this
-// page introduced (every prior page's Supabase calls only ever ran at
-// request time). Same PRD SEO requirement (principle 8) is met either
-// way: the rendered HTML is identical, just generated per-request.
+// its Supabase queries during `next build` itself, making a successful
+// Vercel deployment depend on Supabase being reachable *at build time* --
+// a real, first-time failure mode this page introduced (every prior
+// page's Supabase calls only ever ran at request time). Same PRD SEO
+// requirement (principle 8) is met either way: the rendered HTML is
+// identical, just generated per-request.
 export const dynamic = "force-dynamic";
 
+/**
+ * Onda 3 -- a home vira captura de intenção.
+ *
+ * Duas mudanças estruturais, ambas motivadas pelo mesmo fato medido: há
+ * 2.722 escolas reais em MT e nenhuma lista real publicada.
+ *
+ * 1. Um campo de busca só (`HomeSearch`), no lugar dos dois caminhos
+ *    concorrentes que exigiam classificar a entrada antes de digitar. Nome
+ *    de escola responde na própria home, porque é ali que a resposta "essa
+ *    escola ainda não tem lista" precisa oferecer uma saída -- "avise-me
+ *    quando publicarem", só e-mail, sem conta.
+ * 2. "Escolas em destaque" (sempre vazia, ver CoverageSection) dá lugar à
+ *    cobertura real, com números vindos de query. "Listas recentes" fica
+ *    como estava, condicional: hoje não renderiza, e quando houver lista
+ *    ela volta sozinha -- o que está correto.
+ *
+ * `HomeListRequestCta` (Tier 2 do roadmap ICPs, sub-projeto papelaria #1)
+ * é um segundo CTA, complementar ao "avise-me quando publicarem" do
+ * `HomeSearch`: aquele é passivo (espera alguém publicar), este deixa o
+ * próprio visitante contribuir a lista que já tem em mãos, anonimamente
+ * até o limite técnico do Storage.
+ */
 export default async function HomePage() {
-  const [featuredSchools, recentLists, user] = await Promise.all([
-    getFeaturedSchools(),
+  const [coverage, recentLists, user] = await Promise.all([
+    getCoverageSummary(),
     getRecentLists(),
     getCurrentUser(),
   ]);
@@ -43,38 +65,23 @@ export default async function HomePage() {
         <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
           Encontre a escola, descubra a lista.
         </h1>
-        <p className="mt-3 max-w-xl text-lg text-neutral-600">
-          Pesquise por CEP, cidade ou nome da escola, veja escolas de Mato Grosso e chegue até a lista escolar certa.
+        <p className="mt-3 max-w-[65ch] text-lg text-neutral-600">
+          Busque por CEP, cidade ou nome da escola. Se a lista ainda não tiver sido publicada, a gente avisa você
+          quando sair.
         </p>
 
-        <div className="mt-8 flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <HomeLocationSearch />
-          <div className="border-t border-neutral-100 pt-4">
-            <HomeNameSearch />
-          </div>
-          <div className="border-t border-neutral-100 pt-4">
+        <div className="mt-8 rounded-xl border border-neutral-200 bg-paper p-5 shadow-sm">
+          <HomeSearch />
+          <div className="mt-4 border-t border-neutral-100 pt-4">
             <HomeListRequestCta isAuthenticated={Boolean(user)} />
           </div>
         </div>
       </section>
 
-      {featuredSchools.length > 0 && (
-        <section className="mt-16">
-          <h2 className="mb-4 text-xl font-semibold text-neutral-900">Escolas em destaque</h2>
-          {/* auto-fit (not a fixed column count) so a sparse result -- the
-              common case today, with 0 real submissions yet -- renders as a
-              tight row instead of 1 narrow card next to 3 columns of dead
-              canvas. */}
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,320px))] gap-4">
-            {featuredSchools.map((school) => (
-              <SchoolCard key={school.id} school={school} />
-            ))}
-          </div>
-        </section>
-      )}
+      <CoverageSection coverage={coverage} />
 
       {recentLists.length > 0 && (
-        <section className="mt-16">
+        <section className="mt-12">
           <h2 className="mb-4 text-xl font-semibold text-neutral-900">Listas recentes</h2>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,320px))] gap-4">
             {recentLists.map((list) => (
@@ -95,12 +102,14 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="mt-16 flex flex-col items-start gap-3 rounded-xl border border-dashed border-neutral-300 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <section className="mt-12 flex flex-col items-start gap-3 rounded-xl border border-dashed border-neutral-300 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <ClipboardList className="mt-0.5 size-6 shrink-0 text-primary-600" aria-hidden="true" />
           <div>
             <p className="font-medium text-neutral-900">Já tem a lista escolar em mãos?</p>
-            <p className="text-sm text-neutral-600">Envie a lista da sua escola e ajude outras famílias a encontrá-la.</p>
+            <p className="max-w-[65ch] text-sm text-neutral-600">
+              Envie a lista da sua escola e ajude outras famílias a encontrá-la.
+            </p>
           </div>
         </div>
         <Button asChild size="lg" className="w-full sm:w-auto">

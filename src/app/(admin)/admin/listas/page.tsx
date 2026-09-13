@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 
 import { getAdminLists } from "@/lib/admin/lists";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Listas" };
 
@@ -13,16 +15,35 @@ export default async function AdminListsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-neutral-900">Listas</h1>
-        <p className="text-sm text-neutral-500">
-          Conteúdo (itens/versões) só entra via aprovação de submissão (Moderação) -- aqui dá pra revisar o que já
-          existe e arquivar/reativar.
-        </p>
+      {/* Onda 4: esta descrição dizia "conteúdo só entra via aprovação de
+          submissão (Moderação)". Deixou de ser verdade -- admin_publish_list
+          dá o caminho direto, que era o gargalo do produto inteiro. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900">Listas</h1>
+          <p className="max-w-[65ch] text-sm text-neutral-500">
+            Publique direto em &quot;Nova lista&quot;, ou aprove uma contribuição em Moderação. Aqui dá
+            pra revisar o que já existe e arquivar/reativar.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/listas/nova">
+            <Plus className="size-4" aria-hidden="true" />
+            Nova lista
+          </Link>
+        </Button>
       </div>
 
       {lists.length === 0 ? (
-        <EmptyState title="Nenhuma lista ainda" description="Listas aparecem aqui depois da primeira aprovação em Moderação." />
+        <EmptyState
+          title="Nenhuma lista ainda"
+          description="Publique a primeira direto, sem esperar contribuição de ninguém."
+          action={
+            <Button asChild>
+              <Link href="/admin/listas/nova">Publicar a primeira lista</Link>
+            </Button>
+          }
+        />
       ) : (
         <Table>
           <TableCaption>Listas escolares publicadas</TableCaption>

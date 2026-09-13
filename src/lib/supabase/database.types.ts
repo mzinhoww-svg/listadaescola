@@ -815,6 +815,76 @@ export type Database = {
           },
         ]
       }
+      school_claims: {
+        Row: {
+          claimant_name: string
+          claimant_role: string
+          claimed_by: string
+          created_at: string
+          id: string
+          institutional_contact: string
+          justification: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          school_id: string
+          status: Database["public"]["Enums"]["submission_status"]
+          updated_at: string
+        }
+        Insert: {
+          claimant_name: string
+          claimant_role: string
+          claimed_by: string
+          created_at?: string
+          id?: string
+          institutional_contact: string
+          justification: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          school_id: string
+          status?: Database["public"]["Enums"]["submission_status"]
+          updated_at?: string
+        }
+        Update: {
+          claimant_name?: string
+          claimant_role?: string
+          claimed_by?: string
+          created_at?: string
+          id?: string
+          institutional_contact?: string
+          justification?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          school_id?: string
+          status?: Database["public"]["Enums"]["submission_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_claims_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_claims_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_claims_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_contacts: {
         Row: {
           contact_type: string
@@ -1365,6 +1435,94 @@ export type Database = {
         }
         Relationships: []
       }
+      store_claims: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          municipality: string
+          notes: string | null
+          offers_delivery: boolean
+          offers_pickup: boolean
+          opening_hours: string | null
+          rejection_reason: string | null
+          requester_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          services: string[]
+          status: Database["public"]["Enums"]["submission_status"]
+          store_id: string | null
+          store_name: string
+          uf: string
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          municipality: string
+          notes?: string | null
+          offers_delivery?: boolean
+          offers_pickup?: boolean
+          opening_hours?: string | null
+          rejection_reason?: string | null
+          requester_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          services?: string[]
+          status?: Database["public"]["Enums"]["submission_status"]
+          store_id?: string | null
+          store_name: string
+          uf?: string
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          municipality?: string
+          notes?: string | null
+          offers_delivery?: boolean
+          offers_pickup?: boolean
+          opening_hours?: string | null
+          rejection_reason?: string | null
+          requester_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          services?: string[]
+          status?: Database["public"]["Enums"]["submission_status"]
+          store_id?: string | null
+          store_name?: string
+          uf?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_claims_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_claims_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_claims_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_contacts: {
         Row: {
           contact_type: string
@@ -1429,6 +1587,55 @@ export type Database = {
           },
           {
             foreignKeyName: "store_managers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_quote_requests: {
+        Row: {
+          created_at: string
+          dedupe_hash: string
+          id: string
+          school_id: string | null
+          school_list_id: string | null
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_hash: string
+          id?: string
+          school_id?: string | null
+          school_list_id?: string | null
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_hash?: string
+          id?: string
+          school_id?: string | null
+          school_list_id?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_quote_requests_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_quote_requests_school_list_id_fkey"
+            columns: ["school_list_id"]
+            isOneToOne: false
+            referencedRelation: "school_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_quote_requests_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
@@ -1842,10 +2049,12 @@ export type Database = {
         }
         Returns: string
       }
+      approve_school_claim: { Args: { p_claim_id: string }; Returns: undefined }
       approve_school_suggestion: {
         Args: { p_suggestion_id: string }
         Returns: undefined
       }
+      approve_store_claim: { Args: { p_claim_id: string }; Returns: string }
       approve_submission: { Args: { p_submission_id: string }; Returns: string }
       check_login_rate_limit: {
         Args: { p_identifier: string }
@@ -1980,8 +2189,25 @@ export type Database = {
         Returns: undefined
       }
       record_rate_limit_hit: { Args: { p_action: string }; Returns: undefined }
+      record_store_quote_request: {
+        Args: {
+          p_school_id?: string
+          p_school_list_id?: string
+          p_session_token?: string
+          p_store_id: string
+        }
+        Returns: boolean
+      }
+      reject_school_claim: {
+        Args: { p_claim_id: string; p_reason: string }
+        Returns: undefined
+      }
       reject_school_suggestion: {
         Args: { p_reason: string; p_suggestion_id: string }
+        Returns: undefined
+      }
+      reject_store_claim: {
+        Args: { p_claim_id: string; p_reason: string }
         Returns: undefined
       }
       reject_submission: {
@@ -1994,6 +2220,16 @@ export type Database = {
       }
       resolve_municipality_slug: {
         Args: { p_slug: string; p_uf: string }
+        Returns: string
+      }
+      school_manager_publish_list: {
+        Args: {
+          p_education_level: string
+          p_items: Json
+          p_school_id: string
+          p_school_year: number
+          p_series_name: string
+        }
         Returns: string
       }
       search_schools: {
