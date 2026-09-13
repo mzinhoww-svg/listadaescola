@@ -56,12 +56,12 @@ export function ResendVerificationForm({ defaultEmail }: { defaultEmail?: string
           ? `Aguarde ${secondsLeft}s para reenviar`
           : "Reenviar e-mail de confirmação"}
       </SubmitButton>
-      {/* Live region sempre montada — um elemento inserido só na hora do
-          resultado costuma não ser anunciado. `empty:hidden` evita que o
-          container vazio consuma um `gap` da coluna. */}
-      <div role="status" aria-live="polite" className="empty:hidden">
-        {state?.success ? <p className="text-sm text-neutral-700">{state.success}</p> : null}
-      </div>
+      {/* Live region sempre montada — um elemento inserido no DOM só na hora
+          do resultado costuma não ser anunciado. `empty:hidden` impede que o
+          container vazio consuma um `gap` da coluna enquanto não há mensagem. */}
+      <p role="status" className="text-sm text-neutral-700 empty:hidden">
+        {state?.success}
+      </p>
       {state?.error && (
         <p role="alert" className="text-sm text-danger-600">
           {state.error}

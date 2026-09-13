@@ -45,7 +45,7 @@ export function ListNotificationForm({ schoolId, schoolName }: ListNotificationF
 
   if (state.success) {
     return (
-      <p className="flex items-start gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm text-success-700">
+      <p role="status" className="flex items-start gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm text-success-700">
         <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <span className="max-w-[65ch]">{state.success}</span>
       </p>
@@ -68,8 +68,12 @@ export function ListNotificationForm({ schoolId, schoolName }: ListNotificationF
         <div className="flex-1">
           <Input
             ref={inputRef}
-            label={`Seu e-mail para o aviso sobre ${schoolName}`}
-            hideLabel
+            // Rótulo visível: um campo guiado só por placeholder some no
+            // instante em que a pessoa começa a digitar. O nome da escola
+            // fica no aria-label para quem chega pelo leitor de tela e não
+            // tem o cabeçalho do card em foco.
+            label="Seu e-mail"
+            aria-label={`Seu e-mail para o aviso sobre ${schoolName}`}
             name="email"
             type="email"
             inputMode="email"

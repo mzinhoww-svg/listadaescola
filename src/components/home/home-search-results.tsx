@@ -30,29 +30,33 @@ function SchoolRow({ school }: { school: HomeSearchSchool }) {
 
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-paper p-4 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold text-neutral-900">
-            <Link
-              href={school.href}
-              className="rounded-lg hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-            >
-              {toDisplayCase(school.name)}
-            </Link>
-          </h3>
-          <p className="mt-0.5 flex items-center gap-1 text-sm text-neutral-500">
+      <div>
+        <h3 className="text-base font-semibold text-neutral-900">
+          <Link
+            href={school.href}
+            className="rounded-lg hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+          >
+            {toDisplayCase(school.name)}
+          </Link>
+        </h3>
+        {/* Cidade e status de lista na MESMA linha (quebrando junto quando
+            não cabe): com o selo flutuando à direita do bloco, ele caía ora
+            ao lado do nome, ora abaixo, dependendo do comprimento do nome --
+            e a coluna de status é justamente o que a pessoa varre. */}
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-neutral-500">
+          <span className="inline-flex items-center gap-1">
             <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
             {school.municipality} - {school.uf}
-          </p>
-        </div>
-        {hasList ? (
-          <Badge variant="success">
-            <ListChecks className="size-3" aria-hidden="true" />
-            {school.listCount} {school.listCount === 1 ? "lista" : "listas"}
-          </Badge>
-        ) : (
-          <Badge variant="neutral">Ainda sem lista</Badge>
-        )}
+          </span>
+          {hasList ? (
+            <Badge variant="success">
+              <ListChecks className="size-3" aria-hidden="true" />
+              {school.listCount} {school.listCount === 1 ? "lista" : "listas"}
+            </Badge>
+          ) : (
+            <Badge variant="neutral">Ainda sem lista</Badge>
+          )}
+        </p>
       </div>
 
       {hasList ? (
