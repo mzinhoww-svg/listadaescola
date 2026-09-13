@@ -1,6 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 
-import type { ListCommerceCoverage, CoverageListItem } from "@/lib/commerce/coverage";
+import { sortOffersForComparison, type ListCommerceCoverage, type CoverageListItem } from "@/lib/commerce/coverage";
 import type { ItemOffer } from "@/lib/commerce/offers";
 import { PartnerCoverageCard } from "@/components/commerce/partner-coverage-card";
 import { PartnerOfferButton } from "@/components/commerce/partner-offer-button";
@@ -50,7 +50,7 @@ export function OnlineOffersPanel({ coverage, items, offersByItem, schoolId, lis
         <p className="text-xs text-neutral-500">
           Ordenadas por quantos itens desta lista cada loja cobre. Nenhuma posição aqui é paga.
         </p>
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="flex flex-col gap-3">
           {partners.map((partner) => (
             <PartnerCoverageCard
               key={partner.partnerId}
@@ -77,7 +77,7 @@ export function OnlineOffersPanel({ coverage, items, offersByItem, schoolId, lis
               <div key={item.id}>
                 <p className="mb-2 text-sm font-medium text-neutral-700">{itemLabel(item)}</p>
                 <div className="flex flex-wrap gap-2">
-                  {offersByItem.get(item.id)!.map((offer) => (
+                  {sortOffersForComparison(offersByItem.get(item.id)!).map((offer) => (
                     <PartnerOfferButton
                       key={offer.ecommerceProductId}
                       offer={offer}

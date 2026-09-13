@@ -176,3 +176,25 @@ function comparePartnerCoverage(a: PartnerCoverage, b: PartnerCoverage): number 
   if (b.pricedCount !== a.pricedCount) return b.pricedCount - a.pricedCount;
   return a.partnerName.localeCompare(b.partnerName, "pt-BR");
 }
+
+/**
+ * Ordena as ofertas de UM item para a visão "comparar loja a loja":
+ * preço indicado crescente primeiro (é o que "comparar" quer dizer),
+ * ofertas sem preço depois, nome do parceiro como desempate estável.
+ *
+ * Antes essas ofertas saíam na ordem em que o PostgREST devolveu as
+ * linhas -- estável na prática, mas arbitrária e impossível de explicar
+ * a um parceiro. Aqui também não há dimensão de patrocínio, pelo mesmo
+ * motivo de `comparePartnerCoverage`.
+ */
+export function sortOffersForComparison(offers: ItemOffer[]): ItemOffer[] {
+  return [...offers].sort((a, b) => {
+    if (a.priceHint === null && b.priceHint === null) {
+      return a.partnerName.localeCompare(b.partnerName, "pt-BR");
+    }
+    if (a.priceHint === null) return 1;
+    if (b.priceHint === null) return -1;
+    if (a.priceHint !== b.priceHint) return a.priceHint - b.priceHint;
+    return a.partnerName.localeCompare(b.partnerName, "pt-BR");
+  });
+}

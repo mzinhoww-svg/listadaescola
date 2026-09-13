@@ -193,6 +193,16 @@ language plpgsql
 set search_path = public
 as $$
 begin
+  -- Sem sessão não há nada a limitar, e sair antes importa: `anon` não tem
+  -- EXECUTE em check_rate_limit, e um BEFORE trigger roda ANTES do WITH
+  -- CHECK da policy -- sem esta saída, a tentativa anônima morria com
+  -- "permission denied for function check_rate_limit" (observado ao vivo
+  -- via HTTPS) em vez do 42501 limpo da RLS, que é a resposta correta e a
+  -- que não nomeia o mecanismo interno.
+  if (select auth.uid()) is null then
+    return new;
+  end if;
+
   if not public.check_rate_limit('store_claim_submit', 5, 60) then
     raise exception 'rate limit exceeded for store_claim_submit -- try again later';
   end if;
@@ -274,6 +284,29 @@ alter table public.store_quote_requests enable row level security;
 create policy "store_quote_requests_select_manager" on public.store_quote_requests
   for select to authenticated
   using (public.is_store_manager(store_id));
+
+-- ...e o gestor não lê nem o hash. RLS recorta LINHAS; a promessa "sem PII
+-- do visitante" é sobre COLUNAS, então quem a garante aqui é o GRANT.
+-- `dedupe_hash` não é PII (é SHA-256 de um token aleatório que morre com a
+-- sessão do navegador), mas dentro de uma sessão ele é estável: exposto na
+-- tela do gestor viraria um "visitante único" pseudônimo que ninguém
+-- pediu. Só a RPC SECURITY DEFINER (que roda como a dona da tabela)
+-- precisa lê-lo.
+--
+-- Tem que ser REVOKE da tabela inteira e depois GRANT coluna a coluna:
+-- `revoke select (dedupe_hash)` sozinho é no-op contra o grant de tabela
+-- que o Supabase já concedeu a anon/authenticated -- testado ao vivo, o
+-- hash continuava vindo em `select=*`. `anon` perde o SELECT por completo
+-- (não tinha policy nenhuma aqui de qualquer forma).
+--
+-- Duas consequências para lembrar:
+--   1. `select=*` nesta tabela passa a falhar para authenticated -- toda
+--      query lista as colunas, como src/lib/stores/manager.ts já faz.
+--   2. Coluna nova nasce INVISÍVEL até ganhar GRANT explícito. É o lado
+--      certo para errar, mas é preciso lembrar de conceder.
+revoke select on public.store_quote_requests from anon, authenticated;
+grant select (id, store_id, school_id, school_list_id, created_at)
+  on public.store_quote_requests to authenticated;
 
 -- =====================================================================
 -- 3. RPC: registrar o pedido de orçamento a partir do redirect
@@ -596,3 +629,20 @@ comment on function public.stores_protect_admin_columns() is
 create trigger stores_protect_admin_columns_trg
   before update on public.stores
   for each row execute function public.stores_protect_admin_columns();
+
+-- Toda função criada no schema `public` ganha EXECUTE para PUBLIC, e o
+-- PostgREST publica o schema inteiro -- então uma função de trigger nasce
+-- também como um endpoint `/rest/v1/rpc/...`. Chamá-la direto falha
+-- ("trigger functions can only be called as triggers"), mas o advisor de
+-- segurança a lista corretamente como SECURITY DEFINER executável por
+-- `anon` (verificado ao vivo depois de aplicar esta migration), e uma
+-- função de trigger não tem por que ter porta de entrada nenhuma. Revogar
+-- aqui não afeta o disparo: o Postgres checa a permissão de EXECUTE no
+-- CREATE TRIGGER, não a cada linha.
+-- `from public` sozinho não basta: o Supabase mantém um ALTER DEFAULT
+-- PRIVILEGES que concede EXECUTE em toda função nova do schema `public`
+-- diretamente a anon/authenticated/service_role, e esses grants explícitos
+-- sobrevivem ao revoke de PUBLIC (verificado em pg_proc.proacl depois de
+-- aplicar). `service_role` fica -- é a chave de backend confiável.
+revoke execute on function public.stores_protect_admin_columns() from public, anon, authenticated;
+revoke execute on function public.store_claims_before_insert() from public, anon, authenticated;

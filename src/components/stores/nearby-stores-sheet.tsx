@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Store } from "lucide-react";
+import { Scale, Store } from "lucide-react";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { getNearbyStoresForSchoolAction } from "@/lib/stores/actions";
@@ -13,6 +13,7 @@ import { DialogRoot, DialogTrigger } from "@/components/ui/dialog-primitives";
 import { DrawerContent } from "@/components/ui/drawer";
 import { BottomSheetContent } from "@/components/ui/bottom-sheet";
 import { StoreCard } from "@/components/stores/store-card";
+import { CompareQuotesPanel, MIN_STORES_TO_COMPARE } from "@/components/stores/compare-quotes-panel";
 
 export interface NearbyStoresSheetProps {
   schoolId: string;
@@ -25,6 +26,8 @@ type LoadState = "idle" | "loading" | "loaded";
 
 const SHEET_TITLE = "Papelarias próximas";
 const SHEET_DESCRIPTION = "Peça orçamento direto no WhatsApp da loja.";
+const COMPARE_TITLE = "Comparar orçamentos";
+const COMPARE_DESCRIPTION = "A mesma lista para mais de uma papelaria, uma conversa de cada vez.";
 
 /**
  * Drawer on desktop, BottomSheet on mobile (Prompt 09) -- both are thin
@@ -47,9 +50,11 @@ export function NearbyStoresSheet({ schoolId, listId }: NearbyStoresSheetProps) 
   const [open, setOpen] = React.useState(false);
   const [loadState, setLoadState] = React.useState<LoadState>("idle");
   const [stores, setStores] = React.useState<NearbyStore[]>([]);
+  const [comparing, setComparing] = React.useState(false);
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
+    if (!nextOpen) setComparing(false);
     if (nextOpen && loadState === "idle") {
       setLoadState("loading");
       getNearbyStoresForSchoolAction(schoolId, listId)
@@ -60,6 +65,12 @@ export function NearbyStoresSheet({ schoolId, listId }: NearbyStoresSheetProps) 
         .catch(() => setLoadState("loaded"));
     }
   }
+
+  // Comparar só faz sentido com uma lista em contexto (é a lista itemizada
+  // que vai igual para todas) e com pelo menos duas lojas alcançáveis por
+  // WhatsApp -- ver CompareQuotesPanel.
+  const reachableCount = stores.filter((store) => store.whatsappNormalized !== null).length;
+  const canCompare = Boolean(listId) && reachableCount >= MIN_STORES_TO_COMPARE;
 
   let body: React.ReactNode;
   if (loadState === "loading") {
@@ -72,9 +83,29 @@ export function NearbyStoresSheet({ schoolId, listId }: NearbyStoresSheetProps) 
         description="Ainda não temos papelarias cadastradas perto desta escola."
       />
     );
+  } else if (comparing && listId) {
+    body = (
+      <CompareQuotesPanel
+        stores={stores}
+        schoolId={schoolId}
+        listId={listId}
+        onExit={() => setComparing(false)}
+      />
+    );
   } else {
     body = (
       <div className="flex flex-col gap-3">
+        {canCompare && (
+          <div className="rounded-xl border border-neutral-200 bg-surface-soft p-3">
+            <p className="text-sm text-neutral-700">
+              Quer comparar preço? Mande a mesma lista para mais de uma papelaria.
+            </p>
+            <Button variant="outline" className="mt-2 w-full sm:w-auto" onClick={() => setComparing(true)}>
+              <Scale className="size-4" aria-hidden="true" />
+              Comparar orçamentos
+            </Button>
+          </div>
+        )}
         {stores.map((store) => (
           <StoreCard key={store.id} store={store} schoolId={schoolId} listId={listId} />
         ))}
@@ -92,7 +123,10 @@ export function NearbyStoresSheet({ schoolId, listId }: NearbyStoresSheetProps) 
           Ver papelarias próximas
         </Button>
       </DialogTrigger>
-      <Content title={SHEET_TITLE} description={SHEET_DESCRIPTION}>
+      <Content
+        title={comparing ? COMPARE_TITLE : SHEET_TITLE}
+        description={comparing ? COMPARE_DESCRIPTION : SHEET_DESCRIPTION}
+      >
         {body}
       </Content>
     </DialogRoot>

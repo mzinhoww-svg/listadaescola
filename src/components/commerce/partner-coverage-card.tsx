@@ -63,7 +63,10 @@ export function PartnerCoverageCard({ coverage, totalItems, schoolId, listId }: 
         <div className="h-full rounded-full bg-secondary-300" style={{ width: `${percent}%` }} />
       </div>
 
-      <div className="mt-3 rounded-lg bg-surface-soft px-3 py-2.5">
+      {/* Painel neutro, não `surface-soft`: DESIGN.md reserva o periwinkle a
+          no máximo um elemento por bloco visual, e neste cartão esse
+          elemento é o medidor de cobertura acima. */}
+      <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
         {coverage.estimatedTotal !== null ? (
           <>
             <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
