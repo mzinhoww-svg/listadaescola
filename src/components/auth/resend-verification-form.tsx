@@ -17,14 +17,21 @@ export function ResendVerificationForm({ defaultEmail }: { defaultEmail?: string
   // o usuário a redigitar o endereço só para tentar de novo.
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [secondsLeft, setSecondsLeft] = useState(0);
+  const [handledState, setHandledState] = useState(initialState);
 
   // Um pedido aceito abre a janela de ~60s que o próprio GoTrue impõe entre
   // dois envios para o mesmo endereço (HTTP 429 `over_email_send_rate_limit`).
   // Contar aqui evita que o clique seguinte queime um dos 5 pedidos da janela
   // de 15 min num envio que o servidor recusaria de qualquer jeito.
-  useEffect(() => {
-    if (state?.success) setSecondsLeft(RESEND_COOLDOWN_SECONDS);
-  }, [state]);
+  //
+  // Ajuste de estado durante a renderização (padrão documentado do React para
+  // reagir a uma mudança de valor), não `useEffect`: a Server Action devolve
+  // um objeto novo a cada chamada, então a comparação por identidade dispara
+  // uma vez por resposta e não volta a disparar nos re-renders do contador.
+  if (state !== handledState) {
+    setHandledState(state);
+    setSecondsLeft(state?.success ? RESEND_COOLDOWN_SECONDS : 0);
+  }
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
