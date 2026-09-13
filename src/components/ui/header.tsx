@@ -1,8 +1,5 @@
-"use client";
-
 import * as React from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
@@ -21,10 +18,14 @@ export interface HeaderProps {
 }
 
 /**
- * Header reutilizável — logo, nav desktop, menu mobile acessível
- * (aria-expanded/controls, fecha com Escape) e slot de ações (ex.: entrar,
+ * Header reutilizável — logo, navegação e slot de ações (ex.: entrar,
  * avatar). Áreas diferentes (pública, conta, admin) passam `navItems` e
  * `actions` próprios; o componente em si não sabe nada de auth/rotas.
+ *
+ * Onda 2 P12: era um client component só por causa do estado do menu
+ * sanduíche. Com os links empilhados no mobile (ver abaixo) não sobrou
+ * estado nenhum, então virou server component -- e o header parou de
+ * mandar JavaScript para o browser.
  */
 function Header({
   homeHref = "/",
@@ -33,34 +34,6 @@ function Header({
   actions,
   className,
 }: HeaderProps) {
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const menuId = React.useId();
-  const toggleRef = React.useRef<HTMLButtonElement>(null);
-
-  /** Closing without moving focus back to the toggle drops it wherever the
-   * browser sends focus when the focused element becomes `hidden` (usually
-   * <body>) -- a keyboard user loses their place entirely. */
-  function closeMobileMenu() {
-    setMobileOpen(false);
-    toggleRef.current?.focus();
-  }
-
-  React.useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      // Functional update so this only refocuses the toggle when the menu
-      // was actually open -- an unconditional focus() here would steal
-      // focus from unrelated Escape presses elsewhere on the page (e.g. a
-      // Dialog also listening for Escape).
-      setMobileOpen((open) => {
-        if (open) toggleRef.current?.focus();
-        return false;
-      });
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   return (
     <header
       className={cn(
@@ -94,48 +67,32 @@ function Header({
           </nav>
         )}
 
-        <div className="hidden items-center gap-2 md:flex">{actions}</div>
+        <div className="flex items-center gap-2">{actions}</div>
 
-        {navItems.length > 0 && (
-          <button
-            ref={toggleRef}
-            type="button"
-            className="inline-flex size-11 items-center justify-center rounded-lg text-neutral-700 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 md:hidden"
-            aria-expanded={mobileOpen}
-            aria-controls={menuId}
-            aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
-            onClick={() => setMobileOpen((open) => !open)}
-          >
-            {mobileOpen ? (
-              <X className="size-5" aria-hidden="true" />
-            ) : (
-              <Menu className="size-5" aria-hidden="true" />
-            )}
-          </button>
-        )}
       </div>
 
+      {/*
+        Onda 2 P12. O DESIGN.md é explícito: "Em mobile, os mesmos links
+        empilham sem virar menu sanduíche -- são poucos, e esconder custaria
+        mais do que mostrar." São 4 links curtos, e escondê-los atrás de um
+        hambúrguer no dispositivo que é o piso do projeto custava um toque
+        extra para toda a navegação do site. Aqui eles viram uma segunda
+        linha, que envolve sozinha se não couber.
+      */}
       {navItems.length > 0 && (
-        <nav
-          id={menuId}
-          aria-label="Principal (mobile)"
-          hidden={!mobileOpen}
-          className="border-t border-neutral-200 px-4 py-3 md:hidden"
-        >
-          <ul className="flex flex-col gap-1">
+        <nav aria-label="Principal (mobile)" className="border-t border-neutral-200 px-4 py-2 md:hidden">
+          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {navItems.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  onClick={closeMobileMenu}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                  className="-mx-1 block rounded-lg px-1 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
                 >
                   {item.label}
                 </Link>
               </li>
             ))}
           </ul>
-          {actions && <div className="mt-3 flex flex-col gap-2">{actions}</div>}
         </nav>
       )}
     </header>

@@ -4,7 +4,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
+  // Onda 2 P10: py-0.5 dava 2px reais de padding vertical contra o limiar de
+  // 3.6px para texto de 12px, medido em 20 badges por página de resultados.
+  // py-1 = 4px.
+  "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium",
   {
     variants: {
       variant: {

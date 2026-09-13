@@ -132,10 +132,18 @@
   --color-danger-600: #ba1a1a;
   --color-danger-700: #93000a;
 
-  --color-info-50: var(--color-sky-50);
-  --color-info-500: var(--color-sky-500);
-  --color-info-600: var(--color-sky-600);
-  --color-info-700: var(--color-sky-700);
+  /*
+   * Onda 2 P13. `info` marca "Pública" nos cards e "Opcional" nas listas --
+   * dois dos chips mais visíveis do produto -- e apontava para o sky do
+   * Tailwind, uma cor de fora da paleta Caderno Vivo. Passava na AA (5.49:1),
+   * então nunca apareceu como defeito de acessibilidade; era incoerência de
+   * marca. Agora usa o periwinkle, que é o acento do próprio sistema.
+   * Contraste do -700 sobre o -50: 8.27:1.
+   */
+  --color-info-50: var(--color-secondary-50);
+  --color-info-500: var(--color-secondary-500);
+  --color-info-600: var(--color-secondary-600);
+  --color-info-700: var(--color-secondary-700);
 
   /* Patrocínio — nunca deve se confundir com rating/qualidade */
   --color-sponsored-50: var(--color-amber-50);
