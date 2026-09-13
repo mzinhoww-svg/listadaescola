@@ -5,6 +5,7 @@ import { MapPin } from "lucide-react";
 import { getActiveStores, storeHref } from "@/lib/stores/store-profile";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 
 // Same reasoning as every other Supabase-backed public page: never
 // statically prerendered.
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   title: "Papelarias",
   description: `Papelarias ativas em ${UF} para comprar material escolar local, com pedido de orçamento pelo WhatsApp.`,
   alternates: { canonical: "/papelarias" },
-  openGraph: { title: "Papelarias", description: `Papelarias ativas em ${UF}.`, type: "website" },
+  openGraph: { ...OG_DEFAULTS, title: "Papelarias", description: `Papelarias ativas em ${UF}.`, type: "website" },
 };
 
 export default async function PapelariasPage() {

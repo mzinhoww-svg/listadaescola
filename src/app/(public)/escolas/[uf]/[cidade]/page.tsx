@@ -8,6 +8,7 @@ import { SchoolCard } from "@/components/schools/school-card";
 import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import { jsonLdScript } from "@/lib/seo/json-ld";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 import { slugify } from "@/lib/utils";
 
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: CidadePageProps): Promise<Met
     title,
     description,
     alternates: { canonical: `/escolas/${uf.toLowerCase()}/${cidade}` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { ...OG_DEFAULTS, title, description, type: "website" },
   };
 }
 

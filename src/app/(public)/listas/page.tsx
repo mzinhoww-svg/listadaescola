@@ -5,6 +5,7 @@ import { ClipboardList } from "lucide-react";
 import { getPublicLists } from "@/lib/lists/list-detail";
 import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 
 // Same reasoning as every other Supabase-backed public page: never
 // statically prerendered.
@@ -18,7 +19,12 @@ export const metadata: Metadata = {
   title: "Listas escolares",
   description: "Listas de material escolar publicadas para escolas de Mato Grosso.",
   alternates: { canonical: "/listas" },
-  openGraph: { title: "Listas escolares", description: "Listas de material escolar publicadas.", type: "website" },
+  openGraph: {
+    ...OG_DEFAULTS,
+    title: "Listas escolares",
+    description: "Listas de material escolar publicadas.",
+    type: "website",
+  },
 };
 
 export default async function ListasPage({ searchParams }: ListasPageProps) {

@@ -3,6 +3,7 @@ import { Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 
 /* Tipografia do design system "Caderno Vivo" (Stitch): Plus Jakarta Sans
  * nos títulos (geometria humanista, tracking negativo) e Inter no corpo e
@@ -38,6 +39,13 @@ export const metadata: Metadata = {
   },
   description:
     "Encontre a escola, descubra a lista e resolva a compra em um só lugar.",
+  // Base for every page: Next.js doesn't deep-merge `openGraph`/`twitter`
+  // between a layout and a page that also sets them (the page's object
+  // fully replaces this one), so pages that set their own `openGraph`
+  // spread OG_DEFAULTS in too (see src/lib/seo/metadata.ts) -- this only
+  // covers the rare page that sets neither.
+  openGraph: { ...OG_DEFAULTS, type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
