@@ -25,15 +25,16 @@ processo completo: perguntas → abordagens → design → spec própria).
 
 | Item | O que é | Por quê está aqui, não numa fila |
 |---|---|---|
-| **Habilitar `SCHOOL_MANAGER`?** | O papel existe por inteiro no RLS/schema (`school_managers`, `is_school_manager()`, policies em `school_profiles`/`school_images`/Storage) mas **zero superfície de produto** — nenhuma rota, tela, ou gate de app-layer usa o papel além de um admin atribuí-lo a alguém. | Três auditorias anteriores (`docs/security/final-audit.md`, `docs/implementation/stitch-matrix.md`, `docs/implementation/post-mvp-hardening-report.md`) já documentaram isso e recomendaram **não construir a UI sem antes atualizar a PRD** — que já trata a funcionalidade como condicional ("quando a funcionalidade estiver habilitada", PRD §4.3). Construir um portal da escola agora seria decidir escopo de produto por conta própria, o que as regras absolutas deste projeto proíbem. |
+| **Habilitar `SCHOOL_MANAGER`?** | O papel existe por inteiro no RLS/schema (`school_managers`, `is_school_manager()`, policies em `school_profiles`/`school_images`/Storage) mas **zero superfície de produto** — nenhuma rota, tela, ou gate de app-layer usa o papel além de um admin atribuí-lo a alguém. | Três auditorias anteriores (`docs/security/final-audit.md`, `docs/implementation/stitch-matrix.md`, `docs/implementation/post-mvp-hardening-report.md`) já documentaram isso e recomendaram **não construir a UI sem antes atualizar a PRD** — que já trata a funcionalidade como condicional ("quando a funcionalidade estiver habilitada", PRD §4.3). |
 
-**Se a resposta for sim**, isso vira um sub-projeto Arquitetural de porte
-comparável ao papelaria #1 (login/claim de uma escola real, o que um
-gestor pode editar vs. o que continua INEP-only, como provar que a
-pessoa realmente representa a escola) — processo completo, spec própria,
-só depois de uma resposta explícita aqui.
-**Se a resposta for não** (ou "ainda não"), o item sai do roadmap ativo
-e fica só registrado aqui.
+**Decidido em 2026-09-13: SIM, habilitar.** Autorização explícita do
+dono do produto — esta linha é o registro dessa decisão, atualizando a
+condição da PRD §4.3. Isso vira um sub-projeto Arquitetural no Tier 4
+(login/claim de uma escola real, o que um gestor pode editar vs. o que
+continua INEP-only, como provar que a pessoa realmente representa a
+escola) — decisão de escopo tomada, mas o desenho de segurança/UX ainda
+precisa de cuidado antes do código, dado o que RLS já expõe (§1 da
+pesquisa desta sessão).
 
 ## 1. Bugs reais — corrigir antes de qualquer melhoria nova
 
