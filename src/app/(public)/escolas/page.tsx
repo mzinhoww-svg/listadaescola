@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { searchSchools, type SortMode } from "@/lib/schools/search-schools";
 import { recordAnalyticsEvent, recordSchoolImpressions } from "@/lib/analytics/record-event";
@@ -8,6 +9,8 @@ import { ResultsMap } from "@/components/schools/results-map";
 import { LocationBanner } from "@/components/schools/location-banner";
 import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { CatalogLanding } from "@/components/schools/catalog-landing";
 import type { Database } from "@/lib/supabase/database.types";
 import { slugify } from "@/lib/utils";
 
@@ -65,28 +68,46 @@ export default async function EscolasPage({ searchParams }: EscolasPageProps) {
   const hasLocation = Boolean(lat && lon) || Boolean(params.municipality) || Boolean(params.cep);
   const hasQuery = Boolean(params.q?.trim());
   const sort = SORT_MODES.includes(params.sort as SortMode) ? (params.sort as SortMode) : "relevance";
+  // Onda 2 P3: "com" | "sem" na URL -> true | false | undefined no RPC.
+  const hasList = params.lista === "com" ? true : params.lista === "sem" ? false : undefined;
 
-  const result = await searchSchools({
-    uf,
-    lat,
-    lon,
-    municipality: params.municipality,
-    cep: params.cep,
-    q: params.q,
-    schoolType: params.type as Database["public"]["Enums"]["school_type"] | undefined,
-    educationLevel: params.level,
-    minRating: params.rating ? Number(params.rating) : undefined,
-    sort,
-    page: params.page ? Number(params.page) : 1,
-  });
+  /*
+   * Onda 2 P2: sem nenhum escopo, a busca devolvia as 2.722 escolas de MT em
+   * ordem alfabética -- página 1 de 137, uma sequência de APAEs de 17
+   * municípios diferentes. Para quem chega pelo header ou por SEO, esse era o
+   * primeiro contato com o produto, e parecia um dump de banco. Um filtro
+   * sozinho (tipo/etapa/lista) também é escopo: quem escolheu "Com lista
+   * publicada" quer ver o resultado, não um seletor de cidade.
+   */
+  const hasAnyFilter = Boolean(params.type || params.level || params.rating || params.lista);
+  const hasScope = hasLocation || hasQuery || hasAnyFilter;
+
+  const result = hasScope
+    ? await searchSchools({
+        uf,
+        lat,
+        lon,
+        municipality: params.municipality,
+        cep: params.cep,
+        q: params.q,
+        schoolType: params.type as Database["public"]["Enums"]["school_type"] | undefined,
+        educationLevel: params.level,
+        minRating: params.rating ? Number(params.rating) : undefined,
+        hasList,
+        sort,
+        page: params.page ? Number(params.page) : 1,
+      })
+    : null;
 
   // Analytics is best-effort (RF-015) -- never awaited, never allowed to
   // fail or slow down the page render.
-  void recordAnalyticsEvent({
-    eventType: "school_search",
-    metadata: { q: params.q ?? null, uf, sort, page: result.page, resultCount: result.schools.length },
-  });
-  if (result.schools.length > 0) {
+  if (result) {
+    void recordAnalyticsEvent({
+      eventType: "school_search",
+      metadata: { q: params.q ?? null, uf, sort, page: result.page, resultCount: result.schools.length },
+    });
+  }
+  if (result && result.schools.length > 0) {
     void recordSchoolImpressions(
       result.schools.map((school) => school.id),
       { page: result.page, sort }
@@ -102,37 +123,50 @@ export default async function EscolasPage({ searchParams }: EscolasPageProps) {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <h1 className="mb-4 text-2xl font-semibold text-neutral-900">Escolas</h1>
 
-      <LocationBanner label={locationLabel} hasLocation={hasLocation || hasQuery} />
+      <LocationBanner
+        label={locationLabel}
+        hasLocation={hasLocation || hasQuery}
+        mode={!hasLocation && hasQuery ? "query" : "location"}
+      />
 
       <div className="mt-4">
         <ResultsFilters />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div>
-          {result.schools.length === 0 ? (
-            <EmptyState
-              title="Nenhuma escola encontrada"
-              description="Tente ajustar os filtros, a localização ou o termo de busca."
-            />
-          ) : (
-            <>
-              <h2 className="mb-3 text-sm text-neutral-500">{result.totalCount} escolas encontradas</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {result.schools.map((school) => (
-                  <SchoolCard key={school.id} school={school} />
-                ))}
-              </div>
-              <div className="mt-6">
-                <PaginationControls page={result.page} pageCount={result.pageCount} searchParams={linkParams} />
-              </div>
-            </>
-          )}
+      {!result ? (
+        <CatalogLanding uf={uf} />
+      ) : (
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
+          <div>
+            {result.schools.length === 0 ? (
+              <EmptyState
+                title="Nenhuma escola encontrada"
+                description="Tente ajustar os filtros, a localização ou o termo de busca. Se a escola que você procura não está no cadastro do INEP, você pode sugeri-la."
+                action={
+                  <Button asChild variant="outline">
+                    <Link href="/sugerir-escola">Sugerir uma escola</Link>
+                  </Button>
+                }
+              />
+            ) : (
+              <>
+                <h2 className="mb-3 text-sm text-neutral-500">{result.totalCount} escolas encontradas</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {result.schools.map((school) => (
+                    <SchoolCard key={school.id} school={school} />
+                  ))}
+                </div>
+                <div className="mt-6">
+                  <PaginationControls page={result.page} pageCount={result.pageCount} searchParams={linkParams} />
+                </div>
+              </>
+            )}
+          </div>
+          <div className="lg:sticky lg:top-4 lg:h-fit">
+            <ResultsMap schools={result.schools} center={lat !== undefined && lon !== undefined ? { lat, lon } : null} />
+          </div>
         </div>
-        <div className="lg:sticky lg:top-4 lg:h-fit">
-          <ResultsMap schools={result.schools} center={lat !== undefined && lon !== undefined ? { lat, lon } : null} />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

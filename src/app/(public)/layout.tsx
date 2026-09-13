@@ -16,6 +16,7 @@ const footerColumns = [
     title: "Produto",
     items: [
       { label: "Como funciona", href: "/como-funciona" },
+      { label: "Enviar lista", href: "/enviar-lista" },
       { label: "Para escolas", href: "/para-escolas" },
       { label: "Para papelarias", href: "/para-papelarias" },
       { label: "Parceiros", href: "/parceiros" },
@@ -36,10 +37,21 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     <div className="flex min-h-full flex-1 flex-col">
       <Header
         navItems={navItems}
+        /*
+          Onda 2 P1: todo o lado da oferta depende de famílias enviarem
+          listas, e /enviar-lista não estava no header nem no rodapé. O
+          Header renderiza `actions` também dentro do menu mobile, então um
+          botão aqui cobre os dois tamanhos de tela.
+        */
         actions={
-          <Button asChild variant="outline" size="sm">
-            <Link href="/auth/entrar">Entrar</Link>
-          </Button>
+          <>
+            <Button asChild size="sm">
+              <Link href="/enviar-lista">Enviar lista</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/auth/entrar">Entrar</Link>
+            </Button>
+          </>
         }
       />
       <main id="conteudo-principal" className="flex-1">

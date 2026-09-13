@@ -1940,6 +1940,7 @@ export type Database = {
         Args: {
           p_cep?: string
           p_education_level?: string
+          p_has_list?: boolean
           p_lat?: number
           p_limit?: number
           p_lon?: number

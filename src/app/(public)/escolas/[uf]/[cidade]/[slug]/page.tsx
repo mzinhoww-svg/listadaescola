@@ -15,6 +15,7 @@ import { SaveButton } from "@/components/favorites/save-button";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
@@ -268,9 +269,22 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
         <h2 className="mb-1 text-lg font-semibold text-neutral-900">Séries e listas escolares</h2>
         <p className="mb-4 text-sm text-neutral-500">Escolha a série e o ano letivo para ver a lista de material.</p>
         {etapaGroups.length === 0 ? (
+          /*
+             Onda 2 P1: este é o momento de maior intenção do produto inteiro
+             -- a mãe está com a lista de papel na mão e acabou de confirmar
+             que a escola é a certa. A resposta era "volte depois", sem saída,
+             enquanto /enviar-lista só era alcançável de dois lugares do site
+             público que ela não tem motivo para visitar. O EmptyState já
+             suportava `action`; ninguém tinha usado.
+          */
           <EmptyState
             title="Nenhuma lista publicada ainda"
-            description="Assim que uma lista desta escola for aprovada, ela aparece aqui."
+            description="Se você tem a lista desta escola em mãos, pode enviá-la — depois de aprovada, ela fica disponível para todas as famílias."
+            action={
+              <Button asChild>
+                <Link href={`/enviar-lista?escola=${school.id}`}>Enviar a lista desta escola</Link>
+              </Button>
+            }
           />
         ) : (
           <div className="flex flex-col gap-4">
@@ -300,7 +314,15 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
                           ))}
                         </div>
                       ) : (
-                        <p className="mt-1 text-sm text-neutral-500">Ainda sem lista publicada para esta série.</p>
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-neutral-500">
+                          Ainda sem lista publicada para esta série.
+                          <Link
+                            href={`/enviar-lista?escola=${school.id}`}
+                            className="font-medium text-primary-700 hover:underline"
+                          >
+                            Enviar esta lista
+                          </Link>
+                        </p>
                       )}
                     </div>
                   ))}

@@ -11,6 +11,7 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: "proximity", label: "Proximidade" },
   { value: "popularity", label: "Popularidade" },
   { value: "rating", label: "Avaliação" },
+  { value: "lists", label: "Com lista primeiro" },
 ];
 
 /** Filtros (tipo/etapa/avaliação) + ordenação (PRD RF-002/RF-003). Cada mudança navega via URL -- resultado é sempre uma página renderizada no servidor, compartilhável/indexável. */
@@ -25,7 +26,7 @@ export function ResultsFilters() {
   const hasLocation = searchParams.has("lat") || searchParams.has("municipality") || searchParams.has("cep");
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <Select
         label="Tipo"
         value={searchParams.get("type") ?? ""}
@@ -57,6 +58,18 @@ export function ResultsFilters() {
         <option value="">Qualquer avaliação</option>
         <option value="4">4+ estrelas</option>
         <option value="3">3+ estrelas</option>
+      </Select>
+
+      {/* Onda 2 P3: a promessa do produto é "descubra a lista", e até aqui a
+          tela de descoberta não sabia dizer quais escolas têm uma. */}
+      <Select
+        label="Lista de material"
+        value={searchParams.get("lista") ?? ""}
+        onChange={(event) => update("lista", event.target.value)}
+      >
+        <option value="">Todas as escolas</option>
+        <option value="com">Com lista publicada</option>
+        <option value="sem">Ainda sem lista</option>
       </Select>
 
       <Select

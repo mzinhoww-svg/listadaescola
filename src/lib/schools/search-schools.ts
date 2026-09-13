@@ -3,7 +3,10 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type SchoolResult = Database["public"]["Functions"]["search_schools"]["Returns"][number];
 
-export type SortMode = "relevance" | "proximity" | "popularity" | "rating";
+// "lists" ordena por disponibilidade de lista (Onda 2 P2/P3): com 2.722
+// escolas e cobertura parcial, "quais têm lista" é a pergunta que a tela de
+// descoberta existe para responder.
+export type SortMode = "relevance" | "proximity" | "popularity" | "rating" | "lists";
 
 export const EDUCATION_LEVELS = [
   "Educação Infantil",
@@ -26,6 +29,8 @@ export interface SearchSchoolsParams {
   schoolType?: Database["public"]["Enums"]["school_type"];
   educationLevel?: string;
   minRating?: number;
+  /** true = só com lista publicada, false = só sem, undefined = todas. */
+  hasList?: boolean;
   sort?: SortMode;
   page?: number;
 }
@@ -57,6 +62,7 @@ export async function searchSchools(params: SearchSchoolsParams): Promise<Search
     p_school_type: params.schoolType,
     p_education_level: params.educationLevel,
     p_min_rating: params.minRating,
+    p_has_list: params.hasList,
     p_sort: params.sort ?? "relevance",
     p_limit: PAGE_SIZE,
     p_offset: (page - 1) * PAGE_SIZE,
