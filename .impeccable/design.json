@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-13T00:00:00Z",
+  "title": "Design System: Listada Escola",
+  "extensions": {
+    "colorMeta": {
+      "slate-navy": {
+        "role": "primary",
+        "displayName": "Azul-Ardósia",
+        "canonical": "#5c6b8a",
+        "tonalRamp": ["#384764", "#445371", "#4d5a75", "#5c6b8a", "#6b7a99", "#7b8aa9", "#9aa9c4", "#b7c7ea"]
+      },
+      "periwinkle": {
+        "role": "secondary",
+        "displayName": "Periwinkle",
+        "canonical": "#96aaff",
+        "tonalRamp": ["#001452", "#233987", "#2b418f", "#4559a8", "#6b82e0", "#93a7fc", "#96aaff", "#dde1ff"]
+      },
+      "graphite-soft": {
+        "role": "neutral",
+        "displayName": "Grafite Suave",
+        "canonical": "#3a3a3a",
+        "tonalRamp": ["#1b1c1c", "#3a3a3a", "#44474d", "#5f6168", "#6e7076", "#9f9f9f", "#c5c6ce", "#e7e9ef"]
+      },
+      "paper-warm": {
+        "role": "neutral",
+        "displayName": "Papel Quente",
+        "canonical": "#fbf9f8",
+        "tonalRamp": ["#1b1c1c", "#3a3a3a", "#5f6168", "#9f9f9f", "#c5c6ce", "#e7e9ef", "#f6f3f2", "#fbf9f8"]
+      },
+      "stationery-amber": {
+        "role": "tertiary",
+        "displayName": "Âmbar de Papelaria",
+        "canonical": "#f7b955",
+        "tonalRamp": ["#7a5820", "#a3742b", "#c68d36", "#e0a445", "#f7b955", "#f9cb80", "#fbdcaa", "#fdeed5"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "h1 de conteúdo: nome da escola, título da lista." },
+      "headline": { "displayName": "Headline", "purpose": "h1 de catálogo e institucional." },
+      "title": { "displayName": "Title", "purpose": "h2 de seção dentro de uma página." },
+      "body": { "displayName": "Body", "purpose": "Texto corrido e conteúdo de card. Medida 65–75ch." },
+      "label": { "displayName": "Label", "purpose": "Rótulo de formulário, texto de botão, metadado." }
+    },
+    "shadows": [
+      { "name": "repouso", "value": "0 4px 16px -4px rgb(22 22 22 / 0.06)", "purpose": "Card e superfície estática. Folha pousada sobre folha." },
+      { "name": "flutuante", "value": "0 6px 20px -6px rgb(22 22 22 / 0.12)", "purpose": "Dropdown, toast, popover." },
+      { "name": "overlay", "value": "0 8px 24px -8px rgb(22 22 22 / 0.18)", "purpose": "Modal, drawer, bottom sheet." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Transição padrão de estado (hover, foco)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "mobile-floor", "value": "390px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal. Único botão com fundo sólido de marca por bloco.",
+      "html": "<button class=\"ds-btn-primary\">Buscar escolas</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; height:2.75rem; padding:0 1rem; background:#5c6b8a; color:#fff; font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.875rem; font-weight:500; border:none; border-radius:.5rem; cursor:pointer; transition:background .2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background:#4d5a75; } .ds-btn-primary:focus-visible { outline:2px solid #5c6b8a; outline-offset:2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Ação secundária que ainda é ação.",
+      "html": "<button class=\"ds-btn-outline\">Usar minha localização</button>",
+      "css": ".ds-btn-outline { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; height:2.75rem; padding:0 1rem; background:#fff; color:#3a3a3a; font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.875rem; font-weight:500; border:1px solid #e7e9ef; border-radius:.5rem; cursor:pointer; transition:background .2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-outline:hover { background:#f6f3f2; } .ds-btn-outline:focus-visible { outline:2px solid #5c6b8a; outline-offset:2px; }"
+    },
+    {
+      "name": "WhatsApp Button",
+      "kind": "button",
+      "refersTo": "button-whatsapp",
+      "description": "Único caso em que cor externa entra no sistema: o reconhecimento do canal vale mais que a coerência cromática.",
+      "html": "<button class=\"ds-btn-whatsapp\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20Z\"/></svg>Pedir orçamento</button>",
+      "css": ".ds-btn-whatsapp { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; height:2.75rem; padding:0 1rem; background:#25d366; color:#fff; font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.875rem; font-weight:500; border:none; border-radius:.5rem; cursor:pointer; transition:background .2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-whatsapp:hover { background:#128c7e; } .ds-btn-whatsapp:focus-visible { outline:2px solid #5c6b8a; outline-offset:2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Superfície de conteúdo. A borda faz o trabalho que a sombra não faz.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">EM CARLOS POMPERMAYER</h3><p class=\"ds-card-meta\">Comodoro, MT · Municipal</p></div>",
+      "css": ".ds-card { background:#fff; border:1px solid #e7e9ef; border-radius:1rem; padding:1rem; box-shadow:0 4px 16px -4px rgb(22 22 22 / 0.06); } .ds-card-title { margin:0 0 .25rem; font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif; font-size:1.125rem; font-weight:600; letter-spacing:-0.02em; color:#1b1c1c; } .ds-card-meta { margin:0; font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.875rem; color:#6e7076; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de formulário com rótulo associado e caret na cor da marca.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">CEP ou cidade</span><input class=\"ds-input\" placeholder=\"Ex.: 78000-000 ou Cuiabá\" /></label>",
+      "css": ".ds-field { display:flex; flex-direction:column; gap:.375rem; } .ds-field-label { font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.875rem; font-weight:500; color:#3a3a3a; } .ds-input { height:2.75rem; padding:0 .75rem; background:#fff; color:#1b1c1c; caret-color:#5c6b8a; font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:1rem; border:1px solid #e7e9ef; border-radius:.5rem; } .ds-input::placeholder { color:#6e7076; } .ds-input:focus-visible { outline:2px solid #5c6b8a; outline-offset:2px; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge-neutral",
+      "description": "Metadado curto: etapa de ensino, ano letivo, obrigatório/opcional.",
+      "html": "<span class=\"ds-badge\">Ensino Fundamental</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; gap:.25rem; padding:.125rem .5rem; background:#f6f3f2; color:#3a3a3a; font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.75rem; font-weight:500; border-radius:9999px; }"
+    },
+    {
+      "name": "Soft Panel",
+      "kind": "custom",
+      "refersTo": "panel-soft",
+      "description": "Painel agrupador em lavanda de papel. Existe para evitar o brilho duro do branco em blocos grandes.",
+      "html": "<p class=\"ds-panel-soft\">Nenhuma loja parceira tem oferta para os itens desta lista ainda.</p>",
+      "css": ".ds-panel-soft { margin:0; padding:.625rem .75rem; background:#ebefff; color:#3a3a3a; font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.875rem; border-radius:.5rem; }"
+    },
+    {
+      "name": "Navigation Header",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Header de papel com borda de pauta. Logotipo bicolor à esquerda, links em label.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav-brand\" href=\"/\"><svg width=\"28\" height=\"28\" viewBox=\"0 0 32 32\" aria-hidden=\"true\"><rect width=\"32\" height=\"32\" rx=\"9\" fill=\"#5c6b8a\"/><rect x=\"7\" y=\"9\" width=\"18\" height=\"3\" rx=\"1.5\" fill=\"#fff\"/><rect x=\"7\" y=\"15\" width=\"13\" height=\"3\" rx=\"1.5\" fill=\"#fff\"/><rect x=\"7\" y=\"21\" width=\"9\" height=\"3\" rx=\"1.5\" fill=\"#fff\"/><circle cx=\"22.5\" cy=\"22.5\" r=\"3.2\" fill=\"#96aaff\"/></svg><span class=\"ds-nav-word\">listada<span class=\"ds-nav-word-accent\">escola</span></span></a><nav class=\"ds-nav-links\"><a href=\"#\" class=\"ds-nav-link ds-nav-link-active\">Escolas</a><a href=\"#\" class=\"ds-nav-link\">Listas</a><a href=\"#\" class=\"ds-nav-link\">Papelarias</a></nav></header>",
+      "css": ".ds-nav { display:flex; align-items:center; justify-content:space-between; gap:1.5rem; padding:.75rem 1rem; background:#fff; border-bottom:1px solid #e7e9ef; } .ds-nav-brand { display:inline-flex; align-items:center; gap:.5rem; text-decoration:none; } .ds-nav-word { font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif; font-size:1.125rem; font-weight:700; letter-spacing:-0.02em; color:#1b1c1c; } .ds-nav-word-accent { color:#5c6b8a; } .ds-nav-links { display:flex; gap:1rem; } .ds-nav-link { font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:.875rem; font-weight:500; color:#3a3a3a; text-decoration:none; } .ds-nav-link:hover { color:#4d5a75; } .ds-nav-link-active { color:#5c6b8a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Caderno Vivo",
+    "overview": "Um caderno escolar bem organizado, não um dashboard. O sistema recusa deliberadamente duas estéticas vizinhas: a esterilidade do SaaS moderno e o minimalismo frio de painel financeiro. No lugar delas, a materialidade tangível de papelaria — papel levemente quente, linhas de pauta, cantos arredondados de fichário, acentos de lápis de cor.\n\nQuem usa isto é uma mãe no começo do ano letivo, com a lista da escola na mão e pouco tempo. A densidade é calma e escaneável: listas de verificação claras, divisores visíveis, resposta imediata a cada ação. Nada de brilho supérfluo competindo com a tarefa. A marca vive na precisão dos detalhes — o tom do papel, o raio do canto, a sombra que mal se vê — não em ornamento.\n\nO produto atende três públicos no mesmo mundo visual: famílias procurando material, escolas publicando listas, papelarias recebendo orçamentos. A mesma calma serve aos três.",
+    "keyCharacteristics": [
+      "Papel levemente quente como fundo, nunca branco puro de tela",
+      "Azul-ardósia acadêmico como voz de ação, sem saturação de alerta",
+      "Periwinkle como acento raro, reservado a destaque e progresso",
+      "Tipografia em dois pesos: Plus Jakarta Sans com tracking negativo nos títulos, Inter no corpo",
+      "Sombras que sugerem folha sobre folha, nunca elevação de card flutuante",
+      "Alvos de toque generosos (44px) — a tela é usada de pé, no celular"
+    ],
+    "rules": [
+      { "name": "A Regra do Acento Raro", "body": "O periwinkle aparece em no máximo um elemento por bloco visual. Ele marca progresso e destaque; se estiver em toda parte, não marca nada.", "section": "colors" },
+      { "name": "A Regra da Pauta", "body": "Separação entre itens de uma mesma lista é sempre linha de 1px, nunca sombra e nunca espaço vazio sozinho. A lista é um caderno pautado.", "section": "colors" },
+      { "name": "A Regra do Contorno versus Texto", "body": "#75777e é cor de contorno e passa na régua de 3:1 de elementos não textuais. Não serve para texto: 4.47:1 sobre papel e 4.26:1 sobre papel quente, abaixo dos 4.5:1 da AA. Texto secundário usa #6e7076, a mesma família escurecida até 4.95:1 e 4.72:1. Confundir os dois já custou 13 violações em produção.", "section": "colors" },
+      { "name": "A Regra da Medida", "body": "Todo parágrafo de texto corrido carrega limite de medida (max-w-[65ch]). Um container largo não é licença para linha larga — já produziu linhas de 153 caracteres.", "section": "typography" },
+      { "name": "A Regra dos Dois Pesos", "body": "O sistema usa 400, 500 e 600. Não há 700 nem 300. Hierarquia vem de tamanho e cor antes de peso.", "section": "typography" },
+      { "name": "A Regra da Folha Pousada", "body": "Toda sombra tem deslocamento vertical e desfoque largo. Halo colorido sem deslocamento é decoração, e não pertence a este mundo.", "section": "elevation" },
+      { "name": "A Regra do Estado Honesto", "body": "Estado vazio nomeia o que virá: 'Assim que uma papelaria for cadastrada, ela aparece aqui.' Um marketplace sem parceiros ainda precisa explicar que o canal existe.", "section": "components" }
+    ],
+    "dos": [
+      "Do usar papel quente como fundo de página e papel branco como superfície de card. Essa é a camada tonal que substitui sombra.",
+      "Do limitar todo parágrafo corrido a 65–75ch.",
+      "Do usar pencil-gray para texto secundário e eraser-gray apenas para ícone decorativo e estado desabilitado.",
+      "Do manter 44px de altura em qualquer controle tocável.",
+      "Do puxar as superfícies do navegador — seleção, caret, barra de rolagem — para a paleta.",
+      "Do manter o mapa em sticky quando ele acompanha uma lista longa."
+    ],
+    "donts": [
+      "Don't usar eraser-gray (#9f9f9f) em texto: 2.65:1, reprova AA por larga margem.",
+      "Don't usar a cor de contorno #75777e em texto.",
+      "Don't trocar Inter ou Plus Jakarta Sans por serem 'fontes saturadas'. A dupla é decisão do design system de origem, e o brief vence.",
+      "Don't introduzir borda lateral colorida acima de 1px em card, item de lista ou alerta.",
+      "Don't usar sombra para separar itens de uma mesma lista — isso é trabalho da linha de pauta.",
+      "Don't usar branco puro como fundo de página. O papel é quente.",
+      "Don't inventar peso 300 ou 700. O sistema tem três pesos."
+    ]
+  }
+}
