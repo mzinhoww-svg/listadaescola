@@ -65,14 +65,19 @@ export default async function ReivindicarEscolaPage({ searchParams }: PageProps)
     );
   }
 
-  // Já gerencia esta escola: não faz sentido pedir de novo.
-  const { data: existingManager } = await supabase
-    .from("school_managers")
-    .select("id")
-    .eq("school_id", school.id)
-    .eq("profile_id", profile?.id ?? "")
-    .maybeSingle();
-  if (existingManager) redirect("/minha-escola");
+  // Já gerencia esta escola: não faz sentido pedir de novo. (O layout já
+  // exigiu sessão, então `profile` só é nulo num estado impossível -- mas
+  // um `.eq("profile_id", "")` viraria `22P02 invalid input syntax for
+  // type uuid`, então a consulta só roda quando há perfil.)
+  if (profile) {
+    const { data: existingManager } = await supabase
+      .from("school_managers")
+      .select("id")
+      .eq("school_id", school.id)
+      .eq("profile_id", profile.id)
+      .maybeSingle();
+    if (existingManager) redirect("/minha-escola");
+  }
 
   const ownClaim = await getOwnClaimForSchool(school.id);
 

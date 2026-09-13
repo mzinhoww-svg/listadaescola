@@ -519,7 +519,12 @@ Estão aqui porque nenhuma delas aparece antes de você tentar.
   `CREATE TRIGGER`, **não** a cada disparo (verificado numa transação com
   ROLLBACK: depois do `revoke ... from public`, o trigger continua
   disparando e restaurando a coluna). Ver
-  `20260913040200_school_trigger_functions_revoke_public.sql`.
+  `20260913040200_school_trigger_functions_revoke_public.sql` e
+  `20260913040300_school_trigger_functions_revoke_authenticated.sql` (o
+  `revoke ... from public` **não** tira o grant que o `ALTER DEFAULT
+  PRIVILEGES` do Supabase dá a `authenticated` — precisa dos dois; a
+  convenção do schema é função de trigger sem EXECUTE para nenhum papel
+  de cliente).
 
 - **Seed de `auth.users` para login real: `created_at`/`updated_at` também
   não podem ficar NULL.** A lista de colunas-string vazias documentada

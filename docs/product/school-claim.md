@@ -13,7 +13,7 @@ decisão está tomada e registrada abaixo, com o raciocínio e com o que a
 torna reversível.
 
 Migrations: `supabase/migrations/20260913040000_school_claim_and_publish.sql`
-(+ follow-ups `20260913040100`, `20260913040200`).
+(+ follow-ups `20260913040100`, `20260913040200`, `20260913040300`).
 Prova de RLS e das guardas: `supabase/tests/onda7_school_claim.sql`.
 
 Estado medido em produção antes de começar (2026-09-13): 2.722 escolas
@@ -98,7 +98,8 @@ dado que trave o futuro:
    preencher `reviewed_by` automaticamente — nenhuma linha existente
    precisa ser reinterpretada.
 2. **Quem autoriza é `school_managers`, não o caminho pela qual a linha
-   chegou lá.** `is_school_manager()` — o helper que 15 policies usam —
+   chegou lá.** `is_school_manager()` — o helper que 16 policies usam (11 em `public`
+   mais as de `storage.objects`) —
    olha só o vínculo. Trocar o critério de aprovação não toca em RLS
    nenhuma.
 3. **A aprovação é uma função só**, `approve_school_claim()`. Um critério

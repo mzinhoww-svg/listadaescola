@@ -3,7 +3,8 @@
 --
 -- O que existia antes desta migration, medido ao vivo em produção:
 --   * `school_managers` com RLS completa desde 20260910201000, e
---     `is_school_manager()` já usado em 10 policies -- mas **0 linhas** na
+--     `is_school_manager()` já usado em 11 policies de `public` (mais as
+--     de `storage.objects`) -- mas **0 linhas** na
 --     tabela e 0 perfis com papel SCHOOL_MANAGER. A única forma de virar
 --     gestor era um admin inserir a linha na unha: não havia caminho de
 --     reivindicação nenhum, e nenhuma rota do app para o papel;
