@@ -32,13 +32,13 @@ export default async function MinhaContaPage() {
       icon: Heart,
       title: "Escolas salvas",
       href: "/minha-conta/escolas-salvas",
-      description: `${favoriteSchools.length} salva${favoriteSchools.length === 1 ? "" : "s"}`,
+      description: `${favoriteSchools.schools.length} salva${favoriteSchools.schools.length === 1 ? "" : "s"}`,
     },
     {
       icon: Bookmark,
       title: "Listas salvas",
       href: "/minha-conta/listas-salvas",
-      description: `${favoriteLists.length} salva${favoriteLists.length === 1 ? "" : "s"}`,
+      description: `${favoriteLists.lists.length} salva${favoriteLists.lists.length === 1 ? "" : "s"}`,
     },
   ];
 

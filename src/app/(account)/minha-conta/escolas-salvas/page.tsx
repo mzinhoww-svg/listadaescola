@@ -11,11 +11,18 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Escolas salvas" };
 
 export default async function EscolasSalvasPage() {
-  const schools = await getFavoriteSchools();
+  const { schools, unavailableCount } = await getFavoriteSchools();
 
   return (
     <>
       <h1 className="text-2xl font-semibold text-neutral-900">Escolas salvas</h1>
+      {unavailableCount > 0 && (
+        <p className="mt-2 text-sm text-neutral-500">
+          {unavailableCount === 1
+            ? "1 escola salva não está mais disponível e foi ocultada."
+            : `${unavailableCount} escolas salvas não estão mais disponíveis e foram ocultadas.`}
+        </p>
+      )}
 
       {schools.length === 0 ? (
         <EmptyState

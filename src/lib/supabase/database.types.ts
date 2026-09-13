@@ -2,7 +2,6 @@
 // (ref wfdejmokxrunupsekcmq) via mcp__Supabase__generate_typescript_types.
 // Não editar à mão -- regenerar depois de qualquer migration em
 // supabase/migrations/.
-
 export type Json =
   | string
   | number
@@ -731,6 +730,7 @@ export type Database = {
           moderated_by: string | null
           profile_id: string
           rating: number
+          rejection_reason: string | null
           school_id: string
           status: Database["public"]["Enums"]["review_status"]
           updated_at: string
@@ -742,6 +742,7 @@ export type Database = {
           moderated_by?: string | null
           profile_id: string
           rating: number
+          rejection_reason?: string | null
           school_id: string
           status?: Database["public"]["Enums"]["review_status"]
           updated_at?: string
@@ -753,6 +754,7 @@ export type Database = {
           moderated_by?: string | null
           profile_id?: string
           rating?: number
+          rejection_reason?: string | null
           school_id?: string
           status?: Database["public"]["Enums"]["review_status"]
           updated_at?: string
@@ -1685,7 +1687,10 @@ export type Database = {
         }
         Returns: string
       }
-      admin_reject_review: { Args: { p_review_id: string }; Returns: undefined }
+      admin_reject_review: {
+        Args: { p_reason: string; p_review_id: string }
+        Returns: undefined
+      }
       admin_set_campaign_status: {
         Args: { p_campaign_id: string; p_status: string }
         Returns: undefined
@@ -1940,6 +1945,7 @@ export type Database = {
         Args: {
           p_cep?: string
           p_education_level?: string
+          p_has_list?: boolean
           p_lat?: number
           p_limit?: number
           p_lon?: number

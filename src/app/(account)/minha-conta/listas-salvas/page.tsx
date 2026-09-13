@@ -10,11 +10,18 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Listas salvas" };
 
 export default async function ListasSalvasPage() {
-  const lists = await getFavoriteLists();
+  const { lists, unavailableCount } = await getFavoriteLists();
 
   return (
     <>
       <h1 className="text-2xl font-semibold text-neutral-900">Listas salvas</h1>
+      {unavailableCount > 0 && (
+        <p className="mt-2 text-sm text-neutral-500">
+          {unavailableCount === 1
+            ? "1 lista salva não está mais disponível e foi ocultada."
+            : `${unavailableCount} listas salvas não estão mais disponíveis e foram ocultadas.`}
+        </p>
+      )}
 
       {lists.length === 0 ? (
         <EmptyState
