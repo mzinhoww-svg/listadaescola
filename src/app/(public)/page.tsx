@@ -4,9 +4,13 @@ import { ClipboardList } from "lucide-react";
 
 import { CoverageSection } from "@/components/home/coverage-section";
 import { HomeSearch } from "@/components/home/home-search";
+import { HomeListRequestCta } from "@/components/home/home-list-request-cta";
 import { Button } from "@/components/ui/button";
+import { recordPageView } from "@/lib/analytics/record-event";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getCoverageSummary } from "@/lib/schools/coverage";
 import { getRecentLists } from "@/lib/schools/home-queries";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { toDisplayCase } from "@/lib/utils";
 
 const DESCRIPTION =
@@ -15,7 +19,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   description: DESCRIPTION,
   alternates: { canonical: "/" },
-  openGraph: { title: "Listada Escola", description: DESCRIPTION, type: "website" },
+  openGraph: { ...OG_DEFAULTS, title: "Listada Escola", description: DESCRIPTION, type: "website" },
 };
 
 // Rendered per-request (like every other data-driven page in this
@@ -43,9 +47,22 @@ export const dynamic = "force-dynamic";
  *    cobertura real, com números vindos de query. "Listas recentes" fica
  *    como estava, condicional: hoje não renderiza, e quando houver lista
  *    ela volta sozinha -- o que está correto.
+ *
+ * `HomeListRequestCta` (Tier 2 do roadmap ICPs, sub-projeto papelaria #1)
+ * é um segundo CTA, complementar ao "avise-me quando publicarem" do
+ * `HomeSearch`: aquele é passivo (espera alguém publicar), este deixa o
+ * próprio visitante contribuir a lista que já tem em mãos, anonimamente
+ * até o limite técnico do Storage.
  */
 export default async function HomePage() {
-  const [coverage, recentLists] = await Promise.all([getCoverageSummary(), getRecentLists()]);
+  const [coverage, recentLists, user] = await Promise.all([
+    getCoverageSummary(),
+    getRecentLists(),
+    getCurrentUser(),
+  ]);
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordPageView("/");
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
@@ -60,6 +77,9 @@ export default async function HomePage() {
 
         <div className="mt-8 rounded-xl border border-neutral-200 bg-paper p-5 shadow-sm">
           <HomeSearch />
+          <div className="mt-4 border-t border-neutral-100 pt-4">
+            <HomeListRequestCta isAuthenticated={Boolean(user)} />
+          </div>
         </div>
       </section>
 

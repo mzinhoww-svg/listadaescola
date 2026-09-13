@@ -44,6 +44,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: url("/escolas"), changeFrequency: "daily", priority: 0.9 },
     { url: url(`/escolas/${UF.toLowerCase()}`), changeFrequency: "daily", priority: 0.9 },
     { url: url("/papelarias"), changeFrequency: "daily", priority: 0.7 },
+    { url: url("/listas"), changeFrequency: "daily", priority: 0.7 },
+    { url: url("/como-funciona"), changeFrequency: "monthly", priority: 0.5 },
+    { url: url("/para-escolas"), changeFrequency: "monthly", priority: 0.5 },
+    { url: url("/para-papelarias"), changeFrequency: "monthly", priority: 0.5 },
+    { url: url("/parceiros"), changeFrequency: "monthly", priority: 0.4 },
+    { url: url("/termos"), changeFrequency: "yearly", priority: 0.3 },
+    { url: url("/privacidade"), changeFrequency: "yearly", priority: 0.3 },
+    { url: url("/cookies"), changeFrequency: "yearly", priority: 0.3 },
   ];
 
   const municipalityEntries: MetadataRoute.Sitemap = municipalities.map((municipality) => ({

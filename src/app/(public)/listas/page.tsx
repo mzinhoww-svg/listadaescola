@@ -3,8 +3,10 @@ import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 
 import { getPublicLists } from "@/lib/lists/list-detail";
+import { recordPageView } from "@/lib/analytics/record-event";
 import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 
 // Same reasoning as every other Supabase-backed public page: never
 // statically prerendered.
@@ -18,13 +20,22 @@ export const metadata: Metadata = {
   title: "Listas escolares",
   description: "Listas de material escolar publicadas para escolas de Mato Grosso.",
   alternates: { canonical: "/listas" },
-  openGraph: { title: "Listas escolares", description: "Listas de material escolar publicadas.", type: "website" },
+  openGraph: {
+    ...OG_DEFAULTS,
+    title: "Listas escolares",
+    description: "Listas de material escolar publicadas.",
+    type: "website",
+  },
 };
 
 export default async function ListasPage({ searchParams }: ListasPageProps) {
   const params = await searchParams;
   const page = params.page ? Number(params.page) : 1;
   const result = await getPublicLists(Number.isFinite(page) ? page : 1);
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordPageView("/listas");
+
   const linkParams = new URLSearchParams(
     Object.entries(params).filter((entry): entry is [string, string] => entry[1] !== undefined)
   );

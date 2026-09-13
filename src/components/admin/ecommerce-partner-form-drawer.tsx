@@ -50,7 +50,7 @@ export function EcommercePartnerFormDrawer({ partner }: { partner?: AdminEcommer
           </Select>
 
           <label className="flex items-center gap-2 text-sm text-neutral-700">
-            <input type="checkbox" name="is_active" defaultChecked={partner?.is_active ?? true} className="size-4 rounded border-neutral-300 text-primary-600" />
+            <input type="checkbox" name="is_active" defaultChecked={partner?.is_active ?? true} className="size-4 rounded border-neutral-300 accent-primary-600 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600" />
             Ativo (visível publicamente)
           </label>
 

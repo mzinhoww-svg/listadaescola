@@ -30,7 +30,10 @@ export function LoginForm({ next }: { next?: string }) {
       </p>
       <p className="text-center text-sm text-neutral-500">
         Não tem conta?{" "}
-        <Link href="/auth/criar-conta" className="font-medium text-primary-600 hover:underline">
+        <Link
+          href={next ? `/auth/criar-conta?next=${encodeURIComponent(next)}` : "/auth/criar-conta"}
+          className="font-medium text-primary-600 hover:underline"
+        >
           Criar conta
         </Link>
       </p>

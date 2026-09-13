@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
-import { nullableArg } from "@/lib/admin/rpc-utils";
+import { nullableArg, translateAdminDbError } from "@/lib/admin/rpc-utils";
 
 export interface FormState {
   error?: string;
@@ -35,7 +35,7 @@ export async function upsertEcommercePartnerAction(_prevState: FormState, formDa
     p_integration_type: String(formData.get("integration_type") ?? ""),
     p_is_active: formData.get("is_active") === "on",
   });
-  if (error) return { error: error.message };
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidatePath("/admin/ecommerce");
   return { success: partnerId ? "Parceiro atualizado." : "Parceiro criado." };

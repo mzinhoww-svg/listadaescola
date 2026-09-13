@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "moneyprinterturbo-video": {
+      "source": "harry0703/MoneyPrinterTurbo",
+      "sourceType": "github",
+      "skillPath": "docs/skill/SKILL.md",
+      "computedHash": "e77fbc41d74ddfb4fda2f3298dfa948c206d9164fee9a63e07e97dea37be81ba"
+    },
+    "seo-audit": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "skillPath": "skills/seo-audit/SKILL.md",
+      "computedHash": "01f9f8a3feb3ea69c6c212d61189c610f96ef2cc363adc27fd314d78254bf6ae"
+    }
+  }
+}

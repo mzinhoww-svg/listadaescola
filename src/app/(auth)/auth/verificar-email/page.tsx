@@ -33,9 +33,9 @@ const SUPPORT_HREF = buildTeamWhatsappLink(
 export default async function VerificarEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; next?: string }>;
 }) {
-  const { email: rawEmail } = await searchParams;
+  const { email: rawEmail, next } = await searchParams;
   // Só ecoa o parâmetro se ele realmente parecer um e-mail: a query string é
   // conteúdo controlado por quem monta o link, e um /auth/verificar-email?
   // email=<texto qualquer> viraria um jeito barato de exibir texto arbitrário
@@ -90,7 +90,7 @@ export default async function VerificarEmailPage({
 
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold text-neutral-900">Reenviar a confirmação</h2>
-          <ResendVerificationForm defaultEmail={email} />
+          <ResendVerificationForm defaultEmail={email} next={next} />
           <p className="text-sm text-neutral-600">
             Um novo envio a cada {RESEND_COOLDOWN_SECONDS} segundos, até {RESEND_MAX_ATTEMPTS}{" "}
             pedidos a cada {RESEND_WINDOW_MINUTES} minutos.
@@ -121,7 +121,7 @@ export default async function VerificarEmailPage({
         <p className="text-center text-sm text-neutral-600">
           Já confirmou?{" "}
           <Link
-            href="/auth/entrar"
+            href={next ? `/auth/entrar?next=${encodeURIComponent(next)}` : "/auth/entrar"}
             className="font-medium text-primary-700 underline underline-offset-2 hover:text-primary-800"
           >
             Entrar

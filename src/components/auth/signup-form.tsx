@@ -9,11 +9,12 @@ import { SubmitButton } from "@/components/auth/submit-button";
 
 const initialState: FormState = {};
 
-export function SignupForm() {
+export function SignupForm({ next }: { next?: string }) {
   const [state, formAction] = useActionState(signUpAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="next" value={next ?? ""} />
       <Input
         label="Nome completo"
         name="full_name"
@@ -56,7 +57,10 @@ export function SignupForm() {
       <SubmitButton className="mt-2">Criar conta</SubmitButton>
       <p className="text-center text-sm text-neutral-500">
         Já tem conta?{" "}
-        <Link href="/auth/entrar" className="font-medium text-primary-600 hover:underline">
+        <Link
+          href={next ? `/auth/entrar?next=${encodeURIComponent(next)}` : "/auth/entrar"}
+          className="font-medium text-primary-600 hover:underline"
+        >
           Entrar
         </Link>
       </p>

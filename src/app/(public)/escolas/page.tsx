@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { CatalogLanding } from "@/components/schools/catalog-landing";
 import { buildResultsUrl } from "@/lib/schools/results-url";
 import type { Database } from "@/lib/supabase/database.types";
+import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { slugify } from "@/lib/utils";
 
 interface EscolasPageProps {
@@ -58,7 +59,7 @@ export async function generateMetadata({ searchParams }: EscolasPageProps): Prom
     title,
     description,
     alternates: { canonical: buildCanonical(params) },
-    openGraph: { title, description, type: "website" },
+    openGraph: { ...OG_DEFAULTS, title, description, type: "website" },
   };
 }
 

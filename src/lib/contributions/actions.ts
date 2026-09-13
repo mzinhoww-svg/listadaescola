@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { EDITABLE_SUBMISSION_STATUSES, EDUCATION_LEVELS, SCHOOL_YEAR_OPTIONS } from "@/lib/contributions/constants";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
+import type { LocalDraft } from "@/lib/contributions/local-draft";
+import type { Json } from "@/lib/supabase/database.types";
 
 export interface FormState {
   error?: string;
@@ -160,6 +162,105 @@ export async function startSubmissionAction(
   await supabase.rpc("record_rate_limit_hit", { p_action: "submission_start" });
 
   redirect(`/enviar-lista/${created.id}/itens`);
+}
+
+export interface MaterializeLocalDraftResult {
+  ok: boolean;
+  error?: string;
+  submissionId?: string;
+  /** true quando um DRAFT/NEEDS_CORRECTION remoto pra mesma tupla já
+   * existia e teve os itens substituídos -- o chamador usa isso pra
+   * decidir se mostra o aviso de "atualizamos seu rascunho anterior". */
+  collided?: boolean;
+}
+
+/**
+ * Materializa em list_submissions/submission_items um LocalDraft inteiro
+ * (escola + etapa/série/ano + itens) guardado no localStorage do
+ * navegador -- chamado no momento em que o visitante anônimo autentica
+ * (sub-projeto papelaria #1, docs/superpowers/specs/2026-09-13-cta-home-
+ * rascunho-anonimo-design.md). Nunca confia no cliente: revalida tudo que
+ * startSubmissionAction/addSubmissionItemAction já validam, e o find-or-
+ * create + substituição de itens em si roda dentro de materialize_local_draft
+ * (RPC, uma transação) para nunca deixar uma submissão sem item se a
+ * segunda escrita falhasse.
+ */
+export async function materializeLocalDraftAction(draft: LocalDraft): Promise<MaterializeLocalDraftResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sua sessão expirou. Entre novamente para continuar." };
+
+  const schoolId = draft?.school?.id ?? "";
+  const educationLevel = draft?.educationLevel ?? "";
+  const seriesName = String(draft?.seriesName ?? "").trim();
+  const schoolYear = Number(draft?.schoolYear);
+  const items = Array.isArray(draft?.items) ? draft.items : [];
+
+  if (!isUuid(schoolId)) return { ok: false, error: "Escola inválida. Comece de novo." };
+  if (!(EDUCATION_LEVELS as readonly string[]).includes(educationLevel)) {
+    return { ok: false, error: "Selecione uma etapa de ensino válida." };
+  }
+  if (!seriesName || seriesName.length > MAX_TEXT_LENGTH) {
+    return { ok: false, error: "Informe a série/ano escolar (ex.: 5º Ano)." };
+  }
+  if (!(SCHOOL_YEAR_OPTIONS as readonly number[]).includes(schoolYear)) {
+    return { ok: false, error: "Selecione um ano letivo válido." };
+  }
+  if (items.length === 0) return { ok: false, error: "Adicione pelo menos um item antes de continuar." };
+  for (const item of items) {
+    const name = String(item?.name ?? "").trim();
+    if (!name || name.length > MAX_TEXT_LENGTH) return { ok: false, error: "Um dos itens está com nome inválido." };
+    if (!Number.isInteger(item?.quantity) || item.quantity < 1 || item.quantity > 9999) {
+      return { ok: false, error: "Um dos itens está com quantidade inválida." };
+    }
+  }
+
+  // Mesmo limite/janela de startSubmissionAction (SEC-008) -- materializar
+  // um rascunho local é a mesma ação de "começar um envio", só adiada.
+  const { data: allowed } = await supabase.rpc("check_rate_limit", {
+    p_action: "submission_start",
+    p_max_hits: 10,
+    p_window_minutes: 60,
+  });
+  if (allowed === false) {
+    return { ok: false, error: "Muitos envios em pouco tempo. Aguarde um pouco e tente novamente." };
+  }
+
+  const { data, error } = await supabase
+    .rpc("materialize_local_draft", {
+      p_school_id: schoolId,
+      p_education_level: educationLevel,
+      p_series_name: seriesName,
+      p_school_year: schoolYear,
+      p_items: items.map((item) => ({
+        name: String(item.name).trim(),
+        quantity: item.quantity,
+        unit: item.unit || null,
+        brand: item.brand || null,
+        is_required: item.isRequired,
+      })) as unknown as Json,
+    })
+    .single();
+
+  if (error || !data) {
+    return { ok: false, error: "Não foi possível salvar seu rascunho. Tente novamente." };
+  }
+
+  // Mesma regra de startSubmissionAction: só a submissão genuinamente nova
+  // conta como "iniciada" -- reaproveitar um DRAFT remoto existente (colisão)
+  // não é um novo começo, e não deve contar contra o rate limit de novo.
+  if (!data.collided) {
+    await recordAnalyticsEvent({
+      eventType: "submission_started",
+      schoolId,
+      metadata: { submissionId: data.submission_id, source: "home_anonymous" },
+    });
+    await supabase.rpc("record_rate_limit_hit", { p_action: "submission_start" });
+  }
+
+  return { ok: true, submissionId: data.submission_id, collided: data.collided };
 }
 
 export async function addSubmissionItemAction(_prevState: FormState, formData: FormData): Promise<FormState> {

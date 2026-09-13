@@ -5,6 +5,7 @@ import { BellRing, ListChecks } from "lucide-react";
 
 import { searchSchools } from "@/lib/schools/search-schools";
 import { resolveMunicipalitySlug } from "@/lib/schools/municipalities";
+import { recordPageView } from "@/lib/analytics/record-event";
 import { getMunicipalityOverview, type MunicipalityOverview } from "@/lib/schools/municipality-overview";
 import { SchoolCard } from "@/components/schools/school-card";
 import { PaginationControls } from "@/components/schools/pagination-controls";
@@ -114,6 +115,9 @@ export default async function CidadePage({ params, searchParams }: CidadePagePro
   // vazia -- infinitas URLs indexáveis sem conteúdo. A página 1 nunca cai
   // aqui, mesmo numa cidade sem escola ativa.
   if (page > 1 && page > result.pageCount) notFound();
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordPageView(`/escolas/${uf.toLowerCase()}/${cidade}`);
 
   const siteUrl = getSiteBaseUrl();
   const breadcrumbJsonLd = {

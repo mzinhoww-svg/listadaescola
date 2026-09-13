@@ -9,7 +9,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 
 const initialState: FormState = {};
 
-export function ResendVerificationForm({ defaultEmail }: { defaultEmail?: string }) {
+export function ResendVerificationForm({ defaultEmail, next }: { defaultEmail?: string; next?: string }) {
   const [state, formAction] = useActionState(resendVerificationAction, initialState);
   // Controlado de propósito: o React 19 dá reset no form depois que a
   // Server Action resolve, e um campo não controlado voltaria para o
@@ -41,6 +41,7 @@ export function ResendVerificationForm({ defaultEmail }: { defaultEmail?: string
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
+      <input type="hidden" name="next" value={next ?? ""} />
       <Input
         label="E-mail da conta"
         name="email"

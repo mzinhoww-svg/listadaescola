@@ -13,13 +13,14 @@ export interface ReviewFormState {
 const MAX_COMMENT_LENGTH = 1000;
 
 /**
- * The only write path into reviews (RF-014). RLS (reviews_insert_own_pending
- * / reviews_update_own_pending) is the real backstop -- pins profile_id and
- * status server-side regardless of what's re-checked here. unique(school_id,
- * profile_id) means a second submission is always an UPDATE, never a second
- * INSERT; once moderated (APPROVED/REJECTED) the row is no longer editable
- * by its author (RLS), so that path returns a clear message instead of a
- * raw constraint-violation error.
+ * The only write path into reviews (RF-014). RLS
+ * (reviews_insert_own_pending / reviews_update_own_pending_or_rejected) is
+ * the real backstop -- pins profile_id and status server-side regardless
+ * of what's re-checked here. unique(school_id, profile_id) means a second
+ * submission is always an UPDATE, never a second INSERT. Only APPROVED is
+ * a dead end for the author (RLS blocks it -- editing a published review
+ * without re-moderation would defeat moderation); REJECTED can always
+ * resubmit, which resets the same row back to PENDING.
  */
 export async function createReviewAction(_prevState: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
   const schoolId = String(formData.get("school_id") ?? "");
@@ -60,7 +61,11 @@ export async function createReviewAction(_prevState: ReviewFormState, formData: 
     .maybeSingle();
   if (lookupError) return { error: "Não foi possível enviar sua avaliação. Tente novamente." };
 
-  if (existing && existing.status !== "PENDING") {
+  // APPROVED fica imutável pelo autor (RLS já reforça isso) -- editar uma
+  // avaliação já pública sem passar de novo pela moderação seria burlá-la.
+  // REJECTED pode reenviar: reseta a mesma linha pra PENDING (RLS também
+  // permite agora -- ver 20260913000000_reviews_resubmit_after_rejection.sql).
+  if (existing && existing.status === "APPROVED") {
     return { error: "Você já avaliou esta escola." };
   }
 
@@ -70,6 +75,8 @@ export async function createReviewAction(_prevState: ReviewFormState, formData: 
     rating,
     comment: comment || null,
     status: "PENDING" as const,
+    moderated_by: null,
+    rejection_reason: null,
   };
 
   const { error } = existing

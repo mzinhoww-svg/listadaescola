@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { searchSchools } from "@/lib/schools/search-schools";
 import { listMunicipalities } from "@/lib/schools/municipalities";
+import { recordPageView } from "@/lib/analytics/record-event";
 import { SchoolCard } from "@/components/schools/school-card";
 import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -83,6 +84,9 @@ export default async function EstadoPage({ params, searchParams }: EstadoPagePro
   // Mesma armadilha de rastreio fechada na página de município: sem isto,
   // ?page=9999 responde 200 com uma grade vazia.
   if (page > 1 && page > result.pageCount) notFound();
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordPageView(`/escolas/${uf.toLowerCase()}`);
 
   const siteUrl = getSiteBaseUrl();
   const breadcrumbJsonLd = {

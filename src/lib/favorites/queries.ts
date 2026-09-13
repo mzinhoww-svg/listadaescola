@@ -36,6 +36,15 @@ export interface FavoriteSchool {
   municipality: string;
 }
 
+export interface FavoriteSchoolsResult {
+  schools: FavoriteSchool[];
+  /** Roadmap Tier 1 / B2: favorited schools that no longer pass the public
+   * visibility filter (deactivated) used to just vanish from the result
+   * with no trace -- the saved count looked right, the item silently
+   * wasn't there. Surfacing the count lets the page say so instead. */
+  unavailableCount: number;
+}
+
 /**
  * Sorts favorited-most-recently-first (favorites.created_at) rather than
  * the schools/lists table's own default order, since "what did I save"
@@ -45,12 +54,12 @@ export interface FavoriteSchool {
  * rule as everywhere else so a since-deactivated school never shows up
  * as a dangling link on the user's own saved page.
  */
-export async function getFavoriteSchools(): Promise<FavoriteSchool[]> {
+export async function getFavoriteSchools(): Promise<FavoriteSchoolsResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return [];
+  if (!user) return { schools: [], unavailableCount: 0 };
 
   const { data: favorites, error: favError } = await supabase
     .from("favorites")
@@ -59,7 +68,7 @@ export async function getFavoriteSchools(): Promise<FavoriteSchool[]> {
     .eq("target_type", "SCHOOL")
     .order("created_at", { ascending: false });
   if (favError) throw new Error(`getFavoriteSchools failed: ${favError.message}`);
-  if (!favorites || favorites.length === 0) return [];
+  if (!favorites || favorites.length === 0) return { schools: [], unavailableCount: 0 };
 
   const { data: schools, error: schoolsError } = await supabase
     .from("schools")
@@ -72,16 +81,24 @@ export async function getFavoriteSchools(): Promise<FavoriteSchool[]> {
   if (schoolsError) throw new Error(`getFavoriteSchools (schools) failed: ${schoolsError.message}`);
 
   const order = new Map(favorites.map((favorite, index) => [favorite.target_id, index]));
-  return [...(schools ?? [])].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  const sorted = [...(schools ?? [])].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  return { schools: sorted, unavailableCount: favorites.length - sorted.length };
+}
+
+export interface FavoriteListsResult {
+  lists: PublicListCard[];
+  /** Same reasoning as FavoriteSchoolsResult.unavailableCount, for lists
+   * that were unpublished/archived or whose school was deactivated. */
+  unavailableCount: number;
 }
 
 /** Same reasoning/shape as getFavoriteSchools, for target_type = 'LIST'. */
-export async function getFavoriteLists(): Promise<PublicListCard[]> {
+export async function getFavoriteLists(): Promise<FavoriteListsResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return [];
+  if (!user) return { lists: [], unavailableCount: 0 };
 
   const { data: favorites, error: favError } = await supabase
     .from("favorites")
@@ -90,7 +107,7 @@ export async function getFavoriteLists(): Promise<PublicListCard[]> {
     .eq("target_type", "LIST")
     .order("created_at", { ascending: false });
   if (favError) throw new Error(`getFavoriteLists failed: ${favError.message}`);
-  if (!favorites || favorites.length === 0) return [];
+  if (!favorites || favorites.length === 0) return { lists: [], unavailableCount: 0 };
 
   const { data, error } = await supabase
     .from("school_lists")
@@ -118,13 +135,16 @@ export async function getFavoriteLists(): Promise<PublicListCard[]> {
   const order = new Map(favorites.map((favorite, index) => [favorite.target_id, index]));
   rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 
-  return rows.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    educationLevel: row.education_level,
-    seriesName: row.series_name,
-    schoolYear: row.school_year,
-    updatedAt: row.updated_at,
-    school: row.schools,
-  }));
+  return {
+    lists: rows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      educationLevel: row.education_level,
+      seriesName: row.series_name,
+      schoolYear: row.school_year,
+      updatedAt: row.updated_at,
+      school: row.schools,
+    })),
+    unavailableCount: favorites.length - rows.length,
+  };
 }

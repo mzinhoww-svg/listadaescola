@@ -54,15 +54,15 @@ export function StoreFormDrawer({ store }: { store?: AdminStore }) {
 
           <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4">
             <label className="flex items-center gap-2 text-sm text-neutral-700">
-              <input type="checkbox" name="offers_delivery" defaultChecked={store?.offers_delivery ?? false} className="size-4 rounded border-neutral-300 text-primary-600" />
+              <input type="checkbox" name="offers_delivery" defaultChecked={store?.offers_delivery ?? false} className="size-4 rounded border-neutral-300 accent-primary-600 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600" />
               Oferece entrega
             </label>
             <label className="flex items-center gap-2 text-sm text-neutral-700">
-              <input type="checkbox" name="offers_pickup" defaultChecked={store?.offers_pickup ?? false} className="size-4 rounded border-neutral-300 text-primary-600" />
+              <input type="checkbox" name="offers_pickup" defaultChecked={store?.offers_pickup ?? false} className="size-4 rounded border-neutral-300 accent-primary-600 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600" />
               Oferece retirada
             </label>
             <label className="flex items-center gap-2 text-sm text-neutral-700">
-              <input type="checkbox" name="is_active" defaultChecked={store?.is_active ?? true} className="size-4 rounded border-neutral-300 text-primary-600" />
+              <input type="checkbox" name="is_active" defaultChecked={store?.is_active ?? true} className="size-4 rounded border-neutral-300 accent-primary-600 text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600" />
               Ativa (visível publicamente)
             </label>
           </div>

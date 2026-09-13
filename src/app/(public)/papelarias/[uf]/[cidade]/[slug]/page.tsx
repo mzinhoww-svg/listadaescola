@@ -6,6 +6,7 @@ import { AtSign, Clock, Globe, MapPin, MessageCircle, ShoppingBag, Truck } from 
 import { isQaFixtureSlug } from "@/lib/qa/fixtures";
 import { getStoreBySlug, storeHref } from "@/lib/stores/store-profile";
 import { normalizeWhatsappNumber } from "@/lib/stores/whatsapp";
+import { recordPageView } from "@/lib/analytics/record-event";
 import { getNearbySchools } from "@/lib/schools/nearby-schools";
 import { schoolHref } from "@/components/schools/school-card";
 import { isEntitySponsored } from "@/lib/campaigns/public";
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Map } from "@/components/map/map";
 import { jsonLdScript } from "@/lib/seo/json-ld";
+import { buildEntityTitle, OG_DEFAULTS } from "@/lib/seo/metadata";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 import { toDisplayCase } from "@/lib/utils";
 
@@ -45,10 +47,10 @@ export async function generateMetadata({ params }: StorePageProps): Promise<Meta
   const description = `${store.name} em ${store.municipality}, ${store.uf}. Peça orçamento de material escolar direto pelo WhatsApp.`;
 
   return {
-    title: `${store.name} — ${store.municipality}/${store.uf}`,
+    title: buildEntityTitle(store.name, store.municipality, store.uf),
     description,
     alternates: { canonical: storeHref(store) },
-    openGraph: { title: store.name, description, type: "website" },
+    openGraph: { ...OG_DEFAULTS, title: store.name, description, type: "website" },
     // Fixture de QA: papelaria fictícia, nunca indexável.
     // Ver src/lib/qa/fixtures.ts.
     ...(isQaFixtureSlug(store.slug) ? { robots: { index: false, follow: false } } : {}),
@@ -64,6 +66,12 @@ export default async function StorePage({ params }: StorePageProps) {
   if (canonicalPath !== `/papelarias/${uf}/${cidade}/${slug}`) {
     redirect(canonicalPath);
   }
+
+  // Best-effort (RF-015): never blocks or fails the page render. Distinct
+  // from `store_view` (impression when this store shows up in another
+  // page's "Comprar local" sheet, see nearby-stores-sheet.tsx) -- this is
+  // a direct visit to the store's own page, previously untracked.
+  void recordPageView(canonicalPath);
 
   const whatsappNormalized = normalizeWhatsappNumber(store.whatsapp);
   const whatsappHref = whatsappNormalized ? `/api/store/whatsapp?store=${store.id}` : null;
@@ -150,13 +158,13 @@ export default async function StorePage({ params }: StorePageProps) {
         {(store.offersDelivery || store.offersPickup) && (
           <div className="flex flex-wrap gap-2">
             {store.offersDelivery && (
-              <Badge variant="info">
+              <Badge variant="stationery-mint">
                 <Truck className="size-3" aria-hidden="true" />
                 Entrega
               </Badge>
             )}
             {store.offersPickup && (
-              <Badge variant="info">
+              <Badge variant="stationery-mint">
                 <ShoppingBag className="size-3" aria-hidden="true" />
                 Retirada
               </Badge>
