@@ -107,14 +107,89 @@ Três leituras que mudam decisão:
 4. Supabase -> Authentication -> **Rate Limits**: revisar o limite de e-mails,
    que por padrão é baixo.
 
-### Acoplamento com o domínio próprio
+### Acoplamento com o domínio próprio — correção de 2026-09-13
 
-O passo 2 **exige domínio próprio**. Enviar de um domínio genérico ou não
-verificado para destinos corporativos (`@latam.com`, secretarias de educação,
-escolas) cai em quarentena ou spam — a reputação do remetente é o que decide.
+A versão anterior desta seção dizia que o passo 2 **exige** domínio próprio.
+Isso estava **errado como bloqueador** e certo como qualidade. A distinção
+importa porque `listadaescola.com.br` ainda não resolve em DNS (verificado de
+novo em 2026-09-13), e a formulação antiga fazia parecer que registrar o
+domínio era pré-requisito para destravar cadastro. Não é.
 
-Ou seja: registrar `listadaescola.com.br` deixou de ser item de roadmap
-futuro e virou **pré-requisito de um bloqueador atual**.
+Os provedores transacionais, Brevo incluído, verificam **remetente
+individual** por e-mail de confirmação — sem tocar em DNS. Um remetente
+verificado já entrega para Gmail, Hotmail e Yahoo, que é onde está a maior
+parte das famílias de MT. Então:
+
+| | Remetente verificado | Domínio autenticado (SPF + DKIM) |
+|---|---|---|
+| Precisa de DNS | não | sim |
+| Destrava o cadastro hoje | **sim** | sim |
+| Entrega para Gmail/Hotmail pessoal | sim | sim, melhor |
+| Entrega para destino corporativo (secretaria, escola) | arriscado | é o que funciona |
+| Remetente que aparece | endereço pessoal verificado | `nao-responda@listadaescola.com.br` |
+
+**Recomendação**: verificar um remetente agora para destravar as Ondas 5, 6 e
+7, e autenticar o domínio assim que ele existir. A segunda etapa não repete a
+primeira — ela a substitui, e aí todos os remetentes daquele domínio passam a
+ser verificados automaticamente.
+
+Registrar `listadaescola.com.br` continua importante. Só não é o que segura
+o cadastro.
+
+## Passo a passo com Brevo
+
+Escolhido por ser o que o responsável perguntou primeiro. Resend, Postmark e
+SES resolvem igual; os campos mudam de nome, não de natureza.
+
+**No Brevo**
+
+1. Criar conta e verificar o remetente: **Senders, Domains & Dedicated IPs ->
+   Senders -> Add a sender**. Chega um código de 6 dígitos no endereço; sem
+   confirmá-lo o remetente não envia transacional.
+2. Gerar a chave: **SMTP & API -> SMTP**. Anotar o **login SMTP** e a
+   **SMTP key** exatamente como o painel mostrar.
+
+**No Supabase** — Project Settings -> Authentication -> SMTP Settings:
+
+| Campo | Valor |
+|---|---|
+| Host | `smtp-relay.brevo.com` |
+| Port | `587` (STARTTLS) — `465` se preferir SSL |
+| Username | o login SMTP que o painel do Brevo mostra |
+| Password | a **SMTP key** |
+| Sender email | o endereço que você verificou no passo 1 |
+| Sender name | `Listada Escola` |
+
+Depois: Authentication -> **Rate Limits**, subir o limite de e-mails, que
+nasce baixo justamente porque o servidor embutido não é para produção.
+
+### As três armadilhas que derrubam esse setup
+
+1. **SMTP key não é API key.** O Brevo tem as duas, no mesmo menu. A API key
+   serve para a API HTTP e falha a autenticação SMTP. É o erro mais comum.
+2. **O login SMTP pode não ser o seu e-mail de conta.** Dependendo de quando
+   a conta foi criada, o Brevo gera um login no formato
+   `{aleatório}@smtp-brevo.com`. Copie o que estiver na tela em vez de supor.
+3. **Espaço em branco colado junto do host.** `" smtp-relay.brevo.com"` falha
+   com erro de conexão que não diz que a causa é um espaço.
+
+### Nunca cole a SMTP key aqui
+
+Ela vai **só** no painel do Supabase. Não entra no repositório, nem em
+`.env.example`, nem em variável da Vercel, nem numa mensagem de chat —
+qualquer chave que apareça em texto puro numa conversa passa a ser tratada
+como comprometida e precisa ser rotacionada. Mesma regra que vale para a
+`STITCH_API_KEY` no `CLAUDE.md`.
+
+### Fontes
+
+Os valores de host e porta acima vieram de busca pública, não da
+documentação do Brevo lida diretamente — o help center deles devolve HTTP 403
+para o fetcher desta sessão. Confira contra o painel antes de confiar:
+[SMTP relay](https://help.brevo.com/hc/en-us/articles/360001005870-SMTP-relay),
+[qual porta usar](https://help.brevo.com/hc/en-us/articles/10905415650322-Which-SMTP-port-should-I-use-Port-587-465-or-2525),
+[criar um remetente](https://help.brevo.com/hc/en-us/articles/208836149-Create-a-new-sender-From-name-and-From-email),
+[senders e domains na API](https://developers.brevo.com/docs/getting-started-with-senders-and-domains).
 
 ## Por que magic link (OTP por e-mail) NÃO é atalho para este problema
 
