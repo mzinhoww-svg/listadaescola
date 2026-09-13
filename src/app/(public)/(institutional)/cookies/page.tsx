@@ -22,6 +22,12 @@ export default function CookiesPage() {
           <strong>Sessão de autenticação:</strong> mantém você conectado depois de fazer login, para não
           precisar entrar de novo a cada página.
         </li>
+        <li>
+          <strong>Contagem de pedidos de orçamento:</strong> um identificador aleatório, sem nenhum dado
+          seu, criado quando você clica em &ldquo;pedir orçamento&rdquo; numa papelaria. Ele existe só para
+          que o mesmo clique repetido não seja contado duas vezes para a papelaria. Some quando você fecha
+          o navegador, não sai do nosso site e não é usado para publicidade.
+        </li>
       </ul>
 
       <h2>Como desativar</h2>

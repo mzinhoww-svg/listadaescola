@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
@@ -9,6 +9,17 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 function isUuid(value: string | null): value is string {
   return value !== null && UUID_RE.test(value);
 }
+
+/**
+ * Onda 6 -- cookie de sessão (sem Max-Age: morre quando o navegador
+ * fecha) com um UUID aleatório e nada mais. Existe por um motivo só:
+ * deduplicar a caixa de pedidos da papelaria, para que um mesmo visitante
+ * voltando ao botão em poucos minutos não vire três pedidos. NÃO é
+ * analytics, não é publicidade, não sai daqui e nunca é gravado no banco:
+ * `record_store_quote_request` guarda apenas o SHA-256 dele combinado com
+ * papelaria e lista. Documentado em /cookies.
+ */
+const QUOTE_SESSION_COOKIE = "le_orcamento_sid";
 
 /**
  * The only outbound path for "Comprar local" (Prompt 09, PRD RF-011/012).
@@ -25,22 +36,37 @@ function isUuid(value: string | null): value is string {
  * from Prompt 09 -- the itemized message still requires a real, published
  * list with at least one item.
  *
+ * Onda 6: `school` sem `list` também é válido, e passou a existir de
+ * verdade -- a página de perfil da escola renderiza
+ * `<NearbyStoresSheet schoolId={...} />` sem lista
+ * (src/app/(public)/escolas/[uf]/[cidade]/[slug]/page.tsx), e
+ * buildStoreQuoteHref (src/lib/stores/quote-link.ts) monta o link com
+ * `store` + `school` só. O guard antigo tratava "qualquer um dos dois
+ * presente" como "os dois obrigatórios" e mandava essa pessoa para a
+ * home. Agora só `list` exige `school` (a mensagem itemizada precisa do
+ * nome da escola); `school` sozinho rende a mensagem genérica e ainda
+ * assim registra o pedido com a escola de origem.
+ *
  * `whatsapp_click` is awaited, same reasoning as `/api/commerce/click`:
  * this Route Handler ends the instant it returns its redirect response,
  * so a detached insert risks never flushing.
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const storeId = searchParams.get("store");
   const schoolIdParam = searchParams.get("school");
   const listIdParam = searchParams.get("list");
-  const hasListContext = schoolIdParam !== null || listIdParam !== null;
 
-  if (!isUuid(storeId) || (hasListContext && (!isUuid(schoolIdParam) || !isUuid(listIdParam)))) {
+  const schoolOk = schoolIdParam === null || isUuid(schoolIdParam);
+  // `list` sem `school` fica de fora: a mensagem itemizada precisa do nome
+  // da escola, então esse par é entrada malformada, não um caso de uso.
+  const listOk = listIdParam === null || (isUuid(listIdParam) && isUuid(schoolIdParam));
+
+  if (!isUuid(storeId) || !schoolOk || !listOk) {
     return NextResponse.redirect(new URL("/", origin));
   }
-  const schoolId = hasListContext ? (schoolIdParam as string) : null;
-  const listId = hasListContext ? (listIdParam as string) : null;
+  const schoolId = schoolIdParam;
+  const listId = listIdParam;
 
   const supabase = createPublicClient();
 
@@ -52,7 +78,10 @@ export async function GET(request: Request) {
       : Promise.resolve({ data: null }),
   ]);
 
-  if (!store || (hasListContext && (!school || !list))) {
+  // Cada chave pedida tem que resolver: id de escola ou de lista que não
+  // existe (ou lista não publicada) é link quebrado, não motivo para
+  // inventar uma mensagem genérica em cima de um contexto errado.
+  if (!store || (schoolId && !school) || (listId && !list)) {
     return NextResponse.redirect(new URL("/", origin));
   }
 
@@ -87,14 +116,45 @@ export async function GET(request: Request) {
     message = buildGenericWhatsappMessage(store.name);
   }
 
-  await recordAnalyticsEvent({
-    eventType: "whatsapp_click",
-    schoolId: schoolId ?? undefined,
-    listId: listId ?? undefined,
-    storeId,
-  });
+  // Um clique aqui é a única evidência que existe de que a família pediu
+  // orçamento -- depois do redirect a conversa é do WhatsApp e o produto
+  // não vê mais nada. Por isso as duas escritas são aguardadas: este Route
+  // Handler termina no instante em que devolve o redirect, e um insert
+  // solto corre o risco de nunca ser enviado (mesmo motivo já registrado
+  // para `whatsapp_click`).
+  const sessionToken = request.cookies.get(QUOTE_SESSION_COOKIE)?.value ?? crypto.randomUUID();
+
+  await Promise.all([
+    recordAnalyticsEvent({
+      eventType: "whatsapp_click",
+      schoolId: schoolId ?? undefined,
+      listId: listId ?? undefined,
+      storeId,
+    }),
+    // Best-effort igual ao analytics: a RPC devolve `false` em vez de
+    // estourar quando recusa (duplicata, teto por papelaria), e mesmo um
+    // erro de rede não pode impedir a pessoa de chegar no WhatsApp.
+    supabase
+      .rpc("record_store_quote_request", {
+        p_store_id: storeId,
+        p_school_id: schoolId ?? undefined,
+        p_school_list_id: listId ?? undefined,
+        p_session_token: sessionToken,
+      })
+      .then(({ error }) => {
+        if (error) console.error("record_store_quote_request failed", error.message);
+      }),
+  ]);
 
   const destination = new URL(`https://wa.me/${normalizedPhone}`);
   destination.searchParams.set("text", message);
-  return NextResponse.redirect(destination);
+
+  const response = NextResponse.redirect(destination);
+  response.cookies.set(QUOTE_SESSION_COOKIE, sessionToken, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+  return response;
 }

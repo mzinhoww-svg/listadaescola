@@ -70,6 +70,17 @@ export default async function ModerationQueuePage({
             <Link href="/admin/moderacao/avaliacoes" className="text-sm font-medium text-primary-700 hover:underline">
               Avaliações →
             </Link>
+            {/* Onda 6: fila de autocadastro/reivindicação de papelaria. */}
+            <Link href="/admin/moderacao/papelarias" className="text-sm font-medium text-primary-700 hover:underline">
+              Papelarias →
+            </Link>
+            {/* Onda 7: fila de reivindicação de perfil de escola. */}
+            <Link
+              href="/admin/moderacao/reivindicacoes"
+              className="text-sm font-medium text-primary-700 hover:underline"
+            >
+              Reivindicações de escola →
+            </Link>
           </div>
         </div>
         <p className="text-sm text-neutral-500">
