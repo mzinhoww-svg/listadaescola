@@ -287,3 +287,80 @@ arquivo disjuntos e timestamps de migration reservados por onda.
   listas otimiza uma página que não tem o que oferecer. As 2.722 escolas e
   141 municípios já são conteúdo indexável e já estão no sitemap desde o
   Prompt 15 — o que falta é motivo para alguém chegar nelas.
+
+---
+
+## 6. Ondas 3 a 10 — fechamento
+
+Atualizado em 2026-09-13. As oito ondas foram executadas. Esta seção
+registra o que sobrou de verdade e o que continua sendo decisão do
+responsável.
+
+### Entregue
+
+| Onda | ICP | PR |
+|---|---|---|
+| 3 — Home como captura de intenção | Usuário final | #39 |
+| 4 — Publicação de listas pelo admin | Admin | #39 |
+| 5 — Contas recuperáveis sem SMTP | Contributor | #39 |
+| 6 — Papelaria: cadastro, área, pedidos | Store Manager | #43 |
+| 7 — Escola: perfil reivindicado | School Manager | #43 |
+| 8 — Comércio com profundidade | Usuário final + parceiro | #43 |
+| 9 — Confiança sem fabricar prova social | Usuário final | Lote 3 |
+| 10 — Alcance | todos | Lote 3 |
+
+Os dois ICPs que tinham papel no enum, política de RLS e atribuição pelo
+admin — e nenhuma tela — agora têm produto.
+
+### Bugs vivos em produção achados no caminho
+
+Nenhum deles estava no plano. Todos apareceram porque alguém foi conferir
+uma premissa em vez de aceitá-la.
+
+1. **`/minha-conta/perfil` devolvia HTTP 500 para todo usuário comum**
+   (`42P17`, recursão de policy em `profiles`). Admin nunca via, porque
+   `is_admin()` satisfazia o `WITH CHECK` antes do ramo recursivo importar.
+2. **O filtro "Avaliação mínima" zerava o catálogo inteiro.** Conferido:
+   `p_min_rating` 4, 3 ou 1 devolvia 0 escolas contra 2.722 sem filtro, e o
+   estado vazio culpava a busca do usuário.
+3. **`search_schools.list_count` contava a fixture de QA** — 100% do número
+   exibido era ficção, e ele pesa no `organic_score`.
+4. **`check_rate_limit()` era fail-closed com `auth.uid()` nulo** e
+   bloqueava todo INSERT sem sessão.
+5. **Escalonamento de privilégio em duas tabelas**: gestor de papelaria
+   podia escrever `is_sponsored`/`is_active`/`slug`/`uf`; gestor de escola
+   podia se autoconceder o selo "Verificada". RLS não trava coluna;
+   triggers travam.
+6. **URLs duplicadas indexáveis**: `/escolas/mt/CUIABA` e variantes
+   respondiam 200 com canonical para si mesmas.
+7. **`params` com não-ASCII chega percent-encoded no Next 16**, então
+   `/escolas/mt/Cuiabá` dava 404.
+
+### Três coisas que o produto ainda não tem, e que nenhuma onda resolve
+
+Vale dizer com clareza para não parecer que "8 ondas" significa "pronto":
+
+1. **0 listas reais.** A Onda 4 destravou a capacidade de publicar; ninguém
+   publicou ainda. Tudo que as Ondas 8, 9 e 10 constroem só se exercita
+   quando existir lista.
+2. **SMTP não configurado.** Bloqueia cadastro de contributor, de gestor de
+   papelaria e de escola — ou seja, as Ondas 6 e 7 têm o caminho pronto e a
+   porta de entrada emperrada. É tarefa do responsável.
+3. **`school_profiles` tem 0 linhas** para as 2.722 escolas. O selo
+   "Verificada" nunca renderizou em produção, e `weight_completeness` não
+   contribui nada para o ranking de ninguém.
+
+### Decisões que continuam do responsável
+
+1. **Qual o critério de `is_verified`?** Não existe escrito em lugar
+   nenhum — nem PRD, nem docs, nem comentário de migration. É um checkbox
+   no admin que pesa `weight_quality` na ordenação de 2.722 escolas.
+   Enquanto não houver critério, o selo é uma promessa cujo conteúdo só
+   existe na cabeça de quem marca a caixa.
+2. **Reivindicação aprovada deveria conceder o selo?** Hoje não concede:
+   `approve_school_claim()` cria o vínculo e promove o papel, e não toca em
+   `is_verified`. Se a resposta for sim, o lugar de mudar é a RPC, não o
+   texto da tela.
+3. **A fixture de QA sai?** Continua sendo a única `school_lists` APPROVED
+   do banco. Todos os vazamentos dela para o público estão fechados, mas
+   ela ainda é a razão de vários números precisarem de um filtro.
