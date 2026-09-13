@@ -4,11 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
+import { translateAdminDbError } from "@/lib/admin/rpc-utils";
 
 export interface FormState {
   error?: string;
   success?: string;
 }
+
+const MAX_REASON_LENGTH = 500;
 
 function revalidateReviewPaths() {
   revalidatePath("/admin/moderacao/avaliacoes");
@@ -21,7 +24,7 @@ export async function approveReviewAction(_prevState: FormState, formData: FormD
 
   const reviewId = String(formData.get("review_id") ?? "");
   const { error } = await supabase.rpc("admin_approve_review", { p_review_id: reviewId });
-  if (error) return { error: error.message };
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidateReviewPaths();
   return { success: "Avaliação publicada." };
@@ -33,8 +36,12 @@ export async function rejectReviewAction(_prevState: FormState, formData: FormDa
   if ("error" in gate) return { error: "Você não tem permissão para moderar avaliações." };
 
   const reviewId = String(formData.get("review_id") ?? "");
-  const { error } = await supabase.rpc("admin_reject_review", { p_review_id: reviewId });
-  if (error) return { error: error.message };
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) return { error: "Informe o motivo da recusa." };
+  if (reason.length > MAX_REASON_LENGTH) return { error: "Motivo muito longo." };
+
+  const { error } = await supabase.rpc("admin_reject_review", { p_review_id: reviewId, p_reason: reason });
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidateReviewPaths();
   return { success: "Avaliação recusada." };

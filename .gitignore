@@ -49,3 +49,8 @@ next-env.d.ts
 # autoridade de design fica versionado: DESIGN.md e .impeccable/design.json.
 .impeccable/shots*/
 .impeccable/out/
+
+# Worktrees isolados de agentes (Agent tool, isolation: "worktree") --
+# cópias temporárias do repo para pesquisa/execução paralela, nunca
+# conteúdo do produto.
+.claude/worktrees/

@@ -4,9 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 import { cn } from "@/lib/utils";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { DialogRoot, DialogPortal, DialogOverlay, DialogTitle } from "@/components/ui/dialog-primitives";
+import { ROLE_LABEL, type UserRole } from "@/lib/auth/roles";
 
 const navItems = [
   { label: "Dashboard", href: "/admin" },
@@ -20,6 +23,7 @@ const navItems = [
   { label: "Analytics", href: "/admin/analytics" },
   { label: "Vendas", href: "/admin/vendas" },
   { label: "Usuários", href: "/admin/usuarios" },
+  { label: "Auditoria", href: "/admin/auditoria" },
 ];
 
 function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -56,7 +60,27 @@ function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export interface AdminShellProfile {
+  fullName: string | null;
+  role: UserRole;
+}
+
+/**
+ * Roadmap C6: um admin podia promover qualquer pessoa a Admin/Super Admin
+ * em `/admin/usuarios` sem nunca ver o próprio nome ou papel em lugar
+ * nenhum da shell -- o único jeito de saber "sou super admin ou só
+ * admin?" era abrir a própria linha na tabela de usuários.
+ */
+function AdminIdentity({ profile }: { profile: AdminShellProfile }) {
+  return (
+    <div className="px-2 text-sm">
+      <p className="truncate font-medium text-white">{profile.fullName ?? "Sem nome"}</p>
+      <p className="text-neutral-400">{ROLE_LABEL[profile.role]}</p>
+    </div>
+  );
+}
+
+export function AdminShell({ children, profile }: { children: React.ReactNode; profile: AdminShellProfile }) {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const mobileNavId = React.useId();
 
@@ -72,7 +96,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           Listada Escola · Admin
         </Link>
         <AdminNav />
-        <div className="mt-auto pt-4">
+        <div className="mt-auto flex flex-col gap-3 border-t border-neutral-800 pt-4">
+          <AdminIdentity profile={profile} />
           <LogoutButton className="w-full justify-start text-neutral-300 hover:bg-neutral-800 hover:text-white" />
         </div>
       </aside>
@@ -91,14 +116,27 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             {mobileNavOpen ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
           </button>
         </header>
-        {mobileNavOpen && (
-          <div id={mobileNavId} className="bg-neutral-900 p-4 lg:hidden">
-            <AdminNav onNavigate={() => setMobileNavOpen(false)} />
-            <div className="mt-2 border-t border-neutral-800 pt-2">
-              <LogoutButton className="w-full justify-start text-neutral-300 hover:bg-neutral-800 hover:text-white" />
-            </div>
-          </div>
-        )}
+        {/* Driven by the same `mobileNavOpen` state as the button above
+            (not DialogPrimitive.Trigger) so the existing hamburger/X
+            toggle is untouched -- Radix still gives this the same focus
+            trap, Escape, overlay-click-to-close and focus-return-on-close
+            as Modal/Drawer, controlled entirely through `open`. */}
+        <DialogRoot open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <DialogPortal>
+            <DialogOverlay className="lg:hidden" />
+            <DialogPrimitive.Content
+              id={mobileNavId}
+              className="fixed inset-x-0 top-14 z-50 bg-neutral-900 p-4 lg:hidden"
+            >
+              <DialogTitle className="sr-only">Menu de navegação</DialogTitle>
+              <AdminNav onNavigate={() => setMobileNavOpen(false)} />
+              <div className="mt-2 flex flex-col gap-3 border-t border-neutral-800 pt-2">
+                <AdminIdentity profile={profile} />
+                <LogoutButton className="w-full justify-start text-neutral-300 hover:bg-neutral-800 hover:text-white" />
+              </div>
+            </DialogPrimitive.Content>
+          </DialogPortal>
+        </DialogRoot>
         <main id="conteudo-principal" className="min-w-0 flex-1 bg-neutral-50 p-4 sm:p-6">
           {children}
         </main>

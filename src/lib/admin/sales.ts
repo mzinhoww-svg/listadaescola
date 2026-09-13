@@ -30,8 +30,10 @@ export interface AdminStoreSaleReport {
 // Prompt 18 (performance audit): unbounded before -- see admin/lists.ts's
 // MAX_ROWS comment for the reasoning (same fix, same follow-up note). Sale
 // reports specifically accumulate forever with real usage, no archival --
-// the highest-growth-risk case in this batch.
-const MAX_ROWS = 200;
+// the highest-growth-risk case in this batch. Exported (roadmap C4) so the
+// page can tell "exactly 200 rows" apart from "fewer than 200 rows" and
+// show a truncation notice instead of silently looking complete.
+export const MAX_ROWS = 200;
 
 export interface AdminPartnerSaleReport {
   id: string;

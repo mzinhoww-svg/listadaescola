@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { searchSchools } from "@/lib/schools/search-schools";
 import { resolveMunicipalitySlug } from "@/lib/schools/municipalities";
+import { recordPageView } from "@/lib/analytics/record-event";
 import { SchoolCard } from "@/components/schools/school-card";
 import { PaginationControls } from "@/components/schools/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -55,6 +56,9 @@ export default async function CidadePage({ params, searchParams }: CidadePagePro
   const { page: pageParam } = await searchParams;
   const page = pageParam ? Number(pageParam) : 1;
   const result = await searchSchools({ uf: ufUpper, municipality, sort: "popularity", page });
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordPageView(`/escolas/${uf.toLowerCase()}/${cidade}`);
 
   const siteUrl = getSiteBaseUrl();
   const breadcrumbJsonLd = {

@@ -47,5 +47,32 @@ export function translateAdminDbError(message: string): string {
     return "A data de fim precisa ser depois da data de início.";
   }
 
+  if (message.includes("rejection reason is required")) {
+    return "Informe o motivo da recusa.";
+  }
+
+  if (message.includes("you cannot review your own review") || message.includes("you cannot review your own submission")) {
+    return "Você não pode moderar o próprio envio.";
+  }
+
+  const notAwaitingMatch = message.match(/^(review|submission) .+ is not awaiting (moderation|review) \(status=(\w+)\)$/);
+  if (notAwaitingMatch) {
+    return "Este item já foi moderado por outra pessoa -- atualize a página para ver o estado atual.";
+  }
+
+  // Catálogo/e-commerce (admin_crud.sql, admin_upsert_partner_sale_report).
+  if (message.includes("partner name is required")) return "Informe o nome do parceiro.";
+  if (message.includes("product name is required")) return "Informe o nome do produto.";
+  if (message.includes("partner is required")) return "Selecione um parceiro.";
+  if (message.includes("product is required")) return "Selecione um produto.";
+  if (message.includes("price hint cannot be negative")) return "O preço estimado não pode ser negativo.";
+  if (/^ecommerce partner .+ not found$/.test(message)) return "Parceiro não encontrado.";
+  if (/^product .+ not found$/.test(message)) return "Produto não encontrado.";
+  if (/^ecommerce product .+ not found$/.test(message)) return "Oferta de parceiro não encontrada.";
+  if (/^ecommerce product .+ does not belong to partner .+$/.test(message)) {
+    return "Este produto não pertence ao parceiro selecionado.";
+  }
+  if (/^partner sale report .+ not found$/.test(message)) return "Relatório de venda não encontrado.";
+
   return message;
 }

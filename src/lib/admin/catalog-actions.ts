@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
-import { nullableArg } from "@/lib/admin/rpc-utils";
+import { nullableArg, translateAdminDbError } from "@/lib/admin/rpc-utils";
 
 export interface FormState {
   error?: string;
@@ -31,7 +31,7 @@ export async function upsertProductAction(_prevState: FormState, formData: FormD
     p_brand: nullableArg(optionalString(formData, "brand")),
     p_category: nullableArg(optionalString(formData, "category")),
   });
-  if (error) return { error: error.message };
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidatePath("/admin/catalogo");
   return { success: productId ? "Produto atualizado." : "Produto criado." };
@@ -62,7 +62,7 @@ export async function upsertEcommerceProductAction(_prevState: FormState, formDa
     p_price_hint: nullableArg(priceHint),
     p_is_active: formData.get("is_active") === "on",
   });
-  if (error) return { error: error.message };
+  if (error) return { error: translateAdminDbError(error.message) };
 
   revalidatePath("/admin/catalogo");
   return { success: ecommerceProductId ? "Oferta atualizada." : "Oferta criada." };

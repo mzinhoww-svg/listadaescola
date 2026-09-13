@@ -31,5 +31,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     );
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminShell profile={{ fullName: profile.full_name, role: profile.role }}>{children}</AdminShell>;
 }

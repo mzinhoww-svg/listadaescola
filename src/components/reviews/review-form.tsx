@@ -19,7 +19,7 @@ const RATING_OPTIONS = [
 export interface ReviewFormProps {
   schoolId: string;
   path: string;
-  existing?: { rating: number; comment: string | null };
+  existing?: { rating: number; comment: string | null; status?: "PENDING" | "APPROVED" | "REJECTED" };
 }
 
 export function ReviewForm({ schoolId, path, existing }: ReviewFormProps) {
@@ -37,7 +37,7 @@ export function ReviewForm({ schoolId, path, existing }: ReviewFormProps) {
     <form action={formAction} className="flex max-w-sm flex-col gap-3">
       <input type="hidden" name="school_id" value={schoolId} />
       <input type="hidden" name="path" value={path} />
-      {existing && (
+      {existing?.status === "PENDING" && (
         <p className="text-sm text-neutral-600">Sua avaliação está em análise. Você pode atualizá-la abaixo.</p>
       )}
       <Select label="Nota" name="rating" defaultValue={String(existing?.rating ?? 5)} required>

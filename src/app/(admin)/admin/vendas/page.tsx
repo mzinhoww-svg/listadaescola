@@ -7,9 +7,12 @@ import {
   getPartnerSaleReports,
   summarizeStoreSaleReports,
   summarizePartnerSaleReports,
+  MAX_ROWS,
 } from "@/lib/admin/sales";
+import { deleteStoreSaleReportAction, deletePartnerSaleReportAction } from "@/lib/admin/sales-actions";
 import { StoreSaleReportFormDrawer } from "@/components/admin/store-sale-report-form-drawer";
 import { PartnerSaleReportFormDrawer } from "@/components/admin/partner-sale-report-form-drawer";
+import { DeleteSaleReportButton } from "@/components/admin/delete-sale-report-button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -62,6 +65,11 @@ export default async function AdminVendasPage() {
               {storeSummary.conversionRate !== null && ` · conversão ${formatPercent(storeSummary.conversionRate)}`}
               {storeSummary.averageTicket !== null && ` · ticket médio ${formatCurrency(storeSummary.averageTicket)}`}
             </p>
+            {storeReports.length === MAX_ROWS && (
+              <p className="mt-1 text-sm text-warning-700">
+                Mostrando os {MAX_ROWS} mais recentes -- pode haver registros mais antigos não exibidos aqui.
+              </p>
+            )}
           </div>
           <StoreSaleReportFormDrawer stores={stores} />
         </div>
@@ -91,7 +99,10 @@ export default async function AdminVendasPage() {
                   <TableCell>{report.quotedValue !== null ? formatCurrency(report.quotedValue) : "—"}</TableCell>
                   <TableCell>{report.saleValue !== null ? formatCurrency(report.saleValue) : "—"}</TableCell>
                   <TableCell>
-                    <StoreSaleReportFormDrawer stores={stores} report={report} />
+                    <div className="flex items-center gap-1">
+                      <StoreSaleReportFormDrawer stores={stores} report={report} />
+                      <DeleteSaleReportButton action={deleteStoreSaleReportAction} reportId={report.id} />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -108,6 +119,11 @@ export default async function AdminVendasPage() {
               {partnerSummary.totalReports} conversão(ões) reportada(s) · {formatCurrency(partnerSummary.totalGrossValue)} em
               valor bruto · {formatCurrency(partnerSummary.totalCommission)} em comissão
             </p>
+            {partnerReports.length === MAX_ROWS && (
+              <p className="mt-1 text-sm text-warning-700">
+                Mostrando os {MAX_ROWS} mais recentes -- pode haver registros mais antigos não exibidos aqui.
+              </p>
+            )}
           </div>
           <PartnerSaleReportFormDrawer partners={partners} />
         </div>
@@ -137,7 +153,10 @@ export default async function AdminVendasPage() {
                     {new Date(report.createdAt).toLocaleDateString("pt-BR")}
                   </TableCell>
                   <TableCell>
-                    <PartnerSaleReportFormDrawer partners={partners} report={report} />
+                    <div className="flex items-center gap-1">
+                      <PartnerSaleReportFormDrawer partners={partners} report={report} />
+                      <DeleteSaleReportButton action={deletePartnerSaleReportAction} reportId={report.id} />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,8 +1,3 @@
-// Gerado a partir do schema real do projeto Supabase `listada-escola`
-// (ref wfdejmokxrunupsekcmq) via mcp__Supabase__generate_typescript_types.
-// Não editar à mão -- regenerar depois de qualquer migration em
-// supabase/migrations/.
-
 export type Json =
   | string
   | number
@@ -763,6 +758,7 @@ export type Database = {
           moderated_by: string | null
           profile_id: string
           rating: number
+          rejection_reason: string | null
           school_id: string
           status: Database["public"]["Enums"]["review_status"]
           updated_at: string
@@ -774,6 +770,7 @@ export type Database = {
           moderated_by?: string | null
           profile_id: string
           rating: number
+          rejection_reason?: string | null
           school_id: string
           status?: Database["public"]["Enums"]["review_status"]
           updated_at?: string
@@ -785,6 +782,7 @@ export type Database = {
           moderated_by?: string | null
           profile_id?: string
           rating?: number
+          rejection_reason?: string | null
           school_id?: string
           status?: Database["public"]["Enums"]["review_status"]
           updated_at?: string
@@ -1934,7 +1932,10 @@ export type Database = {
         }
         Returns: string
       }
-      admin_reject_review: { Args: { p_review_id: string }; Returns: undefined }
+      admin_reject_review: {
+        Args: { p_reason: string; p_review_id: string }
+        Returns: undefined
+      }
       admin_set_campaign_status: {
         Args: { p_campaign_id: string; p_status: string }
         Returns: undefined
@@ -2044,10 +2045,7 @@ export type Database = {
         }
         Returns: string
       }
-      approve_school_claim: {
-        Args: { p_claim_id: string }
-        Returns: undefined
-      }
+      approve_school_claim: { Args: { p_claim_id: string }; Returns: undefined }
       approve_school_suggestion: {
         Args: { p_suggestion_id: string }
         Returns: undefined
@@ -2061,6 +2059,10 @@ export type Database = {
       check_rate_limit: {
         Args: { p_action: string; p_max_hits: number; p_window_minutes: number }
         Returns: boolean
+      }
+      current_profile_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
       }
       inep_reconstruct_coordinate: {
         Args: {
@@ -2095,6 +2097,19 @@ export type Database = {
       mark_submission_under_review: {
         Args: { p_submission_id: string }
         Returns: undefined
+      }
+      materialize_local_draft: {
+        Args: {
+          p_education_level: string
+          p_items: Json
+          p_school_id: string
+          p_school_year: number
+          p_series_name: string
+        }
+        Returns: {
+          collided: boolean
+          submission_id: string
+        }[]
       }
       merge_inep_staging: {
         Args: {

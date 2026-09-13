@@ -27,6 +27,8 @@ const EVENT_LABEL: Record<string, string> = {
   submission_started: "Envios de lista iniciados",
   submission_submitted: "Envios/sugestões enviados",
   submission_approved: "Envios/sugestões aprovados",
+  home_list_request_click: "Cliques em 'enviar lista' na home",
+  page_view: "Visitas a páginas sem evento próprio",
 };
 
 const PERIOD_OPTIONS = [7, 30, 90] as const;

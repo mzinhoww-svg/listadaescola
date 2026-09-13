@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getActiveStores, storeHref } from "@/lib/stores/store-profile";
+import { recordPageView } from "@/lib/analytics/record-event";
 import { jsonLdScript } from "@/lib/seo/json-ld";
 import { OG_DEFAULTS } from "@/lib/seo/metadata";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
@@ -54,6 +55,9 @@ export default async function PapelariasCidadePage({ params }: CidadePageProps) 
   const ufUpper = uf.toUpperCase();
   const stores = await getStoresForCity(ufUpper, cidade);
   if (stores.length === 0) notFound();
+
+  // Best-effort (RF-015): never blocks or fails the page render.
+  void recordPageView(`/papelarias/${uf.toLowerCase()}/${cidade}`);
 
   const municipality = stores[0].municipality;
   const siteUrl = getSiteBaseUrl();

@@ -424,14 +424,19 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
         )}
 
         {user ? (
-          !ownReview || ownReview.status === "PENDING" ? (
-            <ReviewForm schoolId={school.id} path={canonicalPath} existing={ownReview ?? undefined} />
+          !ownReview || ownReview.status === "PENDING" || ownReview.status === "REJECTED" ? (
+            <div className="flex flex-col gap-3">
+              {ownReview?.status === "REJECTED" && (
+                <p className="rounded-lg bg-danger-50 p-3 text-sm text-danger-700">
+                  Sua avaliação anterior não foi aprovada
+                  {ownReview.rejectionReason ? `: ${ownReview.rejectionReason}. ` : ". "}
+                  Você pode enviar uma nova abaixo.
+                </p>
+              )}
+              <ReviewForm schoolId={school.id} path={canonicalPath} existing={ownReview ?? undefined} />
+            </div>
           ) : (
-            <p className="text-sm text-neutral-600">
-              {ownReview.status === "APPROVED"
-                ? "Sua avaliação foi publicada. Obrigado!"
-                : "Sua avaliação não foi aprovada."}
-            </p>
+            <p className="text-sm text-neutral-600">Sua avaliação foi publicada. Obrigado!</p>
           )
         ) : (
           <p className="text-sm text-neutral-600">

@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FileText, Heart, Bookmark } from "lucide-react";
+import { FileText, Heart, Bookmark, Star, Building2 } from "lucide-react";
 
 import { getCurrentProfile } from "@/lib/auth/session";
-import { getOwnSubmissions } from "@/lib/contributions/queries";
+import { getOwnSubmissions, getOwnSchoolSuggestions } from "@/lib/contributions/queries";
+import { getOwnReviews } from "@/lib/reviews/queries";
 import { getFavoriteSchools, getFavoriteLists } from "@/lib/favorites/queries";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Minha conta" };
 
 export default async function MinhaContaPage() {
-  const [profile, submissions, favoriteSchools, favoriteLists] = await Promise.all([
+  const [profile, submissions, reviews, suggestions, favoriteSchools, favoriteLists] = await Promise.all([
     getCurrentProfile(),
     getOwnSubmissions(),
+    getOwnReviews(),
+    getOwnSchoolSuggestions(),
     getFavoriteSchools(),
     getFavoriteLists(),
   ]);
@@ -29,16 +32,28 @@ export default async function MinhaContaPage() {
           : `${submissions.length} no total`,
     },
     {
+      icon: Star,
+      title: "Minhas avaliações",
+      href: "/minha-conta/avaliacoes",
+      description: `${reviews.length} no total`,
+    },
+    {
+      icon: Building2,
+      title: "Minhas sugestões",
+      href: "/minha-conta/sugestoes",
+      description: `${suggestions.length} no total`,
+    },
+    {
       icon: Heart,
       title: "Escolas salvas",
       href: "/minha-conta/escolas-salvas",
-      description: `${favoriteSchools.length} salva${favoriteSchools.length === 1 ? "" : "s"}`,
+      description: `${favoriteSchools.schools.length} salva${favoriteSchools.schools.length === 1 ? "" : "s"}`,
     },
     {
       icon: Bookmark,
       title: "Listas salvas",
       href: "/minha-conta/listas-salvas",
-      description: `${favoriteLists.length} salva${favoriteLists.length === 1 ? "" : "s"}`,
+      description: `${favoriteLists.lists.length} salva${favoriteLists.lists.length === 1 ? "" : "s"}`,
     },
   ];
 

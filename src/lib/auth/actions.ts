@@ -117,6 +117,12 @@ export async function signUpAction(_prevState: FormState, formData: FormData): P
   }
   if (password !== confirmPassword) return { fieldErrors: { confirm_password: "As senhas não coincidem." } };
 
+  // Mesmo destino que o login já preserva (RF de "voltar pro que eu tava
+  // fazendo") -- sem isto, o link de confirmação de e-mail sempre mandava
+  // pra /minha-conta, perdendo qualquer fluxo que trouxe a pessoa até o
+  // cadastro (ex.: rascunho anônimo do wizard, sub-projeto papelaria #1).
+  const next = getSafeRedirect(String(formData.get("next") ?? ""), "/minha-conta");
+
   const siteUrl = await getSiteUrl();
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
@@ -124,7 +130,7 @@ export async function signUpAction(_prevState: FormState, formData: FormData): P
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent("/minha-conta")}`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
@@ -135,7 +141,7 @@ export async function signUpAction(_prevState: FormState, formData: FormData): P
     return { error: "Não foi possível criar a conta. Tente novamente." };
   }
 
-  redirect(`/auth/verificar-email?email=${encodeURIComponent(email)}`);
+  redirect(`/auth/verificar-email?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
 }
 
 export async function signOutAction() {
@@ -241,6 +247,7 @@ export async function resendVerificationAction(
 ): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
   if (!isValidEmail(email)) return { fieldErrors: { email: "Informe um e-mail válido." } };
+  const next = getSafeRedirect(String(formData.get("next") ?? ""), "/minha-conta");
 
   const supabase = await createClient();
   const identifier = await getResendRateLimitIdentifier(email);
@@ -261,7 +268,7 @@ export async function resendVerificationAction(
     type: "signup",
     email,
     options: {
-      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent("/minha-conta")}`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
