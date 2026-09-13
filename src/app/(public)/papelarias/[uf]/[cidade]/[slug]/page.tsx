@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AtSign, Clock, Globe, MapPin, MessageCircle, ShoppingBag, Truck } from "lucide-react";
 
+import { isQaFixtureSlug } from "@/lib/qa/fixtures";
 import { getStoreBySlug, storeHref } from "@/lib/stores/store-profile";
 import { normalizeWhatsappNumber } from "@/lib/stores/whatsapp";
 import { getNearbySchools } from "@/lib/schools/nearby-schools";
@@ -48,6 +49,9 @@ export async function generateMetadata({ params }: StorePageProps): Promise<Meta
     description,
     alternates: { canonical: storeHref(store) },
     openGraph: { title: store.name, description, type: "website" },
+    // Fixture de QA: papelaria fictícia, nunca indexável.
+    // Ver src/lib/qa/fixtures.ts.
+    ...(isQaFixtureSlug(store.slug) ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
