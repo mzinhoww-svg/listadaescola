@@ -44,3 +44,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Saída de scan do impeccable (screenshots, relatórios brutos). O que é
+# autoridade de design fica versionado: DESIGN.md e .impeccable/design.json.
+.impeccable/shots*/
+.impeccable/out/

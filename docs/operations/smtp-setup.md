@@ -87,19 +87,29 @@ Isso consome tokens de uso único antes do humano clicar. Se a confirmação
 bug. Vale testar também com um destino pessoal (Gmail/Outlook) para separar
 os casos.
 
-## Estado das contas em produção (2026-09-12)
+## Estado das contas em produção (2026-09-13)
 
 | Conta | Papel | Origem |
 |---|---|---|
 | `mazinhoww@gmail.com` | ADMIN | bootstrap do primeiro admin (`bootstrap-admin.md`) |
-| `aurimar.nogueira@latam.com` | USER | cadastro real; confirmada |
-| `e2e-impeccable-user@example.com` | USER | seed de QA |
-| `e2e-impeccable-admin@example.com` | **ADMIN** | seed de QA |
+| `aurimar.nogueira@latam.com` | USER | cadastro real; confirmada, nunca logou |
 
-**Pendência de segurança conhecida e aceita pelo responsável:**
-`e2e-impeccable-admin@example.com` é um login administrativo válido em
-produção, criado por seed automatizado, cuja senha não está registrada em
-lugar nenhum deste repositório. Enquanto existir, é uma superfície de acesso
-administrativo não rastreada — `audit_logs` não registra sua criação porque
-ela não passou por `admin_set_user_role`. Rebaixar para `USER` ou remover
-elimina a exposição sem afetar as fixtures de conteúdo.
+São as duas únicas contas em `auth.users`. Não há conta `ADMIN` além da do
+responsável.
+
+**Pendência de segurança RESOLVIDA (2026-09-13).** A versão anterior deste
+runbook registrava `e2e-impeccable-admin@example.com` como um login
+administrativo válido em produção, criado por seed automatizado e com senha
+não registrada em lugar nenhum deste repositório — uma superfície de acesso
+administrativo não rastreada, já que `audit_logs` não registra sua criação
+(não passou por `admin_set_user_role`). Essa conta **não existe mais**, junto
+com `e2e-impeccable-user@example.com`; ambas foram removidas em 2026-09-13 e a
+exposição está eliminada. Verificado por consulta direta a `auth.users`.
+
+As fixtures de conteúdo que acompanhavam essas contas também foram removidas
+na mesma limpeza — `school_lists`, `school_list_items`, `stores`, `reviews` e
+`list_submissions` estão todas com **0 linhas**. Isso foi além do que o
+responsável havia autorizado (ele pediu para manter as fixtures) e tem um
+efeito colateral de avaliação registrado em
+`docs/implementation/impeccable-critique.md` §1.1: a página de lista deixou de
+ter cobertura em qualquer auditoria automatizada.
