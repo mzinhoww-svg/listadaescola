@@ -9,9 +9,10 @@ import { recordAnalyticsEvent } from "@/lib/analytics/record-event";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isFavorited } from "@/lib/favorites/queries";
 import { getOffersByListItemId } from "@/lib/commerce/offers";
+import { buildListCommerceCoverage } from "@/lib/commerce/coverage";
 import { SaveButton } from "@/components/favorites/save-button";
 import { ShareButton } from "@/components/lists/share-button";
-import { PartnerOfferButton } from "@/components/commerce/partner-offer-button";
+import { OnlineOffersPanel } from "@/components/commerce/online-offers-panel";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
 import { ListChecklist } from "@/components/lists/list-checklist";
 import { Badge } from "@/components/ui/badge";
@@ -58,10 +59,29 @@ export default async function ListPage({ params }: ListPageProps) {
   ]);
   const favorited = user ? await isFavorited("LIST", list.id) : false;
   const path = `/listas/${list.slug}`;
-  const itemsWithOffers = list.items.filter((item) => (offersByItem.get(item.id)?.length ?? 0) > 0);
+  const coverage = buildListCommerceCoverage(list.items, offersByItem);
 
   // Best-effort (RF-015): never blocks or fails the page render.
   void recordAnalyticsEvent({ eventType: "list_view", schoolId: list.school.id, listId: list.id });
+  // Um evento por parceiro realmente renderizado no bloco de cobertura --
+  // mesmo padrão de recordSchoolImpressions. É o denominador que faltava
+  // para medir CTR por parceiro (Onda 8: "relatório que feche o laço").
+  void Promise.all(
+    coverage.partners.map((partner) =>
+      recordAnalyticsEvent({
+        eventType: "commerce_coverage_impression",
+        schoolId: list.school.id,
+        listId: list.id,
+        partnerId: partner.partnerId,
+        metadata: {
+          coveredItems: partner.coveredCount,
+          totalItems: coverage.totalItems,
+          pricedItems: partner.pricedCount,
+          estimatedTotal: partner.estimatedTotal,
+        },
+      })
+    )
+  );
 
   const siteUrl = getSiteBaseUrl();
   const jsonLd = {
@@ -164,42 +184,32 @@ export default async function ListPage({ params }: ListPageProps) {
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        {/* Lado a lado só enquanto os dois canais cabem compactos. Com
+            cobertura de parceiro renderizada, "Comprar online" precisa da
+            largura inteira -- em duas colunas dentro de max-w-3xl o cartão
+            de cobertura fica com ~350px e o texto da estimativa (que é
+            justamente a parte que não pode ficar ilegível) espreme. */}
+        <div className={coverage.partners.length > 0 ? "grid gap-4" : "grid gap-4 sm:grid-cols-2"}>
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
             <h3 className="font-semibold text-neutral-900">Comprar online</h3>
-            <p className="mb-4 mt-1 text-sm text-neutral-600">
-              Lojas parceiras com oferta para os itens desta lista.
+            <p className="mb-4 mt-1 max-w-[65ch] text-sm text-neutral-600">
+              Quanto da sua lista cada loja parceira resolve. Você compra no site delas — o Listada só mostra o
+              caminho.
             </p>
-            {itemsWithOffers.length > 0 ? (
-              <div className="flex flex-col gap-4">
-                {itemsWithOffers.map((item) => (
-                  <div key={item.id}>
-                    <p className="mb-2 text-sm font-medium text-neutral-700">{item.name}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {offersByItem.get(item.id)!.map((offer) => (
-                        <PartnerOfferButton
-                          key={offer.ecommerceProductId}
-                          offer={offer}
-                          schoolListItemId={item.id}
-                          schoolId={list.school.id}
-                          listId={list.id}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-neutral-600">
-                Nenhuma loja parceira tem oferta para os itens desta lista ainda.
-              </p>
-            )}
+            <OnlineOffersPanel
+              coverage={coverage}
+              items={list.items}
+              offersByItem={offersByItem}
+              schoolId={list.school.id}
+              listId={list.id}
+            />
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
             <h3 className="font-semibold text-neutral-900">Comprar local</h3>
-            <p className="mb-4 mt-1 text-sm text-neutral-600">
-              Peça orçamento em papelarias próximas da escola, direto pelo WhatsApp.
+            <p className="mb-4 mt-1 max-w-[65ch] text-sm text-neutral-600">
+              A lista inteira vai pronta no WhatsApp da papelaria. Havendo mais de uma perto da escola, dá para
+              mandar a mesma lista para todas e comparar os orçamentos que voltarem.
             </p>
             <NearbyStoresSheet schoolId={list.school.id} listId={list.id} />
           </div>

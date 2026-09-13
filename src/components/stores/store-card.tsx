@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { NearbyStore } from "@/lib/stores/nearby-stores";
 import { storeHref } from "@/lib/stores/store-profile";
+import { buildStoreQuoteHref } from "@/lib/stores/quote-link";
 
 export interface StoreCardProps {
   store: NearbyStore;
@@ -24,9 +25,9 @@ export interface StoreCardProps {
  * location).
  */
 export function StoreCard({ store, schoolId, listId }: StoreCardProps) {
-  const whatsappParams = new URLSearchParams({ store: store.id, school: schoolId });
-  if (listId) whatsappParams.set("list", listId);
-  const whatsappHref = store.whatsappNormalized ? `/api/store/whatsapp?${whatsappParams}` : null;
+  const whatsappHref = store.whatsappNormalized
+    ? buildStoreQuoteHref({ storeId: store.id, schoolId, listId })
+    : null;
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4">

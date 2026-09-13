@@ -14,6 +14,7 @@ import { getApprovedReviews, getOwnReview } from "@/lib/reviews/queries";
 import { isEntitySponsored } from "@/lib/campaigns/public";
 import { SaveButton } from "@/components/favorites/save-button";
 import { NearbyStoresSheet } from "@/components/stores/nearby-stores-sheet";
+import { ClaimSchoolCta } from "@/components/school-manager/claim-school-cta";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -449,6 +450,11 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
           </p>
         )}
       </section>
+
+      {/* Onda 7: o caminho de entrada do gestor de escola, no lugar onde
+          ele inevitavelmente chega. Discreto -- ver o comentário do
+          componente para por quê. */}
+      <ClaimSchoolCta schoolId={school.id} />
     </div>
   );
 }

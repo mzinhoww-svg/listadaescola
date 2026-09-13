@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { buildTeamWhatsappLink } from "@/lib/contact";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Para papelarias",
@@ -37,11 +39,30 @@ export default function ParaPapelariasPage() {
 
       <h2>Quer cadastrar sua papelaria?</h2>
       <p>
-        O cadastro de papelarias parceiras é feito pela nossa equipe.{" "}
-        <a href={CONTACT_HREF} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-700 hover:underline">
-          Fale com a gente pelo WhatsApp
-        </a>{" "}
-        para saber mais sobre como incluir sua papelaria no Listada Escola.
+        O cadastro é seu: você mesmo envia os dados da papelaria e nossa equipe confere antes de publicar. Se a
+        sua papelaria já aparece no site, use o mesmo formulário para reivindicar a gestão do cadastro.
+      </p>
+
+      {/* Onda 6: até aqui esta página era o destino do CTA "Cadastrar minha
+          papelaria" da Onda 2 e não tinha nenhum link de ação -- um beco sem
+          saída. O botão abaixo é a saída. */}
+      <p className="my-2 flex flex-wrap items-center gap-3">
+        <Button asChild size="lg">
+          <Link href="/cadastrar-papelaria">Cadastrar minha papelaria</Link>
+        </Button>
+        <a
+          href={CONTACT_HREF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium text-primary-700 hover:underline"
+        >
+          Prefiro falar com alguém pelo WhatsApp
+        </a>
+      </p>
+
+      <p>
+        O cadastro exige uma conta no Listada Escola — é ela que dá acesso à área da papelaria, onde você edita
+        horário, endereço, WhatsApp e serviços e acompanha os pedidos de orçamento que chegaram por aqui.
       </p>
     </>
   );

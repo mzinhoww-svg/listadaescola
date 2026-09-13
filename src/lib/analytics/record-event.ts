@@ -12,7 +12,14 @@ export type AnalyticsEventType =
   | "list_view"
   | "list_share"
   | "commerce_click"
+  // Onda 8: um evento por parceiro exibido no bloco de cobertura agregada
+  // da lista (o denominador que faltava para o CTR real de `commerce_click`
+  // por parceiro). Mesmo padrão de `school_impression`.
+  | "commerce_coverage_impression"
   | "whatsapp_click"
+  // Onda 8: o usuário decidiu pedir o mesmo orçamento a N papelarias.
+  // Cada conversa aberta continua gerando seu próprio `whatsapp_click`.
+  | "whatsapp_compare_started"
   | "store_view"
   | "favorite_added"
   | "review_created"

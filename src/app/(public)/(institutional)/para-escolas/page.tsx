@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
+
 export const metadata: Metadata = {
   title: "Para escolas",
   description: "Como o Listada Escola apresenta sua escola e suas listas de material escolar às famílias.",
@@ -30,12 +32,44 @@ export default function ParaEscolasPage() {
         escola. Cada envio passa pela nossa moderação — comparando o documento original anexado com os
         itens digitados — antes de ficar visível publicamente.
       </p>
-
-      <h2>Quer corrigir alguma informação?</h2>
       <p>
-        Se algo no perfil da sua escola estiver incorreto ou desatualizado,{" "}
+        Quando é a própria escola que publica, o caminho é mais curto: um responsável verificado pela
+        nossa equipe publica a lista direto, sem fila.
+      </p>
+
+      {/*
+        Onda 7: até aqui esta página era um beco sem saída -- explicava tudo
+        e o único link de ação apontava para /sugerir-escola, que é o
+        formulário de "escola que não existe na base". Uma escola que já
+        está no INEP (as 2.722 de MT estão) não tem o que sugerir; ela
+        precisa é de acesso ao próprio perfil.
+      */}
+      <h2>Assuma o perfil da sua escola</h2>
+      <p>
+        Se você trabalha na escola, pode pedir acesso ao perfil dela. Não existe verificação automática:
+        uma pessoa da nossa equipe confere sua declaração com os dados oficiais e com o contato da
+        escola antes de liberar. Depois de aprovado, você mantém descrição, contatos e fotos, e publica
+        as listas de material sem passar pela moderação.
+      </p>
+      <p>
+        Nome, código INEP e endereço continuam vindo da fonte oficial — nem a escola nem um usuário
+        comum editam esses campos.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-3">
+        <Button asChild>
+          <Link href="/reivindicar-escola">Reivindicar minha escola</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/minha-escola">Já pedi — acompanhar solicitação</Link>
+        </Button>
+      </div>
+
+      <h2>Quer corrigir uma informação oficial?</h2>
+      <p>
+        Dados de origem do INEP não são editáveis nem pela escola. Se algo estiver errado na fonte, ou se
+        a escola não estiver na base,{" "}
         <Link href="/sugerir-escola" className="font-medium text-primary-700 hover:underline">
-          entre em contato através do formulário de sugestão
+          use o formulário de sugestão
         </Link>{" "}
         e nossa equipe avalia a correção.
       </p>

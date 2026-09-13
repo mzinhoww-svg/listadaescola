@@ -45,13 +45,14 @@ de usuários não podem tornar conteúdo público sem aprovação").
 |---|---|---|---|---|---|
 | schools | ativos | ativos | não | não | **full, sem DELETE** |
 | school_profiles | ativos | ativos | manager | manager | full |
-| school_contacts | públicos+ativos | públicos+ativos | manager | manager | full |
-| school_images | aprovadas | aprovadas | manager | manager | full |
+| school_contacts | públicos+ativos | públicos+ativos, **+ todos da própria escola (manager)** | manager | manager (**+ delete manager**) | full |
+| school_images | aprovadas | aprovadas, **+ todas da própria escola (manager)** | manager | manager (**+ delete manager**) | full |
 | school_education_levels | ativos | ativos | manager | não | full |
 | school_series | ativos | ativos | manager | não | full |
 | school_managers | não | próprio | não | não | full |
 | school_suggestions | não | próprias | próprias | não | full |
-| school_lists | aprovadas | aprovadas | **não (só via função)** | **não (só via função)** | **full, sem DELETE** |
+| school_claims | não | próprias | próprias (só SUBMITTED) | **não (só via função)** | full |
+| school_lists | aprovadas | aprovadas, **+ todas da própria escola (manager)** | **não (só via função)** | **não (só via função)** | **full, sem DELETE** |
 | school_list_versions | publicados | publicados | **não (só via função)** | **não (só via função)** | **full, sem DELETE** |
 | school_list_items | publicados | publicados | **não (só via função)** | **não (só via função)** | **full, sem DELETE** |
 | list_submissions | não | próprias | próprias (só DRAFT) | próprias (DRAFT/NEEDS_CORRECTION) | full |
@@ -85,6 +86,31 @@ habilitado, zero policies) -- só `check_login_rate_limit`/
 são a única exceção deste projeto a "só `authenticated`": precisam
 funcionar para `anon` porque o rate limit de login roda antes da
 autenticação.
+
+**Onda 7 (`20260913040000_school_claim_and_publish.sql`)**: `school_claims`
+é a fila de "esta escola é minha" — INSERT preso a `claimed_by =
+auth.uid()` **e** ao estado inicial (`SUBMITTED`, sem revisor), SELECT só
+da própria (sem oráculo sobre reivindicações alheias), zero UPDATE/DELETE
+para o dono; quem decide são `approve_school_claim()` /
+`reject_school_claim()` (SECURITY DEFINER, `is_admin()`, com guarda de
+auto-revisão). As linhas de `manager` acima em `school_contacts`,
+`school_images` e `school_lists` são desta onda: sem elas o gestor não
+enxergava o contato interno que ele mesmo criou, a foto que enviou, nem a
+lista que o admin arquivou.
+
+**RLS trava linha, não coluna (Onda 7)**: `school_profiles_manager_update`
+e `school_images_manager_update` são por linha, o que deixaria o gestor
+escrever `is_verified` (o selo "Verificada" da página pública),
+`is_sponsored`, `approved_by` e reverter um `is_approved = false` do
+admin. RLS não tem WITH CHECK por coluna e uma subconsulta na própria
+tabela dentro da policy estoura com `42P17: infinite recursion` — a trava
+são os triggers `school_profiles_protect_admin_columns()` e
+`school_images_protect_admin_columns()`, que restauram a coluna em
+silêncio para quem não é admin (mesmo padrão de
+`stores_protect_admin_columns`, Onda 6). `publish` de lista pelo gestor é
+`school_manager_publish_list()` — irmã de `admin_publish_list` com gate
+`is_school_manager(p_school_id)` e ação de auditoria própria
+(`SCHOOL_MANAGER_PUBLISH_LIST`).
 
 **RN-006/RN-007 (Prompt 20)**: `schools`/`school_lists`/
 `school_list_versions`/`school_list_items` são master/histórico

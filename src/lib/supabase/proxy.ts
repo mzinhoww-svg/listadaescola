@@ -8,7 +8,21 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
 /** Route prefixes that require an authenticated user. Role-specific checks
  * (e.g. admin) happen server-side in that area's own layout, backed by a
  * real `profiles` read — this list only gates "is anyone logged in". */
-const PROTECTED_PREFIXES = ["/minha-conta", "/enviar-lista", "/sugerir-escola", "/admin"];
+const PROTECTED_PREFIXES = [
+  "/minha-conta",
+  "/enviar-lista",
+  "/sugerir-escola",
+  "/admin",
+  // Onda 6 (papelaria). `/minha-papelaria` também exige vínculo em
+  // `store_managers`, mas isso é checado no layout da área e, de verdade,
+  // pela RLS -- aqui só se resolve "tem alguém logado?".
+  "/cadastrar-papelaria",
+  "/minha-papelaria",
+  // Onda 7 (escola). Mesma divisão: `/minha-escola` exige vínculo em
+  // `school_managers`, checado no layout da área e, de verdade, pela RLS.
+  "/reivindicar-escola",
+  "/minha-escola",
+];
 
 function isProtected(pathname: string) {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
