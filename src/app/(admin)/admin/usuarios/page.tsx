@@ -2,21 +2,13 @@ import type { Metadata } from "next";
 
 import { getAdminUsers } from "@/lib/admin/users";
 import { getCurrentUser } from "@/lib/auth/session";
+import { ROLE_LABEL } from "@/lib/auth/roles";
 import { UserRoleForm } from "@/components/admin/user-role-form";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata: Metadata = { title: "Usuários" };
-
-const ROLE_LABEL: Record<string, string> = {
-  USER: "Usuário",
-  EDITOR: "Editor",
-  SCHOOL_MANAGER: "Gestor de escola",
-  STORE_MANAGER: "Gestor de papelaria",
-  ADMIN: "Admin",
-  SUPER_ADMIN: "Super admin",
-};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR");

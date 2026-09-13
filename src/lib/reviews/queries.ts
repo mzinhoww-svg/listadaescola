@@ -70,3 +70,43 @@ export async function getOwnReview(schoolId: string): Promise<OwnReview | null> 
     rejectionReason: data.rejection_reason,
   };
 }
+
+export interface OwnReviewListItem extends OwnReview {
+  updatedAt: string;
+  school: { id: string; name: string; slug: string; uf: string; municipality: string };
+}
+
+/**
+ * Roadmap C1 (docs/product/roadmap-icps-2026-09.md): "Minhas avaliações"
+ * central page -- every review this user has ever left, across schools.
+ * `getOwnReview` above stays scoped to one school (the review-form use
+ * case); this is the account-wide list.
+ */
+export async function getOwnReviews(): Promise<OwnReviewListItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .select(
+      `id, rating, comment, status, rejection_reason, updated_at,
+       schools!inner (id, name, slug, uf, municipality)`
+    )
+    .eq("profile_id", user.id)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw new Error(`getOwnReviews failed: ${error.message}`);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    rating: row.rating,
+    comment: row.comment,
+    status: row.status,
+    rejectionReason: row.rejection_reason,
+    updatedAt: row.updated_at,
+    school: row.schools,
+  }));
+}

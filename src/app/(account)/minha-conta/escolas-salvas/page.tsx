@@ -4,9 +4,14 @@ import { Heart } from "lucide-react";
 
 import { getFavoriteSchools } from "@/lib/favorites/queries";
 import { schoolHref } from "@/components/schools/school-card";
+import { SaveButton } from "@/components/favorites/save-button";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { toDisplayCase } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+const PATH = "/minha-conta/escolas-salvas";
 
 export const metadata: Metadata = { title: "Escolas salvas" };
 
@@ -34,16 +39,25 @@ export default async function EscolasSalvasPage() {
       ) : (
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           {schools.map((school) => (
-            <Link
-              key={school.id}
-              href={schoolHref(school)}
-              className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm hover:border-primary-300"
-            >
-              <p className="font-medium text-neutral-900">{school.name}</p>
-              <p className="mt-1 text-sm text-neutral-600">
-                {school.municipality}, {school.uf}
-              </p>
-            </Link>
+            <Card key={school.id}>
+              <CardHeader>
+                <CardTitle className="line-clamp-2">
+                  <Link href={schoolHref(school)} className="hover:underline">
+                    {toDisplayCase(school.name)}
+                  </Link>
+                </CardTitle>
+                <CardDescription>
+                  {school.municipality}, {school.uf}
+                </CardDescription>
+              </CardHeader>
+              <CardFooter>
+                {/* Já sabemos que está salva -- initialFavorited sempre true
+                    aqui, revalida esta própria página pra sumir da lista ao
+                    desfavoritar (roadmap C3: antes só dava pra desfavoritar
+                    visitando a escola de novo). */}
+                <SaveButton targetType="SCHOOL" targetId={school.id} isAuthenticated initialFavorited path={PATH} />
+              </CardFooter>
+            </Card>
           ))}
         </div>
       )}

@@ -150,6 +150,51 @@ export interface SubmissionDetail {
  * must treat `null` as "not found" (redirect/404), never render partial
  * data.
  */
+export interface OwnSchoolSuggestion {
+  id: string;
+  status: Database["public"]["Enums"]["submission_status"];
+  name: string;
+  municipality: string;
+  uf: string;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
+/**
+ * Roadmap C2 (docs/product/roadmap-icps-2026-09.md): "Minhas sugestões"
+ * central page. Only the admin side existed before
+ * (`lib/admin/school-suggestions.ts`) -- whoever suggested a school had no
+ * way to check whether it was accepted, rejected, or still sitting in the
+ * queue. `school_suggestions_select_own` RLS already scopes this; the
+ * explicit `.eq("suggested_by", ...)` keeps that guarantee readable here
+ * too (same reasoning as getOwnSubmissionDetail's SEC-002 comment above).
+ */
+export async function getOwnSchoolSuggestions(): Promise<OwnSchoolSuggestion[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("school_suggestions")
+    .select("id, status, name, municipality, uf, rejection_reason, created_at")
+    .eq("suggested_by", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`getOwnSchoolSuggestions failed: ${error.message}`);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    status: row.status,
+    name: row.name,
+    municipality: row.municipality,
+    uf: row.uf,
+    rejectionReason: row.rejection_reason,
+    createdAt: row.created_at,
+  }));
+}
+
 export const getOwnSubmissionDetail = cache(async (submissionId: string): Promise<SubmissionDetail | null> => {
   const supabase = await createClient();
   const {

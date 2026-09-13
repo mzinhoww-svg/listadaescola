@@ -54,6 +54,40 @@ export async function upsertStoreSaleReportAction(_prevState: FormState, formDat
   return { success: id ? "Registro atualizado." : "Registro criado." };
 }
 
+/**
+ * Roadmap C4: só dava pra editar um registro de venda errado, nunca
+ * excluir. `store_sale_reports_admin_all` (RLS `for all`) já cobre DELETE
+ * pra admin -- mesmo padrão de discardDraftAction, sem RPC nova: os
+ * upserts destas duas tabelas também não gravam em audit_logs hoje
+ * (conferido em admin_upsert_store_sale_report/admin_upsert_partner_sale_report),
+ * então excluir direto não regride nenhuma trilha de auditoria existente.
+ */
+export async function deleteStoreSaleReportAction(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const supabase = await createClient();
+  const gate = await requireAdmin(supabase);
+  if ("error" in gate) return { error: "Você não tem permissão para excluir vendas de papelarias." };
+
+  const id = String(formData.get("id") ?? "");
+  const { error } = await supabase.from("store_sale_reports").delete().eq("id", id);
+  if (error) return { error: translateAdminDbError(error.message) };
+
+  revalidatePath("/admin/vendas");
+  return { success: "Registro excluído." };
+}
+
+export async function deletePartnerSaleReportAction(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const supabase = await createClient();
+  const gate = await requireAdmin(supabase);
+  if ("error" in gate) return { error: "Você não tem permissão para excluir vendas de parceiros." };
+
+  const id = String(formData.get("id") ?? "");
+  const { error } = await supabase.from("partner_sale_reports").delete().eq("id", id);
+  if (error) return { error: translateAdminDbError(error.message) };
+
+  revalidatePath("/admin/vendas");
+  return { success: "Registro excluído." };
+}
+
 export async function upsertPartnerSaleReportAction(_prevState: FormState, formData: FormData): Promise<FormState> {
   const supabase = await createClient();
   const gate = await requireAdmin(supabase);
